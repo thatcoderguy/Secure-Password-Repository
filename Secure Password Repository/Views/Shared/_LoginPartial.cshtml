@@ -7,8 +7,17 @@
 
     <ul class="nav navbar-nav navbar-right">
         <li>
-            @Html.ActionLink("Hello " + User.Identity.GetUserName() + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
+            @Html.ActionLink("Password List", "Index", "Password", routeValues: null, htmlAttributes: new { title = "Password List" })
         </li>
+        <li>
+            @Html.ActionLink("My Account", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "My Account" })
+        </li>
+        @if (User.IsInRole("Administrator"))
+        {
+            <li>
+                @Html.RouteLink("User Manager", "UserManager", null, htmlAttributes: new { title = "User List" })
+            </li>
+        }
         <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
     </ul>
     }

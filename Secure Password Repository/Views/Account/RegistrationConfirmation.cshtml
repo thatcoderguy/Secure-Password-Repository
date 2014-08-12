@@ -1,0 +1,18 @@
+﻿
+<hgroup class="title">
+    <h1>@ViewBag.Title.</h1>
+</hgroup>
+
+<section id="loginForm">
+    <h2>Account Created</h2>
+    <p>Your account has now been created</p>
+
+    @if (ViewBag.IsFirstAccount == "yes")
+    {
+        <p>Your can now log into your account.</p>
+    }
+    else
+    {
+        <p>An Administrator of the system must activate your account before you can login. You will recieve an email when your account can be logged into.</p>
+    }
+</section>

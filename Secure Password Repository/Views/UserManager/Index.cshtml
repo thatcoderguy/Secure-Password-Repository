@@ -1,0 +1,59 @@
+﻿@using Secure_Password_Repository.Models
+@using Secure_Password_Repository.Database
+@model ApplicationUserManager
+@{
+    ViewBag.Title = "User Manager";
+}
+
+<h2>@ViewBag.Title.</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var user in Model.Users)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.userFullName</td>
+                <td>@user.Email</td>
+                <td>@user.GetRoleName()</td>
+                <td>
+                    <div class="btn-group">
+                        <a href="@Url.Action("Edit", new { user.Id })" class="btn btn-xs btn-primary">
+                            <i class="glyphicon glyphicon-edit"></i>
+                            Edit
+                        </a>
+                        <a href="" class="btn btn-xs btn-default">
+                            <i class="glyphicon glyphicon-lock"></i>
+                            Reset Password
+                        </a>
+                        @if(!user.isAuthorised)
+                        {
+                            <a href="" class="btn btn-xs btn-success">
+                                <i class="glyphicon glyphicon-thumbs-up"></i>
+                                Authorise
+                            </a>
+                        }
+                        <a href="@Url.Action("Delete", new { user.Id })" class="btn btn-xs btn-danger">
+                            <i class="glyphicon glyphicon-remove"></i>
+                            Delete
+                        </a>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

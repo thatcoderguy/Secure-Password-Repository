@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
@@ -10,7 +11,11 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using Owin;
+using Secure_Password_Repository.ViewModels;
 using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -18,6 +23,7 @@ namespace Secure_Password_Repository.Controllers
     public class AccountController : Controller
     {
         private ApplicationUserManager _userManager;
+        private ApplicationRoleManager _roleManager;
 
         public AccountController()
         {
@@ -25,10 +31,16 @@ namespace Secure_Password_Repository.Controllers
 
         public AccountController(ApplicationUserManager userManager)
         {
-            UserManager = userManager;
+            UserMgr = userManager;
         }
 
-        public ApplicationUserManager UserManager {
+        public AccountController(ApplicationRoleManager roleManager)
+        {
+            RoleMgr = roleManager;
+        }
+
+        public ApplicationUserManager UserMgr
+        {
             get
             {
                 return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
@@ -36,6 +48,18 @@ namespace Secure_Password_Repository.Controllers
             private set
             {
                 _userManager = value;
+            }
+        }
+
+        public ApplicationRoleManager RoleMgr
+        {
+            get
+            {
+                return _roleManager ?? HttpContext.GetOwinContext().Get<ApplicationRoleManager>();
+            }
+            private set
+            {
+                _roleManager = value;
             }
         }
 
@@ -57,11 +81,21 @@ namespace Secure_Password_Repository.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await UserManager.FindAsync(model.Email, model.Password);
+                var user = await UserMgr.FindAsync(model.Username, model.Password);
                 if (user != null)
                 {
-                    await SignInAsync(user, model.RememberMe);
-                    return RedirectToLocal(returnUrl);
+                    //only allow the user to sign in if their account is authorised
+                    //this is because an admin needs to authorise new accounts, so that the encryption key can be 
+                    //encrypted with the user's public key
+                    if (user.isAuthorised)
+                    {
+                        await SignInAsync(user, false);
+                        return RedirectToLocal(returnUrl);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Your account needs to be authorised by an Administrator.");
+                    }
                 }
                 else
                 {
@@ -78,7 +112,12 @@ namespace Secure_Password_Repository.Controllers
         [AllowAnonymous]
         public ActionResult Register()
         {
-            return View();
+            //we need to know if there are any existing accounts
+            //because if not, the first account needs to be an admin account, and contain a new encryption key
+            if (UserMgr.Users.ToList().Count == 0)
+                return View("RegisterFirstAccount");
+            else
+                return View();
         }
 
         //
@@ -90,50 +129,110 @@ namespace Secure_Password_Repository.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
-                IdentityResult result = await UserManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
+                var user = new ApplicationUser() { UserName = model.Username, Email = model.Email, userFullName = model.FullName };
+
+                //store whether this was the first account created in the system (gets returned in the querystring)
+                string FirstUserAccount = "";
+
+                string UserDefaultRole = "";
+
+                //generate a set of RSA keys - this set of keys are persistant until Destroy_RSAKeys() is called
+                //so we'll want to call Destroy_RSAKeys ASAP, for security purposes!
+                EncryptionAndHashing.Generate_NewRSAKeys();
+
+                //retrieve the generated RSA public key used for new user
+                //this can be stored as plaintext - we want people to use this key!
+                user.userPublicKey = await EncryptionAndHashing.Retrieve_PublicKey();
+
+                /*
+                 * Now retrieve the generated Private Key and also encrypt it. 
+                 */
+                
+                    //convert the private key to bytes, then clear the original string
+                    byte[] userPrivateKeyBytes = Encoding.Default.GetBytes(await EncryptionAndHashing.Retrieve_PrivateKey());
+
+                    //if the private key length isnt a multiple of 16, then make it so (requirment of DPAPI)
+                    if (userPrivateKeyBytes.Length % 16 != 0)
+                        EncryptionAndHashing.Add_BytePadding(ref userPrivateKeyBytes, 16 - (userPrivateKeyBytes.Length % 16));
+
+                    //Encrypt private key with DPAPI
+                    EncryptionAndHashing.Encrypt_DPAPI(ref userPrivateKeyBytes);
+
+                    //Encrypt privateKey with the user's password
+                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256(userPrivateKeyBytes, model.Password, false);
+
+                    //clear the PrivateKey data - for security
+                    Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);
+
+                    //Keys has been encrypted, the plaintext ones can now be destroyed
+                    EncryptionAndHashing.Destroy_RSAKeys();
+
+                /*
+                 * 
+                 */
+
+                if (UserMgr.Users.ToList().Count == 0)
                 {
-                    await SignInAsync(user, isPersistent: false);
 
-                    // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
-                    // Send an email with this link
-                    // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                    // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
+                    /*
+                     * Generate a new symetric encryption key and then encrypt it
+                     */
 
-                    return RedirectToAction("Index", "Home");
+                        //generate 32 random bytes - this will be the encryption key
+                        byte[] DatabaseEncryptionKeyBytes = EncryptionAndHashing.Generate_RandomBytes(32);
+
+                        //first level of encryption - using DPAPI
+                        EncryptionAndHashing.Encrypt_DPAPI(ref DatabaseEncryptionKeyBytes);
+
+                        //second level of encryption - using RSA
+                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA(DatabaseEncryptionKeyBytes, user.userPublicKey);
+
+                        //clear the original data
+                        Array.Clear(DatabaseEncryptionKeyBytes, 0, DatabaseEncryptionKeyBytes.Length);
+
+                    /*
+                     * 
+                     */
+
+                    user.isAuthorised = true;
+                    FirstUserAccount = "Yes";
+                    UserDefaultRole = "Administrator";
+
                 }
                 else
                 {
-                    AddErrors(result);
+
+                    //user needs to be authorised by an admin, so the encryption key can be copied to the user's account
+                    user.isAuthorised = false;
+                    FirstUserAccount = "No";
+                    UserDefaultRole = "User";
+
+                }
+
+                if (RoleMgr.RoleExists(UserDefaultRole))
+                {
+                    IdentityResult result = await UserMgr.CreateAsync(user, model.Password);
+                    if (result.Succeeded)
+                    {
+                        //await SignInAsync(user, isPersistent: false);
+
+                        result = await UserMgr.AddToRoleAsync(user.Id, UserDefaultRole);
+
+                        return RedirectToAction("RegistrationConfirmation", new { ThisIsTheFirstAccount = FirstUserAccount });
+                    }
+                    else
+                    {
+                        AddErrors(result);
+                    }
+                } 
+                else
+                {
+                    AddErrors(IdentityResult.Failed(new string []{ "The role: " + ApplicationSettings.Default.DefaultAccountRole + " does not exist" }));
                 }
             }
 
             // If we got this far, something failed, redisplay form
             return View(model);
-        }
-
-        //
-        // GET: /Account/ConfirmEmail
-        [AllowAnonymous]
-        public async Task<ActionResult> ConfirmEmail(string userId, string code)
-        {
-            if (userId == null || code == null) 
-            {
-                return View("Error");
-            }
-
-            IdentityResult result = await UserManager.ConfirmEmailAsync(userId, code);
-            if (result.Succeeded)
-            {
-                return View("ConfirmEmail");
-            }
-            else
-            {
-                AddErrors(result);
-                return View();
-            }
         }
 
         //
@@ -153,8 +252,8 @@ namespace Secure_Password_Repository.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await UserManager.FindByNameAsync(model.Email);
-                if (user == null || !(await UserManager.IsEmailConfirmedAsync(user.Id)))
+                var user = await UserMgr.FindByNameAsync(model.Email);
+                if (user == null || !(await UserMgr.IsEmailConfirmedAsync(user.Id)))
                 {
                     ModelState.AddModelError("", "The user either does not exist or is not confirmed.");
                     return View();
@@ -162,10 +261,10 @@ namespace Secure_Password_Repository.Controllers
 
                 // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                 // Send an email with this link
-                // string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
-                // var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);		
-                // await UserManager.SendEmailAsync(user.Id, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
-                // return RedirectToAction("ForgotPasswordConfirmation", "Account");
+                string code = await UserMgr.GeneratePasswordResetTokenAsync(user.Id);
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                await UserMgr.SendEmailAsync(user.Id, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
+                return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
 
             // If we got this far, something failed, redisplay form
@@ -201,13 +300,13 @@ namespace Secure_Password_Repository.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await UserManager.FindByNameAsync(model.Email);
+                var user = await UserMgr.FindByNameAsync(model.Email);
                 if (user == null)
                 {
                     ModelState.AddModelError("", "No user found.");
                     return View();
                 }
-                IdentityResult result = await UserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
+                IdentityResult result = await UserMgr.ResetPasswordAsync(user.Id, model.Code, model.Password);
                 if (result.Succeeded)
                 {
                     return RedirectToAction("ResetPasswordConfirmation", "Account");
@@ -238,10 +337,10 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> Disassociate(string loginProvider, string providerKey)
         {
             ManageMessageId? message = null;
-            IdentityResult result = await UserManager.RemoveLoginAsync(User.Identity.GetUserId(), new UserLoginInfo(loginProvider, providerKey));
+            IdentityResult result = await UserMgr.RemoveLoginAsync(int.Parse(User.Identity.GetUserId()), new UserLoginInfo(loginProvider, providerKey));
             if (result.Succeeded)
             {
-                var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+                var user = await UserMgr.FindByIdAsync(int.Parse(User.Identity.GetUserId()));
                 await SignInAsync(user, isPersistent: false);
                 message = ManageMessageId.RemoveLoginSuccess;
             }
@@ -280,10 +379,10 @@ namespace Secure_Password_Repository.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword, model.NewPassword);
+                    IdentityResult result = await UserMgr.ChangePasswordAsync(int.Parse(User.Identity.GetUserId()), model.OldPassword, model.NewPassword);
                     if (result.Succeeded)
                     {
-                        var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
+                        var user = await UserMgr.FindByIdAsync(int.Parse(User.Identity.GetUserId()));
                         await SignInAsync(user, isPersistent: false);
                         return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
                     }
@@ -304,7 +403,7 @@ namespace Secure_Password_Repository.Controllers
 
                 if (ModelState.IsValid)
                 {
-                    IdentityResult result = await UserManager.AddPasswordAsync(User.Identity.GetUserId(), model.NewPassword);
+                    IdentityResult result = await UserMgr.AddPasswordAsync(int.Parse(User.Identity.GetUserId()), model.NewPassword);
                     if (result.Succeeded)
                     {
                         return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
@@ -321,116 +420,6 @@ namespace Secure_Password_Repository.Controllers
         }
 
         //
-        // POST: /Account/ExternalLogin
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public ActionResult ExternalLogin(string provider, string returnUrl)
-        {
-            // Request a redirect to the external login provider
-            return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
-        }
-
-        //
-        // GET: /Account/ExternalLoginCallback
-        [AllowAnonymous]
-        public async Task<ActionResult> ExternalLoginCallback(string returnUrl)
-        {
-            var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync();
-            if (loginInfo == null)
-            {
-                return RedirectToAction("Login");
-            }
-
-            // Sign in the user with this external login provider if the user already has a login
-            var user = await UserManager.FindAsync(loginInfo.Login);
-            if (user != null)
-            {
-                await SignInAsync(user, isPersistent: false);
-                return RedirectToLocal(returnUrl);
-            }
-            else
-            {
-                // If the user does not have an account, then prompt the user to create an account
-                ViewBag.ReturnUrl = returnUrl;
-                ViewBag.LoginProvider = loginInfo.Login.LoginProvider;
-                return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = loginInfo.Email });
-            }
-        }
-
-        //
-        // POST: /Account/LinkLogin
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult LinkLogin(string provider)
-        {
-            // Request a redirect to the external login provider to link a login for the current user
-            return new ChallengeResult(provider, Url.Action("LinkLoginCallback", "Account"), User.Identity.GetUserId());
-        }
-
-        //
-        // GET: /Account/LinkLoginCallback
-        public async Task<ActionResult> LinkLoginCallback()
-        {
-            var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync(XsrfKey, User.Identity.GetUserId());
-            if (loginInfo == null)
-            {
-                return RedirectToAction("Manage", new { Message = ManageMessageId.Error });
-            }
-            IdentityResult result = await UserManager.AddLoginAsync(User.Identity.GetUserId(), loginInfo.Login);
-            if (result.Succeeded)
-            {
-                return RedirectToAction("Manage");
-            }
-            return RedirectToAction("Manage", new { Message = ManageMessageId.Error });
-        }
-
-        //
-        // POST: /Account/ExternalLoginConfirmation
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ExternalLoginConfirmation(ExternalLoginConfirmationViewModel model, string returnUrl)
-        {
-            if (User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction("Manage");
-            }
-
-            if (ModelState.IsValid)
-            {
-                // Get the information about the user from the external login provider
-                var info = await AuthenticationManager.GetExternalLoginInfoAsync();
-                if (info == null)
-                {
-                    return View("ExternalLoginFailure");
-                }
-                var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
-                IdentityResult result = await UserManager.CreateAsync(user);
-                if (result.Succeeded)
-                {
-                    result = await UserManager.AddLoginAsync(user.Id, info.Login);
-                    if (result.Succeeded)
-                    {
-                        await SignInAsync(user, isPersistent: false);
-                        
-                        // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
-                        // Send an email with this link
-                        // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                        // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                        // SendEmail(user.Email, callbackUrl, "Confirm your account", "Please confirm your account by clicking this link");
-                        
-                        return RedirectToLocal(returnUrl);
-                    }
-                }
-                AddErrors(result);
-            }
-
-            ViewBag.ReturnUrl = returnUrl;
-            return View(model);
-        }
-
-        //
         // POST: /Account/LogOff
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -441,27 +430,29 @@ namespace Secure_Password_Repository.Controllers
         }
 
         //
-        // GET: /Account/ExternalLoginFailure
+        // GET: /RegistrationComplete
         [AllowAnonymous]
-        public ActionResult ExternalLoginFailure()
+        public ActionResult RegistrationConfirmation(string ThisIsTheFirstAccount)
         {
+            ViewBag.Title = "Account Registration Complete";
+            ViewBag.IsFirstAccount = ThisIsTheFirstAccount.ToLower();
             return View();
         }
 
         [ChildActionOnly]
         public ActionResult RemoveAccountList()
         {
-            var linkedAccounts = UserManager.GetLogins(User.Identity.GetUserId());
+            var linkedAccounts = UserMgr.GetLogins(int.Parse(User.Identity.GetUserId()));
             ViewBag.ShowRemoveButton = HasPassword() || linkedAccounts.Count > 1;
             return (ActionResult)PartialView("_RemoveAccountPartial", linkedAccounts);
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && UserManager != null)
+            if (disposing && UserMgr != null)
             {
-                UserManager.Dispose();
-                UserManager = null;
+                UserMgr.Dispose();
+                UserMgr = null;
             }
             base.Dispose(disposing);
         }
@@ -481,7 +472,7 @@ namespace Secure_Password_Repository.Controllers
         private async Task SignInAsync(ApplicationUser user, bool isPersistent)
         {
             AuthenticationManager.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-            AuthenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, await user.GenerateUserIdentityAsync(UserManager));
+            AuthenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, await user.GenerateUserIdentityAsync(UserMgr));
         }
 
         private void AddErrors(IdentityResult result)
@@ -494,7 +485,7 @@ namespace Secure_Password_Repository.Controllers
 
         private bool HasPassword()
         {
-            var user = UserManager.FindById(User.Identity.GetUserId());
+            var user = UserMgr.FindById(int.Parse(User.Identity.GetUserId()));
             if (user != null)
             {
                 return user.PasswordHash != null;
@@ -505,6 +496,9 @@ namespace Secure_Password_Repository.Controllers
         private void SendEmail(string email, string callbackUrl, string subject, string message)
         {
             // For information on sending mail, please visit http://go.microsoft.com/fwlink/?LinkID=320771
+
+
+
         }
 
         public enum ManageMessageId

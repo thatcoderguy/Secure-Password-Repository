@@ -1,4 +1,4 @@
-﻿@using Secure_Password_Repository.Models;
+﻿@using Secure_Password_Repository.ViewModels;
 @using Microsoft.AspNet.Identity;
 @{
     ViewBag.Title = "Manage Account";
@@ -18,10 +18,7 @@
             @Html.Partial("_SetPasswordPartial")
         }
 
-        <section id="externalLogins">
-            @Html.Action("RemoveAccountList")
-            @Html.Partial("_ExternalLoginsListPartial", new ExternalLoginListViewModel { Action = "LinkLogin", ReturnUrl = ViewBag.ReturnUrl })
-        </section>
+
     </div>
 </div>
 @section Scripts {

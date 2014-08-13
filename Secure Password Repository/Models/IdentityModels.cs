@@ -10,6 +10,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
 using System.Web;
 using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.Database;
 
 namespace Secure_Password_Repository.Models
 {
@@ -54,9 +55,31 @@ namespace Secure_Password_Repository.Models
         public string GetRoleName()
         {
 
+            var DatabaseContext = new ApplicationDbContext();
+            string MyRoles = "";
+            
+            DatabaseContext.Users.Load();
 
+            //grab this user account from the database
+            var thisUserAccount = DatabaseContext.Users.FirstOrDefaultAsync(u => u.Id == Id).Result;
+            if (thisUserAccount != null)
+                foreach (var role in thisUserAccount.Roles)
+                {
+                    //grab first role that the user has (there should be only 1)
+                    var myRole = DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
 
-            throw new PasswordRepositoryException("Role does not exist");
+                    if (myRole != null)
+                        MyRoles += myRole.Name;
+                    else
+                        //throw new PasswordRepositoryException("User does not have any roles");
+                        MyRoles = "";
+                }
+                //user does not exist... some how
+            else
+                //throw new PasswordRepositoryException("User does not exist");
+                MyRoles = "";
+
+            return MyRoles;
         }
 
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser, int> manager)

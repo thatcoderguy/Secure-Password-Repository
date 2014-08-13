@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <LogoImage>logo.png</LogoImage>
+  <DefaultAccountRole>User</DefaultAccountRole>
+  <SMTPServerAddress>localhost</SMTPServerAddress>
+  <SMTPServerUsername />
+  <SMTPServerPassword />
+  <SystemSalt>+OEinchr/S9iBcvenvUfRRP96o+SU+N1q7dsMpEd2tU=</SystemSalt>
+  <SystemInitilisationVector>WX0vGqeV1v4RWVvAbsaVxA==</SystemInitilisationVector>
+  <SCryptHashCost>262144</SCryptHashCost>
+  <PBKDF2IterationCount>1000</PBKDF2IterationCount>
+</ApplicationSettings>

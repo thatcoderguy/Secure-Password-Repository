@@ -44,6 +44,8 @@ namespace Secure_Password_Repository
             routes.MapRoute("UserManagerIndex", "UserManager/Index", new { controller = "UserManager", action = "Index" });
             routes.MapRoute("UserManager", "UserManager", new { controller = "UserManager", action = "Index" });
             routes.MapRoute("UserManagerEdit", "UserManager/Edit/{id}", new { controller = "UserManager", action = "Edit", Id = UrlParameter.Optional });
+            routes.MapRoute("UserManagerResetPassword", "UserManager/ResetPassword/{id}", new { controller = "UserManager", action = "ResetPassword", Id = UrlParameter.Optional });
+            routes.MapRoute("UserManagerDelete", "UserManager/Delete/{id}", new { controller = "UserManager", action = "Delete", Id = UrlParameter.Optional });
 
         }
     }

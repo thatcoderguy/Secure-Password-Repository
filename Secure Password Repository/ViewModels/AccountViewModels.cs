@@ -95,4 +95,25 @@ namespace Secure_Password_Repository.ViewModels
         [Display(Name = "Email")]
         public string Email { get; set; }
     }
+
+    public class UpdateAccountViewModel
+    {
+
+        [Required]
+        [StringLength(150)]
+        [DataType(DataType.Text)]
+        [Display(Name = "Username")]
+        public string Username { get; set; }
+
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Name")]
+        public string FullName { get; set; }
+
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; }
+
+    }
 }

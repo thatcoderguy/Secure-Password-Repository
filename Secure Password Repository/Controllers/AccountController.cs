@@ -382,8 +382,6 @@ namespace Secure_Password_Repository.Controllers
                     IdentityResult result = await UserMgr.ChangePasswordAsync(int.Parse(User.Identity.GetUserId()), model.OldPassword, model.NewPassword);
                     if (result.Succeeded)
                     {
-                        var user = await UserMgr.FindByIdAsync(int.Parse(User.Identity.GetUserId()));
-                        await SignInAsync(user, isPersistent: false);
                         return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
                     }
                     else

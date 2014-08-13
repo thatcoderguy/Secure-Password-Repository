@@ -9,6 +9,8 @@ using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using Owin;
 using Secure_Password_Repository.Models;
+using Secure_Password_Repository.ViewModels;
+using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -63,25 +65,21 @@ namespace Secure_Password_Repository.Controllers
             return View(UserMgr);
         }
 
-        // GET: UserManager/Details/5
-        public ActionResult Details(int id)
-        {
-            return View();
-        }
-
         // GET: UserManager/Edit/5
-        public ActionResult Edit(int id)
+        public ActionResult Edit(int Id)
         {
             return View();
         }
 
         // POST: UserManager/Edit/5
         [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
+        public async Task<ActionResult> Edit(int Id, UpdateAccountViewModel model)
         {
             try
             {
                 // TODO: Add update logic here
+                var user = await UserMgr.FindByIdAsync(Id);
+                //user.UserName = model.Username
 
                 return RedirectToAction("Index");
             }
@@ -92,14 +90,14 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // GET: UserManager/Delete/5
-        public ActionResult Delete(int id)
+        public ActionResult Delete(int Id)
         {
             return View();
         }
 
         // POST: UserManager/Delete/5
         [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
+        public ActionResult Delete(int Id, FormCollection collection)
         {
             try
             {
@@ -112,5 +110,104 @@ namespace Secure_Password_Repository.Controllers
                 return View();
             }
         }
+
+        [HttpPost]
+        public ActionResult AuthoriseAccount(int id)
+        {
+            //authorise account
+            return RedirectToAction("Index", "UserManager");
+        }
+
+        public ActionResult ResetPassword(ManageMessageId? message)
+        {
+            ViewBag.StatusMessage =
+                message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
+                : message == ManageMessageId.SetPasswordSuccess ? "Your password has been set."
+                : message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
+                : message == ManageMessageId.Error ? "An error has occurred."
+                : "";
+            ViewBag.HasLocalPassword = HasPassword();
+            ViewBag.ReturnUrl = Url.Action("ResetPassword", "UserManager");
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> ResetPassword(int Id, ManageUserViewModel model)
+        {
+            bool hasPassword = HasPassword();
+            ViewBag.HasLocalPassword = hasPassword;
+            ViewBag.ReturnUrl = Url.Action("ResetPassword", "UserManager");
+            if (hasPassword)
+            {
+                if (ModelState.IsValid)
+                {
+                    IdentityResult result = await UserMgr.ChangePasswordAsync(Id, model.OldPassword, model.NewPassword);
+
+                    //decrypt admin copy of key
+                    //encrypt users copy of key
+
+                    if (result.Succeeded)
+                    {
+                        return RedirectToAction("ResetPassword", "UserManager", new { Message = ManageMessageId.ChangePasswordSuccess });
+                    }
+                    else
+                    {
+                        AddErrors(result);
+                    }
+                }
+            }
+            else
+            {
+                // User does not have a password so remove any validation errors caused by a missing OldPassword field
+                ModelState state = ModelState["OldPassword"];
+                if (state != null)
+                {
+                    state.Errors.Clear();
+                }
+
+                if (ModelState.IsValid)
+                {
+                    IdentityResult result = await UserMgr.AddPasswordAsync(int.Parse(User.Identity.GetUserId()), model.NewPassword);
+                    if (result.Succeeded)
+                    {
+                        return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
+                    }
+                    else
+                    {
+                        AddErrors(result);
+                    }
+                }
+            }
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
+        }
+
+        public enum ManageMessageId
+        {
+            ChangePasswordSuccess,
+            SetPasswordSuccess,
+            RemoveLoginSuccess,
+            Error
+        }
+
+        private bool HasPassword()
+        {
+            var user = UserMgr.FindById(int.Parse(User.Identity.GetUserId()));
+            if (user != null)
+            {
+                return user.PasswordHash != null;
+            }
+            return false;
+        }
+
+        private void AddErrors(IdentityResult result)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("", error);
+            }
+        }
+
     }
 }

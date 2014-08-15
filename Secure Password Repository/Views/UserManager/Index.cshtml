@@ -7,6 +7,15 @@
 
 <h2>@ViewBag.Title.</h2>
 
+@if (ViewBag.Message != string.Empty && ViewBag.Message != null)
+{ 
+<div class="validation-summary-information text-success">
+    <ul>
+        <li>@ViewBag.Message</li> 
+    </ul>
+</div>
+}
+    
 <table class="table table-striped">
     <thead>
         <tr>

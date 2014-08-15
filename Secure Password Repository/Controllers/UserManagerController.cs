@@ -62,13 +62,36 @@ namespace Secure_Password_Repository.Controllers
         // GET: UserManager
         public ActionResult Index()
         {
+            if (Request.QueryString.Get("successaction") == "Account Updated")
+            {
+                ViewBag.Message = "Account updated successfully.";
+            }
+            else if (Request.QueryString.Get("successaction") == "Account Deleted")
+            {
+                ViewBag.Message = "Account delete successfully.";
+            }
+
             return View(UserMgr);
         }
 
         // GET: UserManager/Edit/5
-        public ActionResult Edit(int Id)
+        public async Task<ActionResult> Edit(int Id)
         {
-            return View();
+            UpdateAccountViewModel model = new UpdateAccountViewModel();
+
+            //grab the selected account
+            var selectedAccount = await UserMgr.FindByIdAsync(Id);
+            if(selectedAccount!=null)
+            {
+                //put the attributes from this account into the model, so the existing values are displayed
+                model.Email = selectedAccount.Email;
+                model.Username = selectedAccount.UserName;
+                model.FullName = selectedAccount.userFullName;
+            }
+            else
+                ModelState.AddModelError("", "User account does not exsit");
+
+            return View(model);
         }
 
         // POST: UserManager/Edit/5
@@ -77,38 +100,125 @@ namespace Secure_Password_Repository.Controllers
         {
             try
             {
-                // TODO: Add update logic here
-                var user = await UserMgr.FindByIdAsync(Id);
-                //user.UserName = model.Username
 
-                return RedirectToAction("Index");
+                //grab the account selected
+                var selectedAccount = await UserMgr.FindByIdAsync(Id);
+                if (selectedAccount != null)
+                {
+
+                    //update the account's attributes
+                    selectedAccount.userFullName = model.FullName;
+                    selectedAccount.UserName = model.Username;
+                    selectedAccount.Email = model.Email;
+
+                    //attempt to update the account
+                    var result = await UserMgr.UpdateAsync(selectedAccount);
+                    if (result.Succeeded)
+                    {
+                        //redirect back to the account list, with a success message 
+                        return RedirectToAction("Index", "UserManager", new { successaction = "Account Updated" });
+                    }
+                    else
+                    {
+                        //list any errors (e.g. email/username already exists)
+                        string errorlist = "";
+                        foreach (string error in result.Errors.ToList())
+                            errorlist += error + " and ";
+
+                        if (errorlist != string.Empty)
+                            errorlist = errorlist.Substring(0, errorlist.Length - 5);
+
+                        ModelState.AddModelError("", errorlist);
+                    }
+
+                }
+                else
+                {
+
+                    ModelState.AddModelError("", "User account does not exist");
+
+                }
+
             }
-            catch
+            catch(Exception ex)
             {
-                return View();
+                ModelState.AddModelError("", ex.Message);
             }
+
+
+            //if we got this far, something baaaaad happened
+            return View(model);
         }
 
         // GET: UserManager/Delete/5
-        public ActionResult Delete(int Id)
+        public async Task<ActionResult> Delete(int Id)
         {
-            return View();
+            UpdateAccountViewModel model = new UpdateAccountViewModel();
+
+            //grab the selected account
+            var selectedAccount = await UserMgr.FindByIdAsync(Id);
+            if (selectedAccount != null)
+            {
+                //put the attributes from this account into the model, so the existing values are displayed
+                model.Email = selectedAccount.Email;
+                model.Username = selectedAccount.UserName;
+                model.FullName = selectedAccount.userFullName;
+            }
+            else
+                ModelState.AddModelError("", "User account does not exsit");
+
+            return View(model);
         }
 
         // POST: UserManager/Delete/5
         [HttpPost]
-        public ActionResult Delete(int Id, FormCollection collection)
+        public async Task<ActionResult> Delete(int Id, FormCollection collection)
         {
             try
             {
-                // TODO: Add delete logic here
 
-                return RedirectToAction("Index");
+                //grab the account selected
+                var selectedAccount = await UserMgr.FindByIdAsync(Id);
+                if (selectedAccount != null)
+                {
+
+                    //attempt to delete the account
+                    var result = await UserMgr.DeleteAsync(selectedAccount);
+                    if (result.Succeeded)
+                    {
+                        //redirect back to the account list, with a success message 
+                        return RedirectToAction("Index", "UserManager", new { successaction = "Account Deleted" });
+                    }
+                    else
+                    {
+                        //list any errors (e.g. email/username already exists)
+                        string errorlist = "";
+                        foreach (string error in result.Errors.ToList())
+                            errorlist += error + " and ";
+
+                        if (errorlist != string.Empty)
+                            errorlist = errorlist.Substring(0, errorlist.Length - 5);
+
+                        ModelState.AddModelError("", errorlist);
+                    }
+
+                }
+                else
+                {
+
+                    ModelState.AddModelError("", "User account does not exist");
+
+                }
+
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                ModelState.AddModelError("", ex.Message);
             }
+
+
+            //if we got this far, something baaaaad happened
+            return View();
         }
 
         [HttpPost]
@@ -170,7 +280,7 @@ namespace Secure_Password_Repository.Controllers
                     IdentityResult result = await UserMgr.AddPasswordAsync(int.Parse(User.Identity.GetUserId()), model.NewPassword);
                     if (result.Succeeded)
                     {
-                        return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
+                        return RedirectToAction("ResetPassword", "UserManager", new { Message = ManageMessageId.SetPasswordSuccess });
                     }
                     else
                     {

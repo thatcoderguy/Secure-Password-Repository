@@ -112,7 +112,7 @@ namespace Secure_Password_Repository.ViewModels
 
         [Required]
         [EmailAddress]
-        [Display(Name = "Email")]
+        [Display(Name = "Email Address")]
         public string Email { get; set; }
 
     }

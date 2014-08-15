@@ -7,24 +7,6 @@ namespace Secure_Password_Repository.Migrations
     {
         public override void Up()
         {
-            DropForeignKey("dbo.AspNetUserRoles", "UserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.AspNetUserLogins", "UserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.AspNetUserClaims", "UserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.AspNetUserRoles", "RoleId", "dbo.AspNetRoles");
-            DropIndex("dbo.AspNetUserLogins", new[] { "UserId" });
-            DropIndex("dbo.AspNetUserClaims", new[] { "UserId" });
-            DropIndex("dbo.AspNetUsers", "UserNameIndex");
-            DropIndex("dbo.AspNetUserRoles", new[] { "RoleId" });
-            DropIndex("dbo.AspNetUserRoles", new[] { "UserId" });
-            DropIndex("dbo.AspNetRoles", "RoleNameIndex");
-            DropTable("dbo.AspNetUserLogins");
-            DropTable("dbo.AspNetUserClaims");
-            DropTable("dbo.UserPassword");
-            DropTable("dbo.AspNetUserRoles");
-            DropTable("dbo.AspNetRoles");
-            DropTable("dbo.AspNetUsers");
-            DropTable("dbo.Password");
-            DropTable("dbo.Category");
 
            CreateTable(
                 "dbo.AspNetRoles",
@@ -113,7 +95,7 @@ namespace Secure_Password_Repository.Migrations
                     CategoryId = c.Int(nullable: false)
                 })
                 .PrimaryKey(t => t.PasswordId)
-                .ForeignKey("dbo.Category", t => t.CategoryId, cascadeDelete: true)
+                .ForeignKey("dbo.Category", t => t.CategoryId, cascadeDelete: false)
                 .Index(t => t.CategoryId);
 
             CreateTable(
@@ -136,8 +118,8 @@ namespace Secure_Password_Repository.Migrations
                     PasswordId = c.Int(nullable: false)
                 })
                 .PrimaryKey(t => new { t.Id, t.PasswordId })
-                .ForeignKey("dbo.AspNetUsers", t => t.Id, cascadeDelete: true)
-                .ForeignKey("dbo.Password", t => t.PasswordId, cascadeDelete: true)
+                .ForeignKey("dbo.AspNetUsers", t => t.Id, cascadeDelete: false)
+                .ForeignKey("dbo.Password", t => t.PasswordId, cascadeDelete: false)
                 .Index(t => t.Id)
                 .Index(t => t.PasswordId);
             

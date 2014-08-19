@@ -156,7 +156,7 @@ namespace Secure_Password_Repository.Utilities
         ///Decrypts the supplied text using Data Protection API.
         ///Important note: the supplied text is decrypted in-memory, so the maintain security Encrypt_DPAPI should be called after the decrypted text has been used.
         ///</summary>
-        ///<param name="PlainText">
+        ///<param name="EncryptedText">
         ///The plain text to be EncryptedText
         ///</param>
         public static void Decrypt_DPAPI(ref byte[] EncryptedText)
@@ -185,6 +185,9 @@ namespace Secure_Password_Repository.Utilities
         ///</param>
         ///<param name="EncryptionKey">
         ///The key used to encrypt the text
+        ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
         ///</param>
         ///<returns>
         ///An string of encrypted data converted to Base64
@@ -243,11 +246,14 @@ namespace Secure_Password_Repository.Utilities
         ///<summary>
         ///Encrypts the supplied bytes using the AES 256 algoritm
         ///</summary>
-        ///<param name="param name="BytesToEncrypt">
+        ///<param name="BytesToEncrypt">
         ///The bytes to be encrypted
         ///</param>
         ///<param name="EncryptionKey">
         ///The key used to encrypt the text
+        ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
         ///</param>
         ///<returns>
         ///An string of encrypted data converted to Base64
@@ -306,6 +312,9 @@ namespace Secure_Password_Repository.Utilities
         ///<param name="DecryptionKey">
         ///The key used to decrypt the text
         ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
+        ///</param>
         ///<returns>
         ///A string of decrypted data
         ///</returns>
@@ -360,11 +369,14 @@ namespace Secure_Password_Repository.Utilities
         ///<summary>
         ///Decrypts the supplied string using the AES 256 algoritm
         ///</summary>
-        ///<param name="BytesToDecrypt">
+        ///<param name="BytesToDecrypted">
         ///The encrypted bytes to be decrypted
         ///</param>
         ///<param name="DecryptionKey">
         ///The key used to decrypt the text
+        ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
         ///</param>
         ///<returns>
         ///A string of decrypted data

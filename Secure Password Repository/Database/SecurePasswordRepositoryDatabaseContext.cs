@@ -22,7 +22,9 @@ namespace Secure_Password_Repository.Database
             return new ApplicationDbContext();
         }
 
-        public DbSet<Password> Passwords { get; set; }
-        public DbSet<Category> Categories { get; set; }
+        public virtual DbSet<Password> Passwords { get; set; }
+        public virtual DbSet<Category> Categories { get; set; }
+
+        public virtual DbSet<UserPassword> UserPassword { get; set; }
     }
 }

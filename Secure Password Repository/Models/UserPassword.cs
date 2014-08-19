@@ -8,8 +8,8 @@ namespace Secure_Password_Repository.Models
     public class UserPassword
     {
 
-        public int Id { get; set; }
-        public int PasswordId { get; set; }
+        public Int32 Id { get; set; }
+        public Int32 PasswordId { get; set; }
 
     }
 }

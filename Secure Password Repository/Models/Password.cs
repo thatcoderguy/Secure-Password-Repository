@@ -9,14 +9,15 @@ namespace Secure_Password_Repository.Models
     public class Password
     {
         [Key]
-        public int PasswordId { get; set; }
+        public Int32 PasswordId { get; set; }
         public string Description { get; set; }
         public string EncryptedUserName { get; set; }
         public string EncryptedSecondCredential { get; set; }
         public string EncryptedPassword { get; set; }
         public string Location { get; set; }
         public string Notes { get; set; }
-        public int CategoryId { get; set; }
+        public Int32 CategoryId { get; set; }
+        public bool Deleted { get; set; }
 
     }
 }

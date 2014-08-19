@@ -6,6 +6,7 @@ using System.Web.Mvc;
 
 namespace Secure_Password_Repository.Controllers
 {
+    [Authorize(Roles = "Administrator, Super User, User")]
     public class PasswordController : Controller
     {
         // GET: Password

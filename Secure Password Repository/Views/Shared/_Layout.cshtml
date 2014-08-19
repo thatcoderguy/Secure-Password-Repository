@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using Secure_Password_Repository.Utilities;
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -36,7 +37,9 @@
     </div>
 
     @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jquery-ui")
     @Scripts.Render("~/bundles/bootstrap")
+    @RenderViewScript.RenderScripts()
     @RenderSection("scripts", required: false)
 </body>
 </html>

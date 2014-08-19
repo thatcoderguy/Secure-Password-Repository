@@ -1,0 +1,35 @@
+﻿.treeview,
+.treeview ul {
+    list-style: none;
+}
+
+.treeview li span.treeviewminus {
+    background-position: 0 -224px;
+}
+
+.treeview div span.treeviewplus {
+    background-position: 0 -192px;
+}
+.treeview div span.treeviewicon {
+    background-image: url('/Images/sprite.png');
+    padding-right: 10px;
+    height: 16px;
+    position: absolute !important;
+    top: 16px !important;
+}
+
+.treeview li span.treeviewicon:hover {
+    cursor: pointer;
+}
+
+.ui-accordion .ui-accordion-content {
+    padding: 0px 2.2em;
+}
+
+.glyphicon.rightfolderpadding {
+    padding-right: 7px;
+}
+
+.ui-accordion-header .btn-group {
+    padding-left: 10px;
+}

@@ -10,12 +10,11 @@ namespace Secure_Password_Repository.Migrations
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            AutomaticMigrationsEnabled = true;
         }
 
         protected override void Seed(Secure_Password_Repository.Database.ApplicationDbContext context)
         {
-
             //Add in the roles required for the Secure Password Repository
             context.Roles.AddOrUpdate(
                 r => r.Name,

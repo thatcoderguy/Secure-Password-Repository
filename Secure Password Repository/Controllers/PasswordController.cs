@@ -1,6 +1,10 @@
-﻿using System;
+﻿using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Web;
 using System.Web.Mvc;
 
@@ -9,49 +13,44 @@ namespace Secure_Password_Repository.Controllers
     [Authorize(Roles = "Administrator, Super User, User")]
     public class PasswordController : Controller
     {
+
+        ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+
         // GET: Password
         public ActionResult Index()
         {
-            return View();
+            var CategoryList = DatabaseContext.tblCategory.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            return View(CategoryList);
         }
 
-        // GET: Password/Details/5
-        public ActionResult Details(int id)
+        [HttpGet]
+        public ActionResult GetChildren(Int32 ParentCategoryId)
         {
             return View();
+            //are the children catgories or passwords?
         }
 
-        // GET: Password/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Password/Create
         [HttpPost]
-        public ActionResult Create(FormCollection collection)
+        [ValidateAntiForgeryToken]
+        public ActionResult AddCategory(int ParentId, string CategoryName)
         {
-            try
-            {
-                // TODO: Add insert logic here
+            var CategoryList = DatabaseContext.tblCategory.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            //CategoryList.SubCategories.Add();
+            //C
+            //Category newCategory = new Category { }
 
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
+            return RedirectToAction("Index");
         }
 
-        // GET: Password/Edit/5
-        public ActionResult Edit(int id)
+        // GET: Password/EditCategory/5
+        public ActionResult EditCategory(int id)
         {
             return View();
         }
 
-        // POST: Password/Edit/5
+        // POST: Password/EditCategory/5
         [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
+        public ActionResult EditCategory(int id, FormCollection collection)
         {
             try
             {
@@ -65,15 +64,17 @@ namespace Secure_Password_Repository.Controllers
             }
         }
 
-        // GET: Password/Delete/5
-        public ActionResult Delete(int id)
+        
+
+        // GET: Password/DeleteCategory/5
+        public ActionResult DeleteCategory(int id)
         {
             return View();
         }
 
-        // POST: Password/Delete/5
+        // POST: Password/DeleteCategory/5
         [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
+        public ActionResult DeleteCategory(int id, FormCollection collection)
         {
             try
             {
@@ -85,6 +86,14 @@ namespace Secure_Password_Repository.Controllers
             {
                 return View();
             }
+        }
+
+        [HttpPost]
+        public ActionResult UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition)
+        {
+            HttpRequestMessage httpRequestMessage = System.Web.HttpContext.Current.Items["MS_HttpRequestMessage"] as HttpRequestMessage;
+            SecurityUtilities.ValidateRequestHeader(httpRequestMessage);
+            return Json(null);
         }
     }
 }

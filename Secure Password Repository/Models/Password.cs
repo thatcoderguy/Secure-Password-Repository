@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 
 namespace Secure_Password_Repository.Models
 {
+
+    [Table("Password")]
     public class Password
     {
         [Key]
@@ -20,4 +23,5 @@ namespace Secure_Password_Repository.Models
         public bool Deleted { get; set; }
 
     }
+
 }

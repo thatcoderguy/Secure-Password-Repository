@@ -509,6 +509,10 @@ namespace Secure_Password_Repository.Controllers
 
         private ActionResult RedirectToLocal(string returnUrl)
         {
+            //addtional step - without a / at the begining, IsLocalUrl will return false
+            if (returnUrl.Substring(0, 1) != "/")
+                returnUrl = "/" + returnUrl;
+
             if (Url.IsLocalUrl(returnUrl))
             {
                 return Redirect(returnUrl);

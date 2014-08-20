@@ -1,6 +1,7 @@
 namespace Secure_Password_Repository.Migrations
 {
     using Secure_Password_Repository.Models;
+    using Secure_Password_Repository.ViewModels;
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Migrations;
@@ -10,7 +11,7 @@ namespace Secure_Password_Repository.Migrations
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = true;
+            AutomaticMigrationsEnabled = false;
         }
 
         protected override void Seed(Secure_Password_Repository.Database.ApplicationDbContext context)
@@ -23,6 +24,11 @@ namespace Secure_Password_Repository.Migrations
                 new ApplicationRole { Name = "Super User" }
             );
 
+            context.tblCategory.AddOrUpdate(
+                c => c.CategoryId,
+                new Category { CategoryName = "Root", Deleted = false, SubCategory = false }
+            );
+            
         }
     }
 }

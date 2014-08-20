@@ -1,33 +1,44 @@
-﻿
+﻿@model Secure_Password_Repository.Models.Category
+
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Password List";
 }
 
-<h2>Index</h2>
+<h2>Password List</h2>
 
-<div>
-    <ul class="treeview">
-        <li>
-            <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Root</div>
-            <ul class="treeview">
-                <li>
-                    <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 1<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
-                </li>
-                <li>
-                    <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 2<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
-                    <ul class="treeview">
-                        <li>
-                            <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 4<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
-                        </li>
-                        <li>
-                            <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 5<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 3<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
-                </li>
-            </ul>
-        </li>
-    </ul>
-</div>
+@Html.AntiForgeryToken()
+
+<ul class="treeview">
+    <li data-id="0">
+        <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Root</div>
+        <ul class="treeview">
+            <!--
+            <li data-id="1">
+                <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 1<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
+            </li>
+            <li data-id="2">
+                <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 2<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
+                <ul class="treeview">
+                    <li data-id="4">
+                        <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 4<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
+                    </li>
+                    <li data-id="5">
+                        <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 5<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
+                    </li>
+                </ul>
+            </li>
+            <li data-id="3">
+                <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 3<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
+            </li>
+            -->
+            @foreach (var categoryitem in Model.SubCategories)
+            {
+                    
+            }
+            <li class="treeignore" id="addnew-0">
+                <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-0'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+            </li>
+        </ul>
+    </li>
+</ul>
+

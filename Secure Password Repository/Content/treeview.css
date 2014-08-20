@@ -33,3 +33,13 @@
 .ui-accordion-header .btn-group {
     padding-left: 10px;
 }
+
+.groupalign {
+    padding-bottom: 5px;
+    padding-left: 3px;
+}
+
+.newcategoryform {
+    float: right;
+    width: 97%;
+}

@@ -86,15 +86,15 @@ namespace Secure_Password_Repository.Migrations
                 c => new
                 {
                     CategoryId = c.Int(nullable: false, identity: true),
-                    CategoryName = c.String(),
-                    ParentCategoryId = c.Int(nullable: false),
+                    CategoryName = c.String(nullable: false),
+                    Category_CategoryId = c.Int(nullable: true),
                     CategoryOrder = c.Short(nullable: false),
                     Deleted = c.Boolean(nullable: false),
                     SubCategory = c.Boolean(nullable: false),
                 })
                 .PrimaryKey(t => t.CategoryId)
-                .ForeignKey("dbo.Category", t => t.ParentCategoryId, false)
-                .Index(t => t.ParentCategoryId);
+                .ForeignKey("dbo.Category", t => t.Category_CategoryId, false)
+                .Index(t => t.Category_CategoryId);
 
             CreateTable(
                 "dbo.Password",
@@ -126,7 +126,6 @@ namespace Secure_Password_Repository.Migrations
                 .ForeignKey("dbo.Password", t => t.PasswordId, cascadeDelete: false)
                 .Index(t => t.Id)
                 .Index(t => t.PasswordId);
-
         }
 
         public override void Down()

@@ -29,6 +29,9 @@ namespace Secure_Password_Repository
             bundles.Add(new ScriptBundle("~/bundles/password_treeview").Include(
                        "~/Scripts/treeview.js"));
 
+            bundles.Add(new ScriptBundle("~/bundles/password_categoryandpassword").Include(
+                       "~/Scripts/categoryandpassword.js"));
+
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",
                       "~/Content/site.css",

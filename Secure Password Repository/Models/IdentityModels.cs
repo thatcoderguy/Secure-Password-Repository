@@ -55,7 +55,7 @@ namespace Secure_Password_Repository.Models
         public string GetRoleName()
         {
 
-            var DatabaseContext = new ApplicationDbContext();
+            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
             string MyRoles = "";
             
             DatabaseContext.Users.Load();

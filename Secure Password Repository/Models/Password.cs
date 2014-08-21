@@ -19,7 +19,8 @@ namespace Secure_Password_Repository.Models
         public string EncryptedPassword { get; set; }
         public string Location { get; set; }
         public string Notes { get; set; }
-        public Int32 CategoryId { get; set; }
+        public Int32 Parent_CategoryId { get; set; }
+        public virtual Category Parent { get; set; }
         public bool Deleted { get; set; }
 
     }

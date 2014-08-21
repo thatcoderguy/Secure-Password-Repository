@@ -23,11 +23,30 @@ namespace Secure_Password_Repository.Database
             return new ApplicationDbContext();
         }
 
-        public virtual DbSet<Password> tblPassword { get; set; }
+        public virtual DbSet<Password> Passwords { get; set; }
 
-        public virtual DbSet<Category> tblCategory { get; set; }
+        public virtual DbSet<Category> Categories { get; set; }
 
-        public virtual DbSet<UserPassword> tblUserPassword { get; set; }
+        public virtual DbSet<UserPassword> UserPasswords { get; set; }
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Category>()
+                .HasRequired(a => a.Parent_Category)
+                .WithMany(b => b.SubCategories)
+                .HasForeignKey(c => c.Category_ParentID) // FK_Category_ParentID
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<Password>()
+                .HasRequired(a => a.Parent)
+                .WithMany(b => b.Passwords)
+                .HasForeignKey(c => c.Parent_CategoryId) // FK_Parent_CategoryId
+                .WillCascadeOnDelete(false);
+
+        }
 
     }
+
 }

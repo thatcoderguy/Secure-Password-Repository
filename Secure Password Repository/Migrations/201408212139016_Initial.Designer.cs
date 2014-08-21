@@ -13,7 +13,7 @@ namespace Secure_Password_Repository.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "201408181437156_Initial"; }
+            get { return "201408212139016_Initial"; }
         }
         
         string IMigrationMetadata.Source

@@ -15,13 +15,12 @@ namespace Secure_Password_Repository.Models
         [Key]
         public Int32 CategoryId { get; set; }
         public string CategoryName { get; set; }
-        public Int32? Category_CategoryId { get; set; }
-        public virtual List<Category> SubCategories { get; set; }
-        public virtual List<Password> Passwords { get; set; }
+        public Int32? Category_ParentID { get; set; }
+        public virtual Category Parent_Category { get; set; }
+        public virtual ICollection<Category> SubCategories { get; set; }
+        public virtual ICollection<Password> Passwords { get; set; }
         public Int16 CategoryOrder { get; set; }
-        public bool Deleted { get; set; }
-        public bool SubCategory { get; set; }
-        
+        public bool Deleted { get; set; }        
 
     }
 }

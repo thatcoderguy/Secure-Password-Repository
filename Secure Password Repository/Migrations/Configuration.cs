@@ -1,7 +1,6 @@
 namespace Secure_Password_Repository.Migrations
 {
     using Secure_Password_Repository.Models;
-    using Secure_Password_Repository.ViewModels;
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Migrations;
@@ -24,11 +23,10 @@ namespace Secure_Password_Repository.Migrations
                 new ApplicationRole { Name = "Super User" }
             );
 
-            context.tblCategory.AddOrUpdate(
+            context.Categories.AddOrUpdate(
                 c => c.CategoryId,
-                new Category { CategoryName = "Root", Deleted = false, SubCategory = false, Category_CategoryId=null }
+                new Category { CategoryName = "Root", Deleted = false, Parent_Category = null, Category_ParentID = null }
             );
-            
         }
     }
 }

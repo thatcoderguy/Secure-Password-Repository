@@ -19,7 +19,7 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-            var CategoryList = DatabaseContext.tblCategory.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
             return View(CategoryList);
         }
 
@@ -34,7 +34,7 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult AddCategory(Category category)
         {
-            var CategoryList = DatabaseContext.tblCategory.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
             //DatabaseContext.Entry();
             //CategoryList.SubCategories.Add();
             //CategoryList.SubCategories.Add();

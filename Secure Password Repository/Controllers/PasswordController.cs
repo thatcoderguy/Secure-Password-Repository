@@ -32,9 +32,11 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddCategory(int ParentId, string CategoryName)
+        public ActionResult AddCategory(Category category)
         {
             var CategoryList = DatabaseContext.tblCategory.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            //DatabaseContext.Entry();
+            //CategoryList.SubCategories.Add();
             //CategoryList.SubCategories.Add();
             //C
             //Category newCategory = new Category { }
@@ -89,10 +91,9 @@ namespace Secure_Password_Repository.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition)
         {
-            HttpRequestMessage httpRequestMessage = System.Web.HttpContext.Current.Items["MS_HttpRequestMessage"] as HttpRequestMessage;
-            SecurityUtilities.ValidateRequestHeader(httpRequestMessage);
             return Json(null);
         }
     }

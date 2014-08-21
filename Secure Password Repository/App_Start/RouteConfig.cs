@@ -24,8 +24,6 @@ namespace Secure_Password_Repository
 
             //front page content
             routes.MapRoute("Home", "", new { controller = "Home", action = "Index" });
-            routes.MapRoute("About", "About", new { controller = "Home", action = "About" });
-            routes.MapRoute("Contact", "Contact", new { controller = "Home", action = "Contact" });
 
             //Content Management
 

@@ -8,6 +8,17 @@
 
 @Html.AntiForgeryToken()
 
+<script type="text/javascript">
+    var strNewCategory = '<div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i><form method="post" class="newcategoryform" action="/Password/AddCategory" id="{1}"><input name="__RequestVerificationToken" type="hidden" value="{3}" /><input type="hidden" name="ParentId" value="{0}" /><input type="text" name="CategoryName" value="" /><span class="btn-group groupalign"><a href="#" onclick="saveNewCategory(\'#{2}\');return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save"></i>Save</a></span></form></div>';
+
+    @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+    {
+        @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control" })
+        @Html.AntiForgeryToken()
+    }
+
+</script>
+
 <ul class="treeview">
     <li data-id="0">
         <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Root</div>
@@ -33,7 +44,7 @@
             -->
             @foreach (var categoryitem in Model.SubCategories)
             {
-                    
+                
             }
             <li class="treeignore" id="addnew-0">
                 <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-0'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>

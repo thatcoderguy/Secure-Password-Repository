@@ -1,5 +1,4 @@
 ﻿@model Secure_Password_Repository.Models.Category
-
 @{
     ViewBag.Title = "Password List";
 }
@@ -8,9 +7,8 @@
 
 <script type="text/javascript">
 
-    var strNewCategoryForm = '<div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>@using (Html.BeginForm("AddCategory", "Password", FormMethod.Post, new { @class="newcategoryform", role = "form", id="[1]" })) { @Html.AntiForgeryToken() @Html.PasswordFor(m => m.Category_ParentID, new { type = "hidden", value = "0" }) @Html.PasswordFor(m => m.CategoryName, new { type = "text" })  <span class="btn-group groupalign"><a href="#" onclick="saveNewCategory(\'#[2]\');return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save"></i>Save</a></span> }</div>';
+    var strNewCategoryForm = '@Html.Partial("_NewCategory")';
 
-    //<div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Category 3<span class="btn-group"><a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a><a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a></span></div>
 
 </script>
 

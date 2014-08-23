@@ -7,7 +7,7 @@ function createNewCategory(holderid) {
     var parentid = holderid.split('-')[1];
     //var token = $("input[name^=__RequestVerificationToken]").first();
 
-    $(holderid).html(strNewCategoryForm.replace('[1]', random).replace('[2]', random));
+    $(holderid).html(strNewCategoryForm.replace('[1]', random).replace('[2]', random).replace('[3]', parentid));
 
 }
 

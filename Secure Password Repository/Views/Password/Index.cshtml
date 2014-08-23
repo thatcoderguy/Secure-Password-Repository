@@ -7,8 +7,7 @@
 
 <script type="text/javascript">
 
-    var strNewCategoryForm = '@Html.Partial("_NewCategory")';
-
+    var strNewCategoryForm = '@Html.Partial("_NewCategoryForm")';
 
 </script>
 
@@ -37,10 +36,10 @@
             -->
             @foreach (var categoryitem in Model.SubCategories)
             {
-                
+                <li>@categoryitem.CategoryName</li>
             }
-            <li class="treeignore" id="addnew-0">
-                <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-0'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+            <li class="treeignore" id="addnew-1">
+                <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-1'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
             </li>
         </ul>
     </li>

@@ -20,7 +20,7 @@ namespace Secure_Password_Repository.Models
         public virtual ICollection<Category> SubCategories { get; set; }
         public virtual ICollection<Password> Passwords { get; set; }
         public Int16 CategoryOrder { get; set; }
-        public bool Deleted { get; set; }        
+        public bool Deleted { get; set; }
 
     }
 }

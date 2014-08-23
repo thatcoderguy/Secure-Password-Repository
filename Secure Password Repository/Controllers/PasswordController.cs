@@ -1,6 +1,7 @@
 ﻿using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,8 +20,12 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-            var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
-            return View(CategoryList);
+            //CategoryStorageViewModel newStorage = new CategoryStorageViewModel();
+            //newStorage.RootCategory = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            //newStorage.NewCategoryItem = new Category();
+            var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+
+            return View(categoryList);
         }
 
         [HttpGet]
@@ -32,10 +37,11 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddCategory(Category category)
+        public ActionResult AddCategory(Category newCategory)
         {
-            var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
-            //DatabaseContext.Entry();
+            //var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            DatabaseContext.Categories.Add(newCategory);
+            DatabaseContext.SaveChanges();
             //CategoryList.SubCategories.Add();
             //CategoryList.SubCategories.Add();
             //C

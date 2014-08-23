@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 
@@ -20,9 +21,7 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-            //CategoryStorageViewModel newStorage = new CategoryStorageViewModel();
-            //newStorage.RootCategory = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
-            //newStorage.NewCategoryItem = new Category();
+            //get the root node, and include it's subcategories
             var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
 
             return View(categoryList);
@@ -37,15 +36,21 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddCategory(Category newCategory)
+        public async Task<ActionResult> AddCategory(Category newCategory)
         {
-            //var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
-            DatabaseContext.Categories.Add(newCategory);
-            DatabaseContext.SaveChanges();
-            //CategoryList.SubCategories.Add();
-            //CategoryList.SubCategories.Add();
-            //C
-            //Category newCategory = new Category { }
+
+            if(ModelState.IsValid)
+            { 
+                //get the root node, and include it's subcategories
+                var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+
+                //set the order of the category by getting the number of subcategories
+                newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Count + 1);
+
+                //save the new category
+                DatabaseContext.Categories.Add(newCategory);
+                await DatabaseContext.SaveChangesAsync();
+            }
 
             return RedirectToAction("Index");
         }

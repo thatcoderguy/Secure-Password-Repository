@@ -5,7 +5,6 @@ function createNewCategory(holderid) {
     var random = parseInt(Math.random() * 1000).toString();
     //grab the parent category id
     var parentid = holderid.split('-')[1];
-    //var token = $("input[name^=__RequestVerificationToken]").first();
 
     $(holderid).html(strNewCategoryForm.replace('[1]', random).replace('[2]', random).replace('[3]', parentid));
 

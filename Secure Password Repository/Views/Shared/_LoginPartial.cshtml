@@ -17,6 +17,9 @@
             <li>
                 @Html.RouteLink("User Manager", "UserManager", null, htmlAttributes: new { title = "User List" })
             </li>
+            <li>
+                @Html.RouteLink("System Settings", "SystemSetting", null, htmlAttributes: new { title = "System Settings" })
+            </li>
         }
         <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
     </ul>

@@ -1,17 +1,16 @@
 ﻿@using Microsoft.AspNet.Identity;
 @using Secure_Password_Repository.Settings;
-@model Secure_Password_Repository.Models.Category
-<li data-id="@Model.CategoryId">
-    <div>
-        <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>@Model.CategoryName<span class="btn-group">
-            @if (User.IsInRole("Administrator") && ApplicationSettings.Default.OnlyAdminsCanEditCategories)
+<li class="treelistitem" data-id="[1]"> \
+    <div> \
+        <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>[2]<span class="btn-group"> \
+            @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))
             {
-                <a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a>
+                <a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a> @: \
             }
-            @if (User.IsInRole("Administrator") && ApplicationSettings.Default.OnlyAdminsCanDeleteCategories)
+            @if (ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || User.IsInRole("Administator")))
             {
-                <a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a>
+                <a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a> @: \
             }
-        </span>
-    </div>
+        </span> \
+    </div> \
 </li>

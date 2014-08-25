@@ -22,16 +22,21 @@ namespace Secure_Password_Repository.Controllers
         public ActionResult Index()
         {
             //get the root node, and include it's subcategories
-            var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+            var rootCategoryItem = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
 
-            return View(categoryList);
+            return View(rootCategoryItem);
         }
 
-        [HttpGet]
-        public ActionResult GetChildren(Int32 ParentCategoryId)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult GetCategoryChildren(Int32 ParentCategoryId)
         {
-            return View();
-            //are the children catgories or passwords?
+            var selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == ParentCategoryId);
+
+            return Json(new CategoryChildrenViewModel(){
+                CategoryItems = selectedCategoryItem.SubCategories,
+                PasswordItems = selectedCategoryItem.Passwords
+            });
         }
 
         [HttpPost]

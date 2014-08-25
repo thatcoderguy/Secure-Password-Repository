@@ -8,9 +8,15 @@
 
 <script type="text/javascript">
 
+    //define AJAX UI strings
     var strNewCategoryForm = '@Html.Partial("_NewCategoryForm")';
+    var strAddNewCategoryButton = '@Html.Partial("_NewCategoryItem")';
+    var strCategoryItem = '@Html.Partial("_CategoryItem")';
+    var strPasswordItem = '';
 
 </script>
+
+<form id="_CRSFform" action="#" method="post">@Html.AntiForgeryToken()</form>
 
 <ul class="treeview">
     <li class="treeignore" data-id="0">
@@ -18,7 +24,7 @@
         <ul class="treeview">
             @foreach (var categoryitem in Model.SubCategories)
             {
-                @Html.Partial("_CategoryItem", categoryitem)
+                @Html.Partial("_CategoryModelItem", categoryitem)
             }
             <li class="treeignore" id="addnew-1">
                 <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-1'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>

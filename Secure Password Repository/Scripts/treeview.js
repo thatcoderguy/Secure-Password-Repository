@@ -9,7 +9,7 @@ $(function () {
           icons: icons,
           collapsible: true,
           active: false,
-          heightStyle: "content"
+          heightStyle: "content",
       })
       .sortable({
           axis: "y",
@@ -29,31 +29,10 @@ $(function () {
           },
           update: function (event, ui) {
     
-              var categoryid = ui.item.data('id');
-              var newposition = ui.item.index() + 1;
+              updateCategoryPosition(event, ui);
 
-              var result = $.ajax({
-                  type: "POST",
-                  url: "/Password/UpdateCategoryPosition",
-                  data: { CategoryId: categoryid, NewPosition: newposition },
-                  contentType: "application/x-www-form-urlencoded; charset=utf-8",
-                  dataType: "json",
-                  headers: {
-                      'RequestVerificationToken': '@TokenHeaderValue()'
-                  },
-                  success: function (data) {
-                      
-                  },
-                  failure: function (msg) {
-                      alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                      return false;
-                  },
-                  error: function (xhr, err) {
-                      alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                      return false;
-                  }
-              });
           }
+
       });
 
     //auto open "root"
@@ -78,7 +57,7 @@ $(function () {
       })
       .sortable({
           axis: "y",
-          handle: "li",
+          handle: "div",
           containment: 'parent',
           tolerance: 'pointer',
           cursor: 'n-resize',
@@ -94,31 +73,20 @@ $(function () {
           },
           update: function (event, ui) {
 
-              var passwordid = ui.item.data('id');
-              var newposition = ui.item.index() + 1;
+              updatePasswordPositition(event, ui);
 
-              var result = $.ajax({
-                  type: "POST",
-                  url: "/Password/UpdatePasswordPosition",
-                  data: { PasswordId: passwordid, NewPosition: newposition },
-                  contentType: "application/x-www-form-urlencoded; charset=utf-8",
-                  dataType: "json",
-                  headers: {
-                      'RequestVerificationToken': '@TokenHeaderValue()'
-                  },
-                  success: function (data) {
-
-                  },
-                  failure: function (msg) {
-                      alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                      return false;
-                  },
-                  error: function (xhr, err) {
-                      alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                      return false;
-                  }
-              });
           }
+
       });
+
+});
+
+
+//when a tree item is clicked, load its children
+$('.treelistitem').on('click', function (event) {
+
+    //make sure item isnt already open and hasnt already has its children loaded
+    if (!$(this).hasClass('ui-state-active') && !$(this).has('ul').length)
+        treeListItemClick(event, $(this));
 
 });

@@ -1,5 +1,16 @@
 ﻿//category treeview
 $(function () {
+
+    setupCatgoryTreeView();
+
+    //auto open "root"
+    $('#ui-id-1').removeClass('ui-corner-all').addClass('ui-accordion-header-active').addClass('ui-state-active').addClass('ui-corner-top').find('span').removeClass('treeviewplus').addClass('treeviewminus');
+    $('#ui-id-2').show();
+
+});
+
+function setupCatgoryTreeView() {
+
     var icons = {
         header: "treeviewicon treeviewplus",
         activeHeader: "treeviewicon treeviewminus"
@@ -9,7 +20,7 @@ $(function () {
           icons: icons,
           collapsible: true,
           active: false,
-          heightStyle: "content",
+          heightStyle: "content"
       })
       .sortable({
           axis: "y",
@@ -35,15 +46,12 @@ $(function () {
 
       });
 
-    //auto open "root"
-    $('#ui-id-1').removeClass('ui-corner-all').addClass('ui-accordion-header-active').addClass('ui-state-active').addClass('ui-corner-top').find('span').removeClass('treeviewplus').addClass('treeviewminus');
-    $('#ui-id-2').show();
-
-});
+}
 
 
 //password treeview
-$(function () {
+function setupPasswordTreeView() {
+
     var icons = {
         header: "treeviewicon password",
         activeHeader: "treeviewicon password"
@@ -79,7 +87,7 @@ $(function () {
 
       });
 
-});
+}
 
 
 //when a tree item is clicked, load its children

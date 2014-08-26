@@ -10,7 +10,7 @@ function createNewCategory(holderid) {
 
 }
 
-function saveNewCategory(formid) {
+function submitAjaxForm(formid) {
     $(formid).submit();
 }
 
@@ -26,6 +26,8 @@ function treeListItemClick(event, listItem) {
         success: function (data) {
 
             listItem.append(data);
+
+            setupCatgoryTreeView();
 
         },
         failure: function (msg) {

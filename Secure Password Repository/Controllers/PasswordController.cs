@@ -1,10 +1,12 @@
 ﻿using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 
@@ -19,27 +21,41 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-            var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
-            return View(CategoryList);
-        }
+            //get the root node, and include it's subcategories
+            var rootCategoryItem = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
 
-        [HttpGet]
-        public ActionResult GetChildren(Int32 ParentCategoryId)
-        {
-            return View();
-            //are the children catgories or passwords?
+            return View(rootCategoryItem);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddCategory(Category category)
+        public ActionResult GetCategoryChildren(Int32 ParentCategoryId)
         {
-            var CategoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
-            //DatabaseContext.Entry();
-            //CategoryList.SubCategories.Add();
-            //CategoryList.SubCategories.Add();
-            //C
-            //Category newCategory = new Category { }
+            var selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == ParentCategoryId);
+
+            return Json(new CategoryChildrenViewModel(){
+                CategoryItems = selectedCategoryItem.SubCategories,
+                PasswordItems = selectedCategoryItem.Passwords
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> AddCategory(Category newCategory)
+        {
+
+            if(ModelState.IsValid)
+            { 
+                //get the root node, and include it's subcategories
+                var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+
+                //set the order of the category by getting the number of subcategories
+                newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Count + 1);
+
+                //save the new category
+                DatabaseContext.Categories.Add(newCategory);
+                await DatabaseContext.SaveChangesAsync();
+            }
 
             return RedirectToAction("Index");
         }

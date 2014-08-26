@@ -25,12 +25,11 @@ namespace Secure_Password_Repository
             //front page content
             routes.MapRoute("Home", "", new { controller = "Home", action = "Index" });
 
-            //Content Management
-
-            //passwords
+            //passwords & categories
             routes.MapRoute("Password", "Password", new { controller = "Password", action = "Index" });
             routes.MapRoute("PasswordIndex", "Password/Index", new { controller = "Password", action = "Index" });
-            routes.MapRoute("NewCategory", "Password/AddCategory/{ParentId}", new { controller = "Password", action = "AddCategory", ParentId = UrlParameter.Optional, CategoryName = UrlParameter.Optional });
+            routes.MapRoute("NewCategory", "Password/AddCategory", new { controller = "Password", action = "AddCategory" });
+            routes.MapRoute("GetCategoryChildren", "Password/GetCategoryChildren/{parentcategoryid}", new { controller = "Password", action = "GetCategoryChildren", ParentCategoryId = UrlParameter.Optional });
             routes.MapRoute("UpdateCategoryPosition", "Password/UpdateCategoryPosition/{categoryid}", new { controller = "Password", action = "UpdateCategoryPosition", CategoryId = UrlParameter.Optional, NewPosition = UrlParameter.Optional });
 
             //account handling
@@ -47,6 +46,9 @@ namespace Secure_Password_Repository
             routes.MapRoute("UserManagerEdit", "UserManager/Edit/{id}", new { controller = "UserManager", action = "Edit", Id = UrlParameter.Optional });
             routes.MapRoute("UserManagerResetPassword", "UserManager/ResetPassword/{id}", new { controller = "UserManager", action = "ResetPassword", Id = UrlParameter.Optional });
             routes.MapRoute("UserManagerDelete", "UserManager/Delete/{id}", new { controller = "UserManager", action = "Delete", Id = UrlParameter.Optional });
+
+            //system setting
+            routes.MapRoute("SystemSetting", "SystemSetting", new { controller = "SystemSetting", action = "Index" });
 
         }
     }

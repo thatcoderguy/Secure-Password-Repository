@@ -48,6 +48,10 @@ namespace Secure_Password_Repository.Settings
             Default.SCryptHashCost = "262144";
             Default.DefaultAccountRole = "User";
             Default.PBKDF2IterationCount = "1000";
+            Default.AdminsHaveAccessToAllPasswords = true;
+            Default.RoleAllowDeletePasswords = "Administrator";
+            Default.RoleAllowDeleteCategories = "Administrator";
+            Default.RoleAllowEditCategories = "Administrator";
 
             Save();
         }
@@ -126,6 +130,10 @@ namespace Secure_Password_Repository.Settings
         public string SystemInitilisationVector { get; set; }
         public string SCryptHashCost { get; set; }
         public string PBKDF2IterationCount { get; set; }
+        public string RoleAllowEditCategories { get; set; }
+        public string RoleAllowDeleteCategories { get; set; }
+        public string RoleAllowDeletePasswords { get; set; }
+        public bool AdminsHaveAccessToAllPasswords { get; set; }
 
     }
 }

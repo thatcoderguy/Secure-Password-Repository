@@ -33,10 +33,7 @@ namespace Secure_Password_Repository.Controllers
         {
             var selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == ParentCategoryId);
 
-            return Json(new CategoryChildrenViewModel(){
-                CategoryItems = selectedCategoryItem.SubCategories,
-                PasswordItems = selectedCategoryItem.Passwords
-            });
+            return PartialView("_ReturnCategoryChildren", selectedCategoryItem);
         }
 
         [HttpPost]

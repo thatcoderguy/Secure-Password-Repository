@@ -22,35 +22,10 @@ function treeListItemClick(event, listItem) {
         url: "/Password/GetCategoryChildren",
         data: AddAntiForgeryToken({ ParentCategoryId: listItem.data('id') }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
-        dataType: "json",
+        dataType: "html",
         success: function (data) {
 
-            var itemList = '<ul class="treeview">';
-
-            if(data.CategoryItems.length > 0) {
-
-                for(i = 0; i < data.CategoryItems.length; i++)
-                {
-                    itemList += strCategoryItem.replace('[1]', data.CategoryItems[i].CategoryId).replace('[2]', data.CategoryItems[i].CategoryName);
-                }
-
-            } else if (data.PasswordItems.length > 0) {
-
-
-                for (i = 0; i < data.PasswordItems.length; i++) {
-                    //itemList += strCategoryItem.replace('[1]', data.CategoryItems[i].CategoryId).replace('[2]', data.CategoryItems[i].CategoryName);
-                }
-
-            }
-
-            itemList += strAddNewCategoryButton.replace('[1]', listItem.data('id')).replace('[2]', listItem.data('id'));
-            itemList += '</ul>';
-
-            listItem.append(itemList)
-            //
-
-            //add new category button
-            //addNewCategoryButton.replace('[1]','').replace('[2]','');
+            listItem.append(data);
 
         },
         failure: function (msg) {

@@ -1,0 +1,38 @@
+﻿@using Microsoft.AspNet.Identity;
+@using Secure_Password_Repository.Settings;
+@model Secure_Password_Repository.Models.Category
+<ul class="treeview">
+    @if (Model.SubCategories.Count > 0)
+    {
+        foreach (var categoryitem in Model.SubCategories)
+        {
+            @Html.Partial("_CategoryModelItem", categoryitem);
+        }
+
+        <li class="treeignore" id="addnew-@Model.CategoryId">
+            <div><span class="btn-group"><a href="#" onclick="createNewCategory(\'#addnew-@Model.CategoryId\'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+        </li>
+        
+    }
+    else if (Model.Passwords.Count > 0)
+    {
+        foreach (var passworditem in Model.SubCategories)
+        {
+        }
+        
+         <li class="treeignore" id="addnew-@Model.CategoryId">
+            <div><span class="btn-group"><a href="#" onclick="createNewPassword(\'#addnew-@Model.CategoryId\'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
+         </li>
+    }
+    else { 
+    
+        <li class="treeignore" id="addnew-@Model.CategoryId">
+            <div><span class="btn-group"><a href="#" onclick="createNewCategory(\'#addnew-@Model.CategoryId\'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+        </li>
+        <li class="treeignore" id="addnew-@Model.CategoryId">
+            <div><span class="btn-group"><a href="#" onclick="createNewPassword(\'#addnew-@Model.CategoryId\'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
+        </li>
+        
+    }
+    
+</ul>

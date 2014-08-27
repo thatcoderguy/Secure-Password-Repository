@@ -94,7 +94,7 @@ namespace Secure_Password_Repository
             // Credentials:
             var credentialUserName = "davie@recallhosting.co.uk";
             var sentFrom = "davie@recallhosting.co.uk";
-            var pwd = "";
+            var pwd = " ";
 
             // Configure the client:
             System.Net.Mail.SmtpClient client =

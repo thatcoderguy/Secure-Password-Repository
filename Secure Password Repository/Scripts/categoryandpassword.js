@@ -27,7 +27,7 @@ function treeListItemClick(event, listItem) {
 
             listItem.append(data);
 
-            setupCatgoryTreeView();
+            setupTreeView('treeview');
 
         },
         failure: function (msg) {

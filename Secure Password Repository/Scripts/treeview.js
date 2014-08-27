@@ -3,10 +3,6 @@ $(function () {
 
     setupTreeView('treeview');
 
-    //auto open "root"
-    $('#ui-id-1').removeClass('ui-corner-all').addClass('ui-accordion-header-active').addClass('ui-state-active').addClass('ui-corner-top').find('span').removeClass('treeviewplus').addClass('treeviewminus');
-    $('#ui-id-2').show();
-
 });
 
 function setupTreeView(className) {
@@ -16,12 +12,13 @@ function setupTreeView(className) {
         activeHeader: "treeviewicon treeviewminus"
     };
     $("." + className)
+        /*
       .accordion({
           icons: icons,
           collapsible: true,
           active: false,
           heightStyle: "content"
-      })
+      })*/
       .sortable({
           axis: "y",
           handle: "div",

@@ -26,16 +26,16 @@
 
 <form id="_CRSFform" action="#" method="post">@Html.AntiForgeryToken()</form>
 
-<ul class="treeview">
-    <li class="treeignore" data-id="0">
+<ul id="roottree" class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
+    <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" data-id="0">
         <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Root</div>
-        <ul class="treeview">
+        <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
             @foreach (var categoryitem in Model.SubCategories)
             {
                 @Html.Partial("_CategoryModelItem", categoryitem)
             }
-            <li class="treeignore" id="addnew-1">
-                <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-1'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+            <li id="addnew-1" class="treeignore">
+                <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1"><span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group"><a class="btn btn-xs btn-primary" onclick="createNewCategory('#addnew-1'); return false;" href="#"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
             </li>
         </ul>
     </li>

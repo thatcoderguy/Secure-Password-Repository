@@ -2,9 +2,10 @@
 @using Secure_Password_Repository.Settings;
 @model Secure_Password_Repository.Models.Category
 <li class="treelistitem" data-id="@Model.CategoryId">
-    <div>
+    <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle">
+        <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
         <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>@Model.CategoryName<span class="btn-group">
-            @if (ApplicationSettings.Default.RoleAllowEditCategories!="None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))
+            @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))
             {
                 <a href="@Url.Action("Edit", "0")" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-edit"></i>Edit</a>
             }

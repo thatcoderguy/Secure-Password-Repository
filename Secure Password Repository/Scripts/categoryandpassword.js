@@ -25,9 +25,17 @@ function treeListItemClick(event, listItem) {
         dataType: "html",
         success: function (data) {
 
+            //destroy the accordian, so that "inner" accordians can be created
+            //$('.treeview').accordion('destroy');
+
+            //append the generated HTML to the category item
             listItem.append(data);
 
+            //re-initialize all of the accordians
             setupTreeView('treeview');
+
+            //$('#roottree').accordion({ active: 0 });
+            //$(listItem).accordion({ active: listItem.find('ul').first().data('ui-id') });
 
         },
         failure: function (msg) {

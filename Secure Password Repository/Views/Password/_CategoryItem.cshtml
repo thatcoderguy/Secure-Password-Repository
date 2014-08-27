@@ -1,7 +1,8 @@
 ﻿@using Microsoft.AspNet.Identity;
 @using Secure_Password_Repository.Settings;
 <li class="treelistitem" data-id="[1]"> \
-    <div> \
+    <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"> \
+        <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span> \
         <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>[2]<span class="btn-group"> \
             @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))
             {

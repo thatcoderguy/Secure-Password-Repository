@@ -29,7 +29,7 @@ function setupTreeView(className) {
           distance: 10,
           start: function (event, ui) {
 
-              $(this).attr('data-previndex', ui.item.index());
+             ui.item.attr('data-previndex', ui.item.index()+1);
 
           },
           stop: function (event, ui) {
@@ -38,11 +38,11 @@ function setupTreeView(className) {
               ui.item.children("li").triggerHandler("focusout");
 
               // Refresh accordion to handle new order
-              $(this).accordion("refresh");
+              //$(this).accordion("refresh");
           },
           update: function (event, ui) {
     
-              updateCategoryPosition(event, ui, $(this));
+              updateCategoryPosition(event, ui);
 
           }
 

@@ -4,6 +4,7 @@ using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -44,7 +45,7 @@ namespace Secure_Password_Repository.Controllers
             if(ModelState.IsValid)
             { 
                 //get the root node, and include it's subcategories
-                var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
+                var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == newCategory.Category_ParentID);
 
                 //set the order of the category by getting the number of subcategories
                 newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Count + 1);
@@ -105,8 +106,24 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition)
+        public ActionResult UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition, Int16 OldPosition)
         {
+
+            //moved down
+            if (NewPosition > OldPosition)
+            {
+                Category parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId).Parent_Category;
+                foreach (Category childCategory in parentCategory.SubCategories.Where(c => c.CategoryOrder))
+                {
+                    db.Entry(album).State = EntityState.Modified;
+                    db.SaveChanges();
+                }
+
+            }
+            //moved up
+            else
+                //
+
             return Json(null);
         }
     }

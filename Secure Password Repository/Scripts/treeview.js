@@ -27,6 +27,11 @@ function setupTreeView(className) {
           cursor: 'n-resize',
           items: "li:not(.treeignore)",
           distance: 10,
+          start: function (event, ui) {
+
+              $(this).attr('data-previndex', ui.item.index());
+
+          },
           stop: function (event, ui) {
               // IE doesn't register the blur when sorting
               // so trigger focusout handlers to remove .ui-state-focus
@@ -37,7 +42,7 @@ function setupTreeView(className) {
           },
           update: function (event, ui) {
     
-              updateCategoryPosition(event, ui);
+              updateCategoryPosition(event, ui, $(this));
 
           }
 

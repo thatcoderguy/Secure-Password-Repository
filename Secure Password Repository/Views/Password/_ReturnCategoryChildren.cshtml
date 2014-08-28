@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNet.Identity;
 @using Secure_Password_Repository.Settings;
 @model Secure_Password_Repository.Models.Category
-<ul class="treeview">
+<ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
     @if (Model.SubCategories.Count > 0)
     {
         foreach (var categoryitem in Model.SubCategories)
@@ -9,30 +9,35 @@
             @Html.Partial("_CategoryModelItem", categoryitem);
         }
 
-        <li class="treeignore" id="addnew-@Model.CategoryId">
-            <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+       <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
+            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
         </li>
-        
+
     }
     else if (Model.Passwords.Count > 0)
     {
         foreach (var passworditem in Model.SubCategories)
         {
         }
-        
-         <li class="treeignore" id="addnew-@Model.CategoryId">
-            <div><span class="btn-group"><a href="#" onclick="createNewPassword('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
-         </li>
-    }
-    else { 
-    
-        <li class="treeignore" id="addnew-@Model.CategoryId">
-            <div><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+
+        <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
+            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewPassword('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
         </li>
-        <li class="treeignore" id="addnew-@Model.CategoryId">
-            <div><span class="btn-group"><a href="#" onclick="createNewPassword('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
-        </li>
-        
     }
-    
+    else
+    {
+
+        <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
+            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+        </li>
+       <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
+            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewPassword('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
+        </li>
+
+    }
+
 </ul>

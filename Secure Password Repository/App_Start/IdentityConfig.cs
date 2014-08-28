@@ -8,6 +8,7 @@ using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.Database;
 using System;
 using System.Collections.Generic;
+using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository
 {
@@ -92,13 +93,13 @@ namespace Secure_Password_Repository
         public Task SendAsync(IdentityMessage message)
         {
             // Credentials:
-            var credentialUserName = "davie@recallhosting.co.uk";
-            var sentFrom = "davie@recallhosting.co.uk";
-            var pwd = " ";
+            var credentialUserName = ApplicationSettings.Default.SMTPServerUsername;
+            var sentFrom = ApplicationSettings.Default.SMTPServerUsername;
+            var pwd = ApplicationSettings.Default.SMTPServerPassword;
 
             // Configure the client:
             System.Net.Mail.SmtpClient client =
-                new System.Net.Mail.SmtpClient("webmail.recallhosting.co.uk");
+                new System.Net.Mail.SmtpClient(ApplicationSettings.Default.SMTPServerAddress);
 
             client.Port = 25;
             client.DeliveryMethod = System.Net.Mail.SmtpDeliveryMethod.Network;

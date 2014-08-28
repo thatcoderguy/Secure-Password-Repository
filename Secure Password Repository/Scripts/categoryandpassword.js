@@ -25,17 +25,11 @@ function treeListItemClick(event, listItem) {
         dataType: "html",
         success: function (data) {
 
-            //destroy the accordian, so that "inner" accordians can be created
-            //$('.treeview').accordion('destroy');
-
             //append the generated HTML to the category item
             listItem.append(data);
 
-            //re-initialize all of the accordians
+            //initialize new treeviews added from the newly generated HTML
             setupTreeView('treeview');
-
-            //$('#roottree').accordion({ active: 0 });
-            //$(listItem).accordion({ active: listItem.find('ul').first().data('ui-id') });
 
         },
         failure: function (msg) {
@@ -50,16 +44,18 @@ function treeListItemClick(event, listItem) {
 }
 
 //update the ordering position of the category
-function updateCategoryPosition(event, ui)
+function updateCategoryPosition(event, ui, me)
 {
 
     var categoryid = ui.item.data('id');
     var newposition = ui.item.index() + 1;
+    var oldposition = me.attr('data-previndex');
+    me.removeAttr('data-previndex');
 
     var result = $.ajax({
         type: "POST",
         url: "/Password/UpdateCategoryPosition",
-        data: AddAntiForgeryToken({ CategoryId: categoryid, NewPosition: newposition }),
+        data: AddAntiForgeryToken({ CategoryId: categoryid, NewPosition: newposition, OldPosition: oldposition }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
         dataType: "json",
         success: function (data) {

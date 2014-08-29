@@ -14,6 +14,11 @@ function submitAjaxForm(formid) {
     $(formid).submit();
 }
 
+//display the edit category form
+function editCategory(categoryid) {
+
+}
+
 //load children of the category clicked on
 function treeListItemClick(event, listItem) {
 
@@ -57,8 +62,11 @@ function updateCategoryPosition(event, ui)
         url: "/Password/UpdateCategoryPosition",
         data: AddAntiForgeryToken({ CategoryId: categoryid, NewPosition: newposition, OldPosition: oldposition }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
-        dataType: "json",
+        dataType: "html",
         success: function (data) {
+
+            if(data=='failed')
+                alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
 
         },
         failure: function (msg) {
@@ -85,8 +93,11 @@ function updatePasswordPositition(event, ui)
         url: "/Password/UpdatePasswordPosition",
         data: AddAntiForgeryToken({ PasswordId: passwordid, NewPosition: newposition }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
-        dataType: "text",
+        dataType: "html",
         success: function (data) {
+
+            if(data=='failed')
+                alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
 
         },
         failure: function (msg) {

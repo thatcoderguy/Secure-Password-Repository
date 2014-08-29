@@ -16,9 +16,6 @@
     //add new category button html
     var strAddNewCategoryButton = '@Html.Partial("_NewCategoryItem")';
 
-    //category item html
-    var strCategoryItem = '@Html.Partial("_CategoryItem")';
-
     //password item html
     var strPasswordItem = '';
 
@@ -30,7 +27,7 @@
     <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" data-id="0">
         <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Root</div>
         <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
-            @foreach (var categoryitem in Model.SubCategories)
+            @foreach (var categoryitem in Model.SubCategories.OrderBy(c => c.CategoryOrder))
             {
                 @Html.Partial("_CategoryModelItem", categoryitem)
             }

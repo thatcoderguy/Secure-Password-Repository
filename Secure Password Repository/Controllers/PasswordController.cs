@@ -45,7 +45,7 @@ namespace Secure_Password_Repository.Controllers
             if(ModelState.IsValid)
             { 
                 //get the root node, and include it's subcategories
-                var categoryList = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == newCategory.Category_ParentID);
+                var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == newCategory.Category_ParentID);
 
                 //set the order of the category by getting the number of subcategories
                 newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Count + 1);
@@ -106,74 +106,75 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public bool UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition, Int16 OldPosition)
+        public async Task<string> UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition, Int16 OldPosition)
         {
 
-            //moved down
-            if (NewPosition > OldPosition)
+            try
             {
-                //disable auto detect changes (as this slows everything down)
-                DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
-
-                //get the parent category of the category that has been moved
-                Category parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId).Parent_Category;
-
-                //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
-                foreach (Category childCategory in parentCategory.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition+1))
+                //moved down
+                if (NewPosition > OldPosition)
                 {
-                    //move the category up
-                    childCategory.CategoryOrder--;
+                    //disable auto detect changes (as this slows everything down)
+                    DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
 
-                    //tell EF that the category has been altered
-                    DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                    //get the category that has been moved
+                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId);
+
+                    //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
+                    foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
+                    {
+                        //move the category up
+                        childCategory.CategoryOrder--;
+
+                        //tell EF that the category has been altered
+                        DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                    }
+
+                    //set its new position
+                    currentCategory.CategoryOrder = NewPosition;
+                    DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
+
+                    DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+
+                    //save changes to database
+                    await DatabaseContext.SaveChangesAsync();
+
                 }
+                //moved up
+                else
+                {
+                    //disable auto detect changes (as this slows everything down)
+                    DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
 
-                //get the category that has been moved
-                Category currentCategory = parentCategory.SubCategories.Single(c => c.CategoryOrder == OldPosition);
+                    //get the category that has been moved
+                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId);
 
-                //set its new position
-                currentCategory.CategoryOrder = NewPosition;
-                DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
+                    //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
+                    foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
+                    {
+                        //move the category up
+                        childCategory.CategoryOrder++;
 
-                DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+                        //tell EF that the category has been altered
+                        DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                    }
 
-                //save changes to database
-                DatabaseContext.SaveChanges();
+                    //set its new position
+                    currentCategory.CategoryOrder = NewPosition;
+                    DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
 
+                    DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+
+                    //save changes to database
+                    await DatabaseContext.SaveChangesAsync();
+                }
             }
-            //moved up
-            else
+            catch (Exception ex)
             {
-                //disable auto detect changes (as this slows everything down)
-                DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
-
-                //get the parent category of the category that has been moved
-                Category parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId).Parent_Category;
-
-                //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
-                foreach (Category childCategory in parentCategory.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition-1))
-                {
-                    //move the category up
-                    childCategory.CategoryOrder++;
-
-                    //tell EF that the category has been altered
-                    DatabaseContext.Entry(childCategory).State = EntityState.Modified;
-                }
-
-                //get the category that has been moved
-                Category currentCategory = parentCategory.SubCategories.Single(c => c.CategoryId == CategoryId);
-
-                //set its new position
-                currentCategory.CategoryOrder = NewPosition;
-                DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
-
-                DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
-
-                //save changes to database
-                DatabaseContext.SaveChanges();
+                return "failed";
             }
 
-            return true;
+            return "complete";
         }
     }
 }

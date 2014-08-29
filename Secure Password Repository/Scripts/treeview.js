@@ -12,13 +12,6 @@ function setupTreeView(className) {
         activeHeader: "treeviewicon treeviewminus"
     };
     $("." + className)
-        /*
-      .accordion({
-          icons: icons,
-          collapsible: true,
-          active: false,
-          heightStyle: "content"
-      })*/
       .sortable({
           axis: "y",
           handle: "div",
@@ -36,9 +29,6 @@ function setupTreeView(className) {
               // IE doesn't register the blur when sorting
               // so trigger focusout handlers to remove .ui-state-focus
               ui.item.children("li").triggerHandler("focusout");
-
-              // Refresh accordion to handle new order
-              //$(this).accordion("refresh");
           },
           update: function (event, ui) {
     

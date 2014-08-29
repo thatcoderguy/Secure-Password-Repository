@@ -44,13 +44,13 @@ function treeListItemClick(event, listItem) {
 }
 
 //update the ordering position of the category
-function updateCategoryPosition(event, ui, me)
+function updateCategoryPosition(event, ui)
 {
 
     var categoryid = ui.item.data('id');
     var newposition = ui.item.index() + 1;
-    var oldposition = me.attr('data-previndex');
-    me.removeAttr('data-previndex');
+    var oldposition = ui.item.attr('data-previndex');
+    //ui.item.removeAttr('data-previndex');
 
     var result = $.ajax({
         type: "POST",
@@ -85,7 +85,7 @@ function updatePasswordPositition(event, ui)
         url: "/Password/UpdatePasswordPosition",
         data: AddAntiForgeryToken({ PasswordId: passwordid, NewPosition: newposition }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
-        dataType: "json",
+        dataType: "text",
         success: function (data) {
 
         },

@@ -39,7 +39,8 @@
     padding-left: 3px;
 }
 
-.newcategoryform {
+.newcategoryform,
+.editcategoryform {
     float: right;
     width: 97%;
 }

@@ -17,6 +17,13 @@ function submitAjaxForm(formid) {
 //display the edit category form
 function editCategory(categoryid) {
 
+    //generate a random number, so the multiple forms can be on the same page
+    var random = parseInt(Math.random() * 1000).toString();
+    //grab the parent category id
+    var parentid = '';//holderid.split('-')[1];
+
+    $('li[data-id="' + categoryid + '"]').html(strEditCategoryFrom.replace('[1]', random).replace('[2]', random).replace('[3]', parentid));
+
 }
 
 //load children of the category clicked on
@@ -25,16 +32,21 @@ function treeListItemClick(event, listItem) {
     var result = $.ajax({
         type: "POST",
         url: "/Password/GetCategoryChildren",
-        data: AddAntiForgeryToken({ ParentCategoryId: listItem.data('id') }),
+        data: AddAntiForgeryToken({ ParentCategoryId: listItem.parent().parent().data('id') }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
         dataType: "html",
         success: function (data) {
 
+            listItem.parent().addClass('ui-state-active');
+            listItem.find('span').removeClass('treeviewplus').addClass('treeviewminus');
+
             //append the generated HTML to the category item
-            listItem.append(data);
+            listItem.parent().parent().append(data);
 
             //initialize new treeviews added from the newly generated HTML
             setupTreeView('treeview');
+
+            listItem.slideDown();
 
         },
         failure: function (msg) {

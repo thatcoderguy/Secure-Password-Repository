@@ -9,9 +9,25 @@
             @Html.Partial("_CategoryModelItem", categoryitem);
         }
 
-       <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
-            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+        <li id="addnew-@Model.CategoryId" class="treeignore">
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
+                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
+                    <a class="btn btn-xs btn-primary" onclick="displayForm('addnew-@Model.CategoryId'); return false;" href="#">
+                        <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category
+                    </a>
+                </span>
+            </div>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
+                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+                <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
+                @using (Html.BeginForm("AddCategory", "Password", FormMethod.Post, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Category_ParentID, new { Value=@Model.CategoryId })
+                    @Html.TextBoxFor(m => m.CategoryName, new { Value = "" })
+                    <span class="btn-group groupalign"><a href="#" onclick="submitAjaxForm('addform-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a></span>
+                }
+            </div>
         </li>
 
     }
@@ -21,21 +37,37 @@
         {
         }
 
-        <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
+        <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-password-@Model.CategoryId">
             <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewPassword('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="displayForm('addnew-password-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
         </li>
     }
     else
     {
-
-        <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
-            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewCategory('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category</a></span></div>
+        <li id="addnew-@Model.CategoryId" class="treeignore">
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
+                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
+                    <a class="btn btn-xs btn-primary" onclick="displayForm('addnew-@Model.CategoryId'); return false;" href="#">
+                        <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category
+                    </a>
+                </span>
+            </div>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
+                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+                <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
+                @using (Html.BeginForm("AddCategory", "Password", FormMethod.Post, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Category_ParentID, new { Value = @Model.CategoryId })
+                    @Html.TextBoxFor(m => m.CategoryName, new { Value = "" })
+                    <span class="btn-group groupalign"><a href="#" onclick="submitAjaxForm('addform-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a></span>
+                }
+            </div>
         </li>
-       <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-@Model.CategoryId">
+        
+       <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" id="addnew-password-@Model.CategoryId">
             <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="createNewPassword('#addnew-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
+            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle"><span class="btn-group"><a href="#" onclick="displayForm('addnew-password-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password</a></span></div>
         </li>
 
     }

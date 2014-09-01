@@ -22,7 +22,7 @@ function setupTreeView(className) {
           distance: 10,
           start: function (event, ui) {
 
-             ui.item.attr('data-previndex', ui.item.index()+1);
+             ui.item.data('previndex', ui.item.index()+1);
 
           },
           stop: function (event, ui) {
@@ -41,10 +41,24 @@ function setupTreeView(className) {
 }
 
 //when a tree item is clicked, load its children
-$('.treelistitem').on('click', function (event) {
+$('.clickable').on('click', function (event) {
 
     //make sure item isnt already open and hasnt already has its children loaded
-    if (!$(this).hasClass('ui-state-active') && !$(this).has('ul').length)
+    if (!$(this).parent().hasClass('ui-state-active') && !$(this).parent().parent().has('ul').length)
         treeListItemClick(event, $(this));
+    //not open
+    else if (!$(this).parent().hasClass('ui-state-active')) {
+
+        $(this).parent().parent().find('ul').slideDown();
+        $(this).parent().addClass('ui-state-active');
+        $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus');
+
+    } else {
+
+        $(this).parent().parent().find('ul').slideUp();
+        $(this).parent().removeClass('ui-state-active');
+        $(this).find('span').removeClass('treeviewminus').addClass('treeviewplus');
+
+    }
 
 });

@@ -26,9 +26,10 @@ namespace Secure_Password_Repository
                       "~/Scripts/bootstrap.js",
                       "~/Scripts/respond.js"));
 
-            bundles.Add(new ScriptBundle("~/bundles/password_treeview").Include(
+            bundles.Add(new ScriptBundle("~/bundles/password_treeviewandforms").Include(
                        "~/Scripts/treeview.js",
-                       "~/Scripts/categoryandpassword.js"));
+                       "~/Scripts/categoryandpassword.js",
+                       "~/Scripts/jquery.unobtrusive-ajax.min.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/utilities").Include(
                         "~/Scripts/utilities.js"));

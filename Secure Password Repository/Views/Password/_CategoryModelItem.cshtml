@@ -1,18 +1,36 @@
 ﻿@using Microsoft.AspNet.Identity;
 @using Secure_Password_Repository.Settings;
 @model Secure_Password_Repository.Models.Category
-<li class="treelistitem" data-id="@Model.CategoryId">
-    <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle">
-        <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-        <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>@Model.CategoryName<span class="btn-group">
+
+<li class="treelistitem" id="@Model.CategoryId">
+    <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle first">
+        <span class="clickable">
+            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+            <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>@Model.CategoryName
+        </span>
+        <span class="btn-group">
             @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))
             {
-                <a href="#" class="btn btn-xs btn-primary" onclick="editCategory('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-edit"></i>Edit</a>
+                <a href="#" class="btn btn-xs btn-primary" onclick="displayForm('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-edit">&nbsp;</i>Edit</a>
             }
             @if (ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || User.IsInRole("Administator")))
             {
-                <a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove"></i>Delete</a>
+                <a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove">&nbsp;</i>Delete</a>
             }
         </span>
     </div>
+    @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))
+    {
+        <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none">
+            <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
+            <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
+            @using (Ajax.BeginForm("EditCategory", "Password", new AjaxOptions { HttpMethod = "post", OnFailure = "", OnSuccess = "" }, new { @class = "editcategoryform", role = "form", id = "edit-" + @Model.CategoryId }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.Category_ParentID)
+                @Html.TextBoxFor(m => m.CategoryName)
+                <span class="btn-group groupalign"><a href="#" onclick="submitAjaxForm('edit-@Model.CategoryId');return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a><a href="#" onclick="cancelCategoryEdit('@Model.CategoryId');return false;" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-chevron-left">&nbsp;</i>Cancel</a></span>
+            }
+        </div>
+    }
 </li>

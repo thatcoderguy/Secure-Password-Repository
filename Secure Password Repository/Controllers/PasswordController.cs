@@ -58,15 +58,11 @@ namespace Secure_Password_Repository.Controllers
             return RedirectToAction("Index");
         }
 
-        // GET: Password/EditCategory/5
-        public ActionResult EditCategory(int id)
-        {
-            return View();
-        }
 
         // POST: Password/EditCategory/5
         [HttpPost]
-        public ActionResult EditCategory(int id, FormCollection collection)
+        [ValidateAntiForgeryToken]
+        public ActionResult EditCategory(Category editedCategory)
         {
             try
             {

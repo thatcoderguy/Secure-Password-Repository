@@ -27,7 +27,7 @@
                 <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
                     <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
                     <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                    @using (Html.BeginForm("AddCategory", "Password", FormMethod.Post, new { @class = "newcategoryform", role = "form", id = "addform-1" }))
+                    @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnFailure = "failAlert()", OnSuccess = "createCategorySuccess(data,'1')" }, new { @class = "newcategoryform", role = "form", id = "addform-1" }))
                     {
                         @Html.AntiForgeryToken()
                         @Html.HiddenFor(m => m.Category_ParentID, new { Value = "1" })

@@ -12,23 +12,50 @@ function displayForm(categoryid) {
 }
 
 //hide the form
-function cancelCategoryEdit(categoryid) {
+function cancelAction(categoryid) {
 
     $('#' + categoryid).find('.first').show();
     $('#' + categoryid).find('.second').hide();
 
 }
 
+//generic error
 function failAlert() {
 
     alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
 
 }
 
-function updateSuccess(data) {
-    alert(data);
-    //alert($('#' + categoryid).find('.second input').val());
+//category updates successfully
+function updateCategorySuccess(data) {
+
+    //update text
+    $('#' + data.CategoryId).find('.categoryname').text(data.CategoryName);
+
+    //hide the form
+    cancelAction(data.CategoryId);
+
+}
+
+function createCategorySuccess(data,parentid) {
+
+    //append the new item to the list
+    $('#addnew-' + parentid).parent().append(data);
     
+    //move the new item to the bottom of the list
+    $('#addnew-' + parentid).appendTo($('#addnew-' + parentid).parent());
+    
+    //remove the "add new password" button
+    $('#addnew-password-' + parentid).remove();
+    
+    //clear add new category form
+    $('#addnew-' + parentid).find('.second input[name="CategoryName"]').val('');
+
+    //refresh treeview, so new item is part of sortable
+    refreshTreeView('treeview');
+
+    //hide the form
+    cancelAction('addnew-' + parentid);
 
 }
 

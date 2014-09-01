@@ -1,15 +1,4 @@
-﻿//display the new category form
-function createNewCategory(holderid) {
-
-    //generate a random number, so the multiple forms can be on the same page
-    var random = parseInt(Math.random() * 1000).toString();
-    //grab the parent category id
-    var parentid = holderid.split('-')[1];
-
-    $(holderid).html(strNewCategoryForm.replace('[1]', random).replace('[2]', random).replace('[3]', parentid));
-
-}
-
+﻿//submit form
 function submitAjaxForm(formid) {
     $('#' + formid).submit();
 }
@@ -22,10 +11,24 @@ function displayForm(categoryid) {
 
 }
 
+//hide the form
 function cancelCategoryEdit(categoryid) {
 
     $('#' + categoryid).find('.first').show();
     $('#' + categoryid).find('.second').hide();
+
+}
+
+function failAlert() {
+
+    alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
+
+}
+
+function updateSuccess(data) {
+    alert(data);
+    //alert($('#' + categoryid).find('.second input').val());
+    
 
 }
 

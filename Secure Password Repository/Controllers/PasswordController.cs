@@ -62,31 +62,33 @@ namespace Secure_Password_Repository.Controllers
         // POST: Password/EditCategory/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult EditCategory(Category editedCategory)
+        public async Task<ActionResult> EditCategory(Category editedCategory)
         {
             try
             {
-                // TODO: Add update logic here
+                if(ModelState.IsValid) {
+                
+                    DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
+                    DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified=false;
+                    await DatabaseContext.SaveChangesAsync();
 
-                return RedirectToAction("Index");
+                    return Json(editedCategory);
+                }
+                else
+                {
+                    return Json("failed");
+                }
             }
-            catch
+            catch(Exception ex)
             {
-                return View();
+                return Json("failed");
             }
-        }
-
-        
-
-        // GET: Password/DeleteCategory/5
-        public ActionResult DeleteCategory(int id)
-        {
-            return View();
         }
 
         // POST: Password/DeleteCategory/5
         [HttpPost]
-        public ActionResult DeleteCategory(int id, FormCollection collection)
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteCategory(int id)
         {
             try
             {

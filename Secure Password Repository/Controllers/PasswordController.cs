@@ -32,38 +32,47 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GetCategoryChildren(Int32 ParentCategoryId)
         {
-            var selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == ParentCategoryId);
+            Category selectedCategoryItem = new Category();
 
-            return PartialView("_ReturnCategoryChildren", selectedCategoryItem);
+            try
+            {
+                selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Where(c => c.Deleted==false).Single(c => c.CategoryId == ParentCategoryId);
+
+                return PartialView("_ReturnCategoryChildren", selectedCategoryItem);
+
+            } catch { }
+
+            return new HttpStatusCodeResult(500);
+
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddCategory(Category newCategory)
         {
-
-            if(ModelState.IsValid)
-            { 
-                //get the root node, and include it's subcategories
-                var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == newCategory.Category_ParentID);
-
-                //set the order of the category by getting the number of subcategories
-                newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Count + 1);
-
-                //save the new category
-                DatabaseContext.Categories.Add(newCategory);
-                await DatabaseContext.SaveChangesAsync();
-            }
-
-            /*
-            return Json(new
+            try
             {
-                CategoryId = newCategory.CategoryId,
-                NewCategoryHTML = PartialView("_CategoryModelItem", newCategory)
-            });
-             * */
+                if (ModelState.IsValid)
+                {
+                    //get the root node, and include it's subcategories
+                    var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == newCategory.Category_ParentID);
 
-            return PartialView("_CategoryModelItem", newCategory);
+                    //set the order of the category by getting the number of subcategories
+                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Count + 1);
+
+                    //save the new category
+                    DatabaseContext.Categories.Add(newCategory);
+                    await DatabaseContext.SaveChangesAsync();
+
+                    return PartialView("_CategoryModelItem", newCategory);
+
+                } else {
+                    return new HttpStatusCodeResult(500);
+                }
+
+            } catch { }
+
+            return new HttpStatusCodeResult(500);
 
         }
 
@@ -88,37 +97,48 @@ namespace Secure_Password_Repository.Controllers
                     //return the object, so that the UI can be updated
                     return Json(editedCategory);
                 }
-                else
-                {
-                    return Json("failed");
-                }
-            }
-            catch(Exception ex)
-            {
-                return Json("failed");
-            }
+            } catch {}
+
+            return new HttpStatusCodeResult(500);
+
         }
 
         // POST: Password/DeleteCategory/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteCategory(int id)
+        public async Task<ActionResult> DeleteCategory(int CategoryId)
         {
+            Category deleteCategory;
+
             try
             {
-                // TODO: Add delete logic here
 
-                return RedirectToAction("Index");
+                //get the category item to delete
+                deleteCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId);
+                deleteCategory.Deleted = true;
+
+
+                //set the item to be deleted
+                DatabaseContext.Entry(deleteCategory).State = EntityState.Modified;
+                
+
+                //loop through and adjust category order
+
+
+
+                //save changes
+                await DatabaseContext.SaveChangesAsync();
+
+                return Json(deleteCategory);
             }
-            catch
-            {
-                return View();
-            }
+            catch {}
+
+            return new HttpStatusCodeResult(500);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<string> UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition, Int16 OldPosition)
+        public async Task<ActionResult> UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition, Int16 OldPosition)
         {
 
             try
@@ -183,10 +203,17 @@ namespace Secure_Password_Repository.Controllers
             }
             catch (Exception ex)
             {
-                return "failed";
+                ModelState.AddModelError("", "Could Not Update Position");
+                return Json(new
+                {
+                    Status = "Failed"
+                });
             }
 
-            return "complete";
+            return Json(new
+            {
+                Status = "Completed"
+            });
         }
     }
 }

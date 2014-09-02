@@ -15,7 +15,7 @@
             }
             @if (ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || User.IsInRole("Administator")))
             {
-                <a href="@Url.Action("Delete", "0")" class="btn btn-xs btn-danger"><i class="glyphicon glyphicon-remove">&nbsp;</i>Delete</a>
+                <a href="#" class="btn btn-xs btn-danger" onclick="deleteCategory('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-remove">&nbsp;</i>Delete</a>
             }
         </span>
     </div>

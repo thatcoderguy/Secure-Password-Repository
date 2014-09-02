@@ -3,6 +3,7 @@ using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.ViewModels;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -22,9 +23,20 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-            //get the root node, and include it's subcategories
-            var rootCategoryItem = DatabaseContext.Categories.Include("SubCategories").OrderBy(c => c.CategoryOrder).Single(c => c.CategoryId == 1);
 
+            //get the root node, and include it's subcategories
+            var rootCategoryItem = DatabaseContext.Categories
+                .ToList().Select(c => new Category()
+                {
+                    SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),    //make sure only undeleted subcategories are returned
+                    CategoryId = c.CategoryId,
+                    CategoryName = c.CategoryName,
+                    Category_ParentID = c.Category_ParentID,
+                    CategoryOrder = c.CategoryOrder,
+                    Parent_Category = c.Parent_Category,
+                    Deleted = c.Deleted
+                }).Single(c => c.CategoryId == 1);
+             
             return View(rootCategoryItem);
         }
 
@@ -36,8 +48,11 @@ namespace Secure_Password_Repository.Controllers
 
             try
             {
-                selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Where(c => c.Deleted==false).Single(c => c.CategoryId == ParentCategoryId);
 
+                ///NEED TO FILETER CHILDREN
+                ///
+                selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Where(c => c.Deleted == false).Single(c => c.CategoryId == ParentCategoryId);
+                x
                 return PartialView("_ReturnCategoryChildren", selectedCategoryItem);
 
             } catch { }
@@ -58,7 +73,7 @@ namespace Secure_Password_Repository.Controllers
                     var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == newCategory.Category_ParentID);
 
                     //set the order of the category by getting the number of subcategories
-                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Count + 1);
+                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count + 1);
 
                     //save the new category
                     DatabaseContext.Categories.Add(newCategory);
@@ -114,21 +129,33 @@ namespace Secure_Password_Repository.Controllers
             {
 
                 //get the category item to delete
-                deleteCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId);
+                deleteCategory = DatabaseContext.Categories.Include("Parent_Category").Single(c => c.CategoryId == CategoryId);
+
+                //loop through and adjust category order
+                foreach(Category siblingCategory in deleteCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > deleteCategory.CategoryOrder).Where(c => !c.Deleted))
+                {
+                    siblingCategory.CategoryOrder--;
+                    DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
+                }
+
+                //set the item to deleted
                 deleteCategory.Deleted = true;
 
+                //move it to the very end
+                deleteCategory.CategoryOrder = 9999;
 
                 //set the item to be deleted
                 DatabaseContext.Entry(deleteCategory).State = EntityState.Modified;
-                
-
-                //loop through and adjust category order
-
-
 
                 //save changes
                 await DatabaseContext.SaveChangesAsync();
 
+                //proxies are no longer needed, so remove to avoid the "cicular reference" issue
+                deleteCategory.SubCategories = null;
+                deleteCategory.Parent_Category = null;
+                deleteCategory.Passwords = null;
+
+                //return the item, so that it can be removed from the UI
                 return Json(deleteCategory);
             }
             catch {}

@@ -59,6 +59,32 @@ function createCategorySuccess(data,parentid) {
 
 }
 
+
+function deleteCategory(categoryid) {
+
+    var result = $.ajax({
+        type: "POST",
+        url: "/Password/DeleteCategory",
+        data: AddAntiForgeryToken({ CategoryId: categoryid }),
+        contentType: "application/x-www-form-urlencoded; charset=utf-8",
+        dataType: "json",
+        success: function (data) {
+            
+            $('#' + data.CategoryId).remove();
+
+        },
+        failure: function (msg) {
+            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
+            return false;
+        },
+        error: function (xhr, err) {
+            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
+            return false;
+        }
+    });
+
+}
+
 //load children of the category clicked on
 function treeListItemClick(event, listItem) {
 
@@ -110,7 +136,7 @@ function updateCategoryPosition(event, ui)
         dataType: "html",
         success: function (data) {
 
-            if(data=='failed')
+            if (data.Status == 'Failed')
                 alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
 
         },

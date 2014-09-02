@@ -55,9 +55,17 @@ namespace Secure_Password_Repository.Controllers
                 await DatabaseContext.SaveChangesAsync();
             }
 
-            return RedirectToAction("Index");
-        }
+            /*
+            return Json(new
+            {
+                CategoryId = newCategory.CategoryId,
+                NewCategoryHTML = PartialView("_CategoryModelItem", newCategory)
+            });
+             * */
 
+            return PartialView("_CategoryModelItem", newCategory);
+
+        }
 
         // POST: Password/EditCategory/5
         [HttpPost]
@@ -68,10 +76,16 @@ namespace Secure_Password_Repository.Controllers
             {
                 if(ModelState.IsValid) {
                 
+                    //update the category
                     DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
+
+                    //dont update the categoryorder value
                     DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified=false;
+
+                    //save changes
                     await DatabaseContext.SaveChangesAsync();
 
+                    //return the object, so that the UI can be updated
                     return Json(editedCategory);
                 }
                 else

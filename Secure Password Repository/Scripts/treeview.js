@@ -40,6 +40,11 @@ function setupTreeView(className) {
 
 }
 
+function refreshTreeView(className) {
+
+    $("." + className).sortable('refresh');
+}
+
 //when a tree item is clicked, load its children
 $('.clickable').on('click', function (event) {
 

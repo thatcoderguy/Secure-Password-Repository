@@ -33,7 +33,7 @@
     }
     else if (Model.Passwords.Count > 0)
     {
-        foreach (var passworditem in Model.SubCategories.OrderBy(c => c.CategoryOrder))
+        foreach (var passworditem in Model.Passwords.OrderBy(p => p.PasswordOrder))
         {
         }
 
@@ -76,7 +76,7 @@
                 {
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.Category_ParentID, new { Value = @Model.CategoryId })
-                    @Html.TextBoxFor(m => m.CategoryName, new { Value = "" })
+                    @Html.TextBoxFor(m => m.CategoryName, new { Value = "", PlaceHolder="Category Name" })
                     <span class="btn-group groupalign"><a href="#" onclick="submitAjaxForm('addform-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a></span>
                 }
             </div>
@@ -97,7 +97,7 @@
                 {
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.Category_ParentID, new { Value = @Model.CategoryId })
-                    @Html.TextBoxFor(m => m.CategoryName, new { Value = "" })
+                    @Html.TextBoxFor(m => m.CategoryName, new { Value = "", PlaceHolder = "Category Name" })
                     <span class="btn-group groupalign"><a href="#" onclick="submitAjaxForm('addform-@Model.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a></span>
                 }
             </div>

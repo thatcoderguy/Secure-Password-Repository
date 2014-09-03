@@ -62,26 +62,34 @@ function createCategorySuccess(data,parentid) {
 
 function deleteCategory(categoryid) {
 
-    var result = $.ajax({
-        type: "POST",
-        url: "/Password/DeleteCategory",
-        data: AddAntiForgeryToken({ CategoryId: categoryid }),
-        contentType: "application/x-www-form-urlencoded; charset=utf-8",
-        dataType: "json",
-        success: function (data) {
-            
-            $('#' + data.CategoryId).remove();
+    if (confirm('Are you sure you wish to delete this category?\n\nYou will not be able to view any passwords linked to it\n\nHowever, Administrators can undelete Categories\n\n'))
+    {
+        if(confirm('ARE YOU REALLY SURE YOU WISH TO DELETE THIS CATEGORY?\n\nYou will NOT be able to VIEW any PASSWORDS linked to it\n\n'))
+        {
 
-        },
-        failure: function (msg) {
-            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-            return false;
-        },
-        error: function (xhr, err) {
-            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-            return false;
+            var result = $.ajax({
+                type: "POST",
+                url: "/Password/DeleteCategory",
+                data: AddAntiForgeryToken({ CategoryId: categoryid }),
+                contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+
+                    $('#' + data.CategoryId).remove();
+
+                },
+                failure: function (msg) {
+                    alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
+                    return false;
+                },
+                error: function (xhr, err) {
+                    alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
+                    return false;
+                }
+            });
+
         }
-    });
+    }
 
 }
 
@@ -120,18 +128,18 @@ function treeListItemClick(event, listItem) {
 }
 
 //update the ordering position of the category
-function updateCategoryPosition(event, ui)
+function updatePosition(event, ui)
 {
 
-    var categoryid = ui.item.attr('id');
+    var itemid = ui.item.attr('id');
     var newposition = ui.item.index() + 1;
     var oldposition = ui.item.data('previndex');
     ui.item.removeAttr('data-previndex');
 
     var result = $.ajax({
         type: "POST",
-        url: "/Password/UpdateCategoryPosition",
-        data: AddAntiForgeryToken({ CategoryId: categoryid, NewPosition: newposition, OldPosition: oldposition }),
+        url: "/Password/UpdatePosition",
+        data: AddAntiForgeryToken({ ItemID: itemid, NewPosition: newposition, OldPosition: oldposition, isCategoryItem: (ui.item.data('type').toString().toLowerCase() == 'category') }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
         dataType: "html",
         success: function (data) {

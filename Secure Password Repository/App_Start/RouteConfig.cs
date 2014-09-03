@@ -28,11 +28,17 @@ namespace Secure_Password_Repository
             //passwords & categories
             routes.MapRoute("Password", "Password", new { controller = "Password", action = "Index" });
             routes.MapRoute("PasswordIndex", "Password/Index", new { controller = "Password", action = "Index" });
+
+            //categories
             routes.MapRoute("NewCategory", "Password/AddCategory", new { controller = "Password", action = "AddCategory" });
             routes.MapRoute("EditCategory", "Password/EditCategory", new { controller = "Password", action = "EditCategory" });
             routes.MapRoute("DeleteCategory", "Password/DeleteCategory/{categoryid}", new { controller = "Password", action = "DeleteCategory", CategoryId = UrlParameter.Optional });
             routes.MapRoute("GetCategoryChildren", "Password/GetCategoryChildren/{parentcategoryid}", new { controller = "Password", action = "GetCategoryChildren", ParentCategoryId = UrlParameter.Optional });
-            routes.MapRoute("UpdateCategoryPosition", "Password/UpdateCategoryPosition/{categoryid}", new { controller = "Password", action = "UpdateCategoryPosition", CategoryId = UrlParameter.Optional, NewPosition = UrlParameter.Optional });
+            routes.MapRoute("UpdatePosition", "Password/UpdatePosition/{categoryid}", new { controller = "Password", action = "UpdatePosition", CategoryId = UrlParameter.Optional, NewPosition = UrlParameter.Optional, isCategoryItem = UrlParameter.Optional });
+
+            //passwords
+            routes.MapRoute("CreatePassword", "Password/CreatePassword/{parentcategoryid}", new { controller = "Password", action = "CreatePassword", ParentCategoryId = UrlParameter.Optional });
+            
 
             //account handling
             routes.MapRoute("Login", "Login/{returnUrl}", new { controller = "Account", action = "Login", returnUrl = "Password" });

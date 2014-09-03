@@ -7,10 +7,6 @@ $(function () {
 
 function setupTreeView(className) {
 
-    var icons = {
-        header: "treeviewicon treeviewplus",
-        activeHeader: "treeviewicon treeviewminus"
-    };
     $("." + className)
       .sortable({
           axis: "y",
@@ -22,7 +18,7 @@ function setupTreeView(className) {
           distance: 10,
           start: function (event, ui) {
 
-             ui.item.data('previndex', ui.item.index()+1);
+              ui.item.data('previndex', ui.item.index() + 1);
 
           },
           stop: function (event, ui) {
@@ -31,8 +27,8 @@ function setupTreeView(className) {
               ui.item.children("li").triggerHandler("focusout");
           },
           update: function (event, ui) {
-    
-              updateCategoryPosition(event, ui);
+
+              updatePosition(event, ui);
 
           }
 

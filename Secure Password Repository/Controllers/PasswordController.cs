@@ -28,31 +28,44 @@ namespace Secure_Password_Repository.Controllers
             var rootCategoryItem = DatabaseContext.Categories
                 .ToList().Select(c => new Category()
                 {
-                    SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),    //make sure only undeleted subcategories are returned
+                    SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),        //make sure only undeleted subcategories are returned
                     CategoryId = c.CategoryId,
                     CategoryName = c.CategoryName,
                     Category_ParentID = c.Category_ParentID,
                     CategoryOrder = c.CategoryOrder,
                     Parent_Category = c.Parent_Category,
+                    Passwords = c.Passwords,
                     Deleted = c.Deleted
                 }).Single(c => c.CategoryId == 1);
              
             return View(rootCategoryItem);
         }
 
+        #region CategoryActions
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult GetCategoryChildren(Int32 ParentCategoryId)
         {
-            Category selectedCategoryItem = new Category();
 
             try
             {
 
-                ///NEED TO FILETER CHILDREN
-                ///
-                selectedCategoryItem = DatabaseContext.Categories.Include("SubCategories").Include("Passwords").OrderBy(c => c.CategoryOrder).Where(c => c.Deleted == false).Single(c => c.CategoryId == ParentCategoryId);
-                x
+                //return the selected item - with its children
+                var selectedCategoryItem = DatabaseContext.Categories
+                        .ToList().Select(c => new Category()
+                        {
+                            SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),    //make sure only undeleted subcategories are returned
+                            CategoryId = c.CategoryId,
+                            CategoryName = c.CategoryName,
+                            Category_ParentID = c.Category_ParentID,
+                            CategoryOrder = c.CategoryOrder,
+                            Parent_Category = c.Parent_Category,
+                            Passwords = c.Passwords.Where(pass => !pass.Deleted).ToList(),          //make sure only undeleted passwords are returned
+                            Deleted = c.Deleted
+                        })
+                        .Single(c => c.CategoryId == ParentCategoryId);
+                    
                 return PartialView("_ReturnCategoryChildren", selectedCategoryItem);
 
             } catch { }
@@ -123,13 +136,11 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int CategoryId)
         {
-            Category deleteCategory;
-
             try
             {
 
                 //get the category item to delete
-                deleteCategory = DatabaseContext.Categories.Include("Parent_Category").Single(c => c.CategoryId == CategoryId);
+                var deleteCategory = DatabaseContext.Categories.Include("Parent_Category").Single(c => c.CategoryId == CategoryId);
 
                 //loop through and adjust category order
                 foreach(Category siblingCategory in deleteCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > deleteCategory.CategoryOrder).Where(c => !c.Deleted))
@@ -163,9 +174,11 @@ namespace Secure_Password_Repository.Controllers
             return new HttpStatusCodeResult(500);
         }
 
+        #endregion
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> UpdateCategoryPosition(Int32 CategoryId, Int16 NewPosition, Int16 OldPosition)
+        public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
         {
 
             try
@@ -177,7 +190,7 @@ namespace Secure_Password_Repository.Controllers
                     DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
 
                     //get the category that has been moved
-                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId);
+                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == ItemId);
 
                     //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
                     foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
@@ -206,7 +219,7 @@ namespace Secure_Password_Repository.Controllers
                     DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
 
                     //get the category that has been moved
-                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == CategoryId);
+                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == ItemId);
 
                     //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
                     foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
@@ -228,9 +241,8 @@ namespace Secure_Password_Repository.Controllers
                     await DatabaseContext.SaveChangesAsync();
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                ModelState.AddModelError("", "Could Not Update Position");
                 return Json(new
                 {
                     Status = "Failed"
@@ -241,6 +253,13 @@ namespace Secure_Password_Repository.Controllers
             {
                 Status = "Completed"
             });
+        }
+
+        public ActionResult CreatePassword(int ParentCategoryId)
+        {
+            Password n = new Password();
+            n.Parent_CategoryId = ParentCategoryId;
+            return View(n);
         }
     }
 }

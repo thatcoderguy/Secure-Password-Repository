@@ -34,6 +34,7 @@ namespace Secure_Password_Repository.Migrations
                         Notes = c.String(),
                         Parent_CategoryId = c.Int(nullable: true),
                         Deleted = c.Boolean(nullable: false),
+                        PasswordOrder = c.Int(nullable: false)
                     })
                 .PrimaryKey(t => t.PasswordId)
                 .ForeignKey("dbo.Category", t => t.Parent_CategoryId, cascadeDelete: false)

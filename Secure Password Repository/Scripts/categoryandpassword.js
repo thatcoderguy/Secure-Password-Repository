@@ -6,16 +6,16 @@ function submitAjaxForm(formid) {
 //display the edit category form
 function displayForm(categoryid) {
 
-    $('#' + categoryid).find('.first').hide();
-    $('#' + categoryid).find('.second').show();
+    $('#' + categoryid).find('.first').first().hide();
+    $('#' + categoryid).find('.second').first().show();
 
 }
 
 //hide the form
 function cancelAction(categoryid) {
 
-    $('#' + categoryid).find('.first').show();
-    $('#' + categoryid).find('.second').hide();
+    $('#' + categoryid).find('.first').first().show();
+    $('#' + categoryid).find('.second').first().hide();
 
 }
 
@@ -53,6 +53,9 @@ function createCategorySuccess(data,parentid) {
 
     //refresh treeview, so new item is part of sortable
     refreshTreeView('treeview');
+
+    //bind click events
+    bindClickEvent();
 
     //hide the form
     cancelAction('addnew-' + parentid);
@@ -113,6 +116,12 @@ function treeListItemClick(event, listItem) {
                 //initialize new treeviews added from the newly generated HTML
                 setupTreeView('treeview');
 
+                //bind click events
+                bindClickEvent();
+
+                bindPasswordClickEvent();
+
+                //open the parent item
                 listItem.slideDown();
 
             },
@@ -130,7 +139,6 @@ function treeListItemClick(event, listItem) {
 //update the ordering position of the category
 function updatePosition(event, ui)
 {
-
     var itemid = ui.item.attr('id');
     var newposition = ui.item.index() + 1;
     var oldposition = ui.item.data('previndex');
@@ -145,37 +153,6 @@ function updatePosition(event, ui)
         success: function (data) {
 
             if (data.Status == 'Failed')
-                alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-
-        },
-        failure: function (msg) {
-            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-            return false;
-        },
-        error: function (xhr, err) {
-            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-            return false;
-        }
-    });
-
-}
-
-//update the ordering position of the password
-function updatePasswordPositition(event, ui)
-{
-
-    var passwordid = ui.item.data('id');
-    var newposition = ui.item.index() + 1;
-
-    var result = $.ajax({
-        type: "POST",
-        url: "/Password/UpdatePasswordPosition",
-        data: AddAntiForgeryToken({ PasswordId: passwordid, NewPosition: newposition }),
-        contentType: "application/x-www-form-urlencoded; charset=utf-8",
-        dataType: "html",
-        success: function (data) {
-
-            if(data=='failed')
                 alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
 
         },

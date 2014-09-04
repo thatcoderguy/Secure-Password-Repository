@@ -161,7 +161,7 @@ namespace Secure_Password_Repository.Utilities
         ///</param>
         public static void Decrypt_DPAPI(ref byte[] EncryptedText)
         {
-            ProtectedMemory.Unprotect(EncryptedText, MemoryProtectionScope.SameLogon);
+            ProtectedMemory.Unprotect(EncryptedText, MemoryProtectionScope.SameProcess);
             //EncryptedText is now PlainText
         }
 
@@ -173,7 +173,7 @@ namespace Secure_Password_Repository.Utilities
         ///</param>
         public static void Encrypt_DPAPI(ref byte[] PlainText)
         {
-            ProtectedMemory.Protect(PlainText, MemoryProtectionScope.SameLogon);
+            ProtectedMemory.Protect(PlainText, MemoryProtectionScope.SameProcess);
             //PlainText is now EncryptedText
         }
 

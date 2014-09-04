@@ -11,6 +11,7 @@ using System.Data.Entity;
 using System.Web;
 using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.Database;
+using System;
 
 namespace Secure_Password_Repository.Models
 {
@@ -48,9 +49,9 @@ namespace Secure_Password_Repository.Models
         public string userPublicKey { get; set; }
         public string userEncryptionKey { get; set; }
         public string userFullName { get; set; }
-
         [Display(Name = "Account authorised by Admin")]
         public bool isAuthorised { get; set; }
+        public DateTime userLastEncryptionKeyUpdate { get; set; }
 
         public string GetRoleName()
         {

@@ -19,8 +19,11 @@
 
 Upon Login
 > Generate key
+
 > Encrypt passwd
+
 > Write cookie
+
 > Store key in app data
 
 

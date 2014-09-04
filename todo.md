@@ -12,6 +12,8 @@
 - [ ] 10. Change system settings
 - [ ] 11. Auto migrate database
 - [ ] 12. Force SSL
+- [ ] 13. Display user role
+- [ ] 14. Edit user role
 
 # DONE
 

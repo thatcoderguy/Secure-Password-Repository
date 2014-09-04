@@ -8,7 +8,7 @@
         {
             @Html.Partial("_CategoryModelItem", categoryitem);
         }
-
+       
         <li id="addnew-@Model.CategoryId" class="treeignore">
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
@@ -40,7 +40,7 @@
         <li id="addnew-password-@Model.CategoryId" class="treeignore">
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
-                    <a class="btn btn-xs btn-primary" onclick="displayForm('addnew-@Model.CategoryId'); return false;" href="#">
+                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("CreatePassword", new { ParentCategoryId = @Model.CategoryId })?iframe">
                         <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password
                     </a>
                 </span>
@@ -81,11 +81,11 @@
                 }
             </div>
         </li>
-        
+         
         <li id="addnew-password-@Model.CategoryId" class="treeignore">
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
-                    <a class="btn btn-xs btn-primary" onclick="displayForm('addnew-@Model.CategoryId'); return false;" href="#">
+                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("CreatePassword", new { ParentCategoryId = @Model.CategoryId })?iframe">
                         <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password
                     </a>
                 </span>

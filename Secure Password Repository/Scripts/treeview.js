@@ -2,7 +2,8 @@
 $(function () {
 
     setupTreeView('treeview');
-
+    bindClickEvent();
+    
 });
 
 function setupTreeView(className) {
@@ -41,25 +42,39 @@ function refreshTreeView(className) {
     $("." + className).sortable('refresh');
 }
 
-//when a tree item is clicked, load its children
-$('.clickable').on('click', function (event) {
+function bindPasswordClickEvent() {
+    $('a.fancyboxbutton').on('click', function (event) {
+        $.fancybox({
+            padding: 0,
+            'href': this.href,
+            'type': 'iframe'
+        });
+    });
+}
 
-    //make sure item isnt already open and hasnt already has its children loaded
-    if (!$(this).parent().hasClass('ui-state-active') && !$(this).parent().parent().has('ul').length)
-        treeListItemClick(event, $(this));
-    //not open
-    else if (!$(this).parent().hasClass('ui-state-active')) {
+function bindClickEvent() {
 
-        $(this).parent().parent().find('ul').slideDown();
-        $(this).parent().addClass('ui-state-active');
-        $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus');
+    //when a tree item is clicked, load its children
+    $('.clickable').on('click', function (event) {
 
-    } else {
+        //make sure item isnt already open and hasnt already has its children loaded
+        if (!$(this).parent().hasClass('ui-state-active') && !$(this).parent().parent().has('ul').length)
+            treeListItemClick(event, $(this));
+        //not open
+        else if (!$(this).parent().hasClass('ui-state-active')) {
 
-        $(this).parent().parent().find('ul').slideUp();
-        $(this).parent().removeClass('ui-state-active');
-        $(this).find('span').removeClass('treeviewminus').addClass('treeviewplus');
+            $(this).parent().parent().find('ul').slideDown();
+            $(this).parent().addClass('ui-state-active');
+            $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus');
 
-    }
+        } else {
 
-});
+            $(this).parent().parent().find('ul').slideUp();
+            $(this).parent().removeClass('ui-state-active');
+            $(this).find('span').removeClass('treeviewminus').addClass('treeviewplus');
+
+        }
+
+    });
+
+}

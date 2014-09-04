@@ -26,11 +26,11 @@ namespace Secure_Password_Repository.Migrations
                 c => new
                     {
                         PasswordId = c.Int(nullable: false, identity: true),
-                        Description = c.String(),
-                        EncryptedUserName = c.String(),
+                        Description = c.String(nullable: false),
+                        EncryptedUserName = c.String(nullable: false),
                         EncryptedSecondCredential = c.String(),
-                        EncryptedPassword = c.String(),
-                        Location = c.String(),
+                        EncryptedPassword = c.String(nullable: false),
+                        Location = c.String(nullable: false),
                         Notes = c.String(),
                         Parent_CategoryId = c.Int(nullable: true),
                         Deleted = c.Boolean(nullable: false),

@@ -1,6 +1,12 @@
 ﻿.treeview,
 .treeview ul {
     list-style: none;
+    cursor: default;
+    width: 100%;
+}
+
+.ui-accordion-header {
+    cursor: default !important;
 }
 
 .treeview li span.treeviewminus {
@@ -18,7 +24,8 @@
     top: 16px !important;
 }
 
-.treeview li span.treeviewicon:hover {
+.treeview li span.treeviewicon:hover,
+.treeview li span.clickable {
     cursor: pointer;
 }
 
@@ -43,4 +50,9 @@
 .editcategoryform {
     float: right;
     width: 97%;
+}
+
+textarea.password-textarea {
+    width: 380px;
+    height: 200px;
 }

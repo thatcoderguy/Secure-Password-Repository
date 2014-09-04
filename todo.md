@@ -25,6 +25,8 @@ Upon Login
 
 > Write cookie
 
+> Encrypt key with DPAPI
+
 > Store key in app data
 
 

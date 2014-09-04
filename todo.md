@@ -10,6 +10,18 @@
 - [ ] 8. Change database encryption key
 - [ ] 9. Change system settings
 - [ ] 10. Auto migrate database
+- [ ] 11. Force SSL
 
 # DONE
 
+
+## Implementation ideas (1)
+
+Upon Login
+> Generate key
+> Encrypt passwd
+> Write cookie
+> Store key in app data
+
+
+## Implementation ideas (2)

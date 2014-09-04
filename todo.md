@@ -1,6 +1,6 @@
 # TO DO
 
-- [ ] Store password in encrypted cookie
+1. [ ] Store password in encrypted cookie
 - [ ] Add password
 - [ ] Update password
 - [ ] Delete password

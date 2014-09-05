@@ -124,12 +124,16 @@ function treeListItemClick(event, listItem) {
                 //open the parent item
                 listItem.slideDown();
 
+                isPopulating = false;
+
             },
             failure: function (msg) {
+                isPopulating = false;
                 alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
                 return false;
             },
             error: function (xhr, err) {
+                isPopulating = false;
                 alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
                 return false;
             }

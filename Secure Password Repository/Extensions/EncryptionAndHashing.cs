@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Secure_Password_Repository.Settings;
 
-namespace Secure_Password_Repository.Utilities
+namespace Secure_Password_Repository.Extensions
 {
     public class EncryptionAndHashing
     {
@@ -192,7 +192,7 @@ namespace Secure_Password_Repository.Utilities
         ///<returns>
         ///An string of encrypted data converted to Base64
         ///</returns>
-        public static string Encrypt_AES256(string PlainText, string EncryptionKey, bool KeyIsBase64)
+        public static string Encrypt_AES256_To_String(string PlainText, string EncryptionKey, bool KeyIsBase64)
         {
 
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
@@ -244,6 +244,63 @@ namespace Secure_Password_Repository.Utilities
         }
 
         ///<summary>
+        ///Encrypts the supplied string using the AES 256 algoritm and returns a Base64ed version of the encrypted text
+        ///</summary>
+        ///<param name="PlainText">
+        ///The plain text to be encrypted
+        ///</param>
+        ///<param name="EncryptionKey">
+        ///Byte array of the key used to encrypt the text
+        ///</param>
+        ///<returns>
+        ///An string of encrypted data converted to Base64
+        ///</returns>
+        public static string Encrypt_AES256_To_String(string PlainText, byte[] EncryptionKey)
+        {
+
+            byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
+
+            //clear the original text (for security)
+            PlainText = "";
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //we need the key to be 32 chars long (256 bits)
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+
+                aesAlg.Key = EncryptionKey;
+
+                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            //encrypt the bytes
+                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+                            CryptoStream.FlushFinalBlock();
+                            BytesToEncrypt = MemStream.ToArray();
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return Convert.ToBase64String(BytesToEncrypt);
+        }
+
+        ///<summary>
         ///Encrypts the supplied bytes using the AES 256 algoritm
         ///</summary>
         ///<param name="BytesToEncrypt">
@@ -258,7 +315,7 @@ namespace Secure_Password_Repository.Utilities
         ///<returns>
         ///An string of encrypted data converted to Base64
         ///</returns>
-        public static string Encrypt_AES256(byte[] BytesToEncrypt, string EncryptionKey, bool KeyIsBase64)
+        public static string Encrypt_AES256_To_String(byte[] BytesToEncrypt, string EncryptionKey, bool KeyIsBase64)
         {
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -302,6 +359,300 @@ namespace Secure_Password_Repository.Utilities
 
             return Convert.ToBase64String(BytesToEncrypt);
         }
+
+
+        ///<summary>
+        ///Encrypts the supplied bytes using the AES 256 algoritm
+        ///</summary>
+        ///<param name="BytesToEncrypt">
+        ///The bytes to be encrypted
+        ///</param>
+        ///<param name="EncryptionKey">
+        ///The byte array of the key used to encrypt the text
+        ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
+        ///</param>
+        ///<returns>
+        ///An string of encrypted data converted to Base64
+        ///</returns>
+        public static string Encrypt_AES256_To_String(byte[] BytesToEncrypt, byte[] EncryptionKey)
+        {
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //we need the key to be 32 chars long (256 bits)
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+
+                aesAlg.Key = EncryptionKey;
+
+                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            //encrypt the bytes
+                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+                            CryptoStream.FlushFinalBlock();
+                            BytesToEncrypt = MemStream.ToArray();
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return Convert.ToBase64String(BytesToEncrypt);
+        }
+
+        ///<summary>
+        ///Encrypts the supplied string using the AES 256 algoritm
+        ///</summary>
+        ///<param name="PlainText">
+        ///The plain text to be encrypted
+        ///</param>
+        ///<param name="EncryptionKey">
+        ///The key used to encrypt the text
+        ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
+        ///</param>
+        ///<returns>
+        ///An byte array of encrypted data
+        ///</returns>
+        public static byte[] Encrypt_AES256_To_Bytes(string PlainText, string EncryptionKey, bool KeyIsBase64)
+        {
+
+            byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
+
+            //clear the original text (for security)
+            PlainText = "";
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //the key may not be a base64 string
+                if (KeyIsBase64)
+                    aesAlg.Key = Convert.FromBase64String(EncryptionKey);
+                else
+                {
+                    //we need the key to be 32 chars long (256 bits)
+                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+
+                    aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
+                }
+
+                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            //encrypt the bytes
+                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+                            CryptoStream.FlushFinalBlock();
+                            BytesToEncrypt = MemStream.ToArray();
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToEncrypt;
+        }
+
+        ///<summary>
+        ///Encrypts the supplied string using the AES 256 algoritm
+        ///</summary>
+        ///<param name="PlainText">
+        ///The plain text to be encrypted
+        ///</param>
+        ///<param name="EncryptionKey">
+        ///Byte array of the key used to encrypt the text
+        ///</param>
+        ///<returns>
+        ///An byte array of encrypted data
+        ///</returns>
+        public static byte[] Encrypt_AES256_To_Bytes(string PlainText, byte[] EncryptionKey)
+        {
+
+            byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
+
+            //clear the original text (for security)
+            PlainText = "";
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //we need the key to be 32 chars long (256 bits)
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+
+                aesAlg.Key = EncryptionKey;
+
+                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            //encrypt the bytes
+                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+                            CryptoStream.FlushFinalBlock();
+                            BytesToEncrypt = MemStream.ToArray();
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToEncrypt;
+        }
+
+        ///<summary>
+        ///Encrypts the supplied bytes using the AES 256 algoritm
+        ///</summary>
+        ///<param name="BytesToEncrypt">
+        ///The bytes to be encrypted
+        ///</param>
+        ///<param name="EncryptionKey">
+        ///The key used to encrypt the text
+        ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
+        ///</param>
+        ///<returns>
+        ///An byte array of encrypted data
+        ///</returns>
+        public static byte[] Encrypt_AES256_To_Bytes(byte[] BytesToEncrypt, string EncryptionKey, bool KeyIsBase64)
+        {
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //the key may not be a base64 string
+                if (KeyIsBase64)
+                    aesAlg.Key = Convert.FromBase64String(EncryptionKey);
+                else
+                {
+                    //we need the key to be 32 chars long (256 bits)
+                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+
+                    aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
+                }
+
+                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            //encrypt the bytes
+                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+                            CryptoStream.FlushFinalBlock();
+                            BytesToEncrypt = MemStream.ToArray();
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToEncrypt;
+        }
+
+
+        ///<summary>
+        ///Encrypts the supplied bytes using the AES 256 algoritm
+        ///</summary>
+        ///<param name="BytesToEncrypt">
+        ///The bytes to be encrypted
+        ///</param>
+        ///<param name="EncryptionKey">
+        ///The byte array of the key used to encrypt the text
+        ///</param>
+        ///<param name="KeyIsBase64">
+        ///The encryption key is in base64 or not
+        ///</param>
+        ///<returns>
+        ///An byte array of encrypted data
+        ///</returns>
+        public static byte[] Encrypt_AES256_To_Bytes(byte[] BytesToEncrypt, byte[] EncryptionKey)
+        {
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //we need the key to be 32 chars long (256 bits)
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+
+                aesAlg.Key = EncryptionKey;
+
+                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            //encrypt the bytes
+                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+                            CryptoStream.FlushFinalBlock();
+                            BytesToEncrypt = MemStream.ToArray();
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToEncrypt;
+        }
+
 
         ///<summary>
         ///Decrypts the supplied string using the AES 256 algoritm
@@ -606,24 +957,10 @@ namespace Secure_Password_Repository.Utilities
         }
 
         /// <summary>
-        /// Pads the array with null bytes
-        /// </summary>
-        /// <param name="OriginalArray">
-        /// The array to add padding to
-        /// </param>
-        /// <param name="NumberOfBytesToAdd">
-        /// The number of null bytes to add to the array
-        /// </param>
-        public static void Add_BytePadding(ref byte[] OriginalArray, int NumberOfBytesToAdd)
-        {
-            Array.Resize(ref OriginalArray, OriginalArray.Length + NumberOfBytesToAdd);
-        }
-
-        /// <summary>
         /// Pads the string with more chars from the original string
         /// </summary>
         /// <param name="OriginalString">
-        /// The string to padding to
+        /// The string to add padding to
         /// </param>
         /// <param name="NumberOfCharsToAdd">
         /// The number of chars to add to the string
@@ -633,24 +970,61 @@ namespace Secure_Password_Repository.Utilities
             //if the number of chars to add is greater then the length of the data
             if (NumberOfCharsToAdd > OriginalString.Length)
             {
-                string CopyOfPassword = OriginalString;
+                string CopyOfString = OriginalString;
 
                 //keep appending data until chars to add is not longer greater then the length of the data
-                while (NumberOfCharsToAdd > CopyOfPassword.Length)
+                while (NumberOfCharsToAdd > CopyOfString.Length)
                 {
-                    NumberOfCharsToAdd -= CopyOfPassword.Length;
-                    OriginalString += CopyOfPassword;
+                    NumberOfCharsToAdd -= CopyOfString.Length;
+                    OriginalString += CopyOfString;
                 }
 
                 //any remaining chars
-                OriginalString += CopyOfPassword.Substring(0, NumberOfCharsToAdd);
+                OriginalString += CopyOfString.Substring(0, NumberOfCharsToAdd);
 
                 //clear the string (for security)
-                CopyOfPassword = "";
+                CopyOfString = "";
             }
             //number of chars to add was less than the length of the data, so just append what is needed.
             else
                 OriginalString += OriginalString.Substring(0, NumberOfCharsToAdd);
+
+        }
+
+        /// <summary>
+        /// Pads the byte array with more chars from the original array
+        /// </summary>
+        /// <param name="OriginalBytes">
+        /// The byte array to add padding to
+        /// </param>
+        /// <param name="NumberOfCharsToAdd">
+        /// The number of chars to add to the string
+        /// </param>
+        public static void Add_BytePadding(ref byte[] OriginalBytes, int NumberOfCharsToAdd)
+        {
+            //if the number of chars to add is greater then the length of the data
+            if (NumberOfCharsToAdd > OriginalBytes.Length)
+            {
+
+                byte[] CopyOfBytes = new byte[OriginalBytes.Length];
+                OriginalBytes.CopyTo(CopyOfBytes, OriginalBytes.Length);
+
+                //keep appending data until bytes to add is not longer greater then the length of the data
+                while (NumberOfCharsToAdd > CopyOfBytes.Length)
+                {
+                    System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, CopyOfBytes.Length);
+                    NumberOfCharsToAdd -= CopyOfBytes.Length;
+                }
+
+                //any remaining chars
+                System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfCharsToAdd);
+
+                //clear the array (for security)
+                Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
+            }
+            //number of chars to add was less than the length of the data, so just append what is needed.
+            else
+                System.Buffer.BlockCopy(OriginalBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfCharsToAdd);
 
         }
 

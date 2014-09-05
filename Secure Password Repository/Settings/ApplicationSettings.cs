@@ -9,7 +9,7 @@ using System.Xml.Serialization;
 using System.Web.Caching;
 using System.IO;
 using Microsoft.VisualBasic;
-using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.Extensions;
 
 namespace Secure_Password_Repository.Settings
 {

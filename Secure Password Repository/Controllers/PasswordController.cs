@@ -1,6 +1,6 @@
 ﻿using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
-using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.ViewModels;
 using System;
 using System.Collections;
@@ -162,8 +162,10 @@ namespace Secure_Password_Repository.Controllers
                 await DatabaseContext.SaveChangesAsync();
 
                 //proxies are no longer needed, so remove to avoid the "cicular reference" issue
+                deleteCategory.SubCategories.Clear();
                 deleteCategory.SubCategories = null;
                 deleteCategory.Parent_Category = null;
+                deleteCategory.Passwords.Clear();
                 deleteCategory.Passwords = null;
 
                 //return the item, so that it can be removed from the UI

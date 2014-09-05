@@ -38,8 +38,8 @@ namespace Secure_Password_Repository
                        "~/Scripts/categoryandpassword.js",
                        "~/Scripts/jquery.unobtrusive-ajax.min.js"));
 
-            bundles.Add(new ScriptBundle("~/bundles/utilities").Include(
-                        "~/Scripts/utilities.js"));
+            bundles.Add(new ScriptBundle("~/bundles/extensions").Include(
+                        "~/Scripts/extensions.js"));
                        
 
             bundles.Add(new StyleBundle("~/Content/css").Include(

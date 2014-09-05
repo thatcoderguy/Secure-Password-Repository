@@ -89,6 +89,9 @@ namespace Secure_Password_Repository.Controllers
                     //encrypted with the user's public key
                     if (user.isAuthorised)
                     {
+
+
+
                         await SignInAsync(user, false);
                         return RedirectToLocal(returnUrl);
                     }

@@ -16,7 +16,7 @@ textarea {
     max-width: 280px;
 }
 
-
+/* override bootstrap media query, so that forms in iframes format better */
 @media (min-width: 720px) {
 
     .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11 {

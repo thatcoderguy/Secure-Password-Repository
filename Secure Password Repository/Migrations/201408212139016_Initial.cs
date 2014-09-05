@@ -97,6 +97,7 @@ namespace Secure_Password_Repository.Migrations
                         LockoutEnabled = c.Boolean(nullable: false),
                         AccessFailedCount = c.Int(nullable: false),
                         UserName = c.String(nullable: false, maxLength: 256),
+                        userLastEncryptionKeyUpdate = c.DateTime(nullable: true)
                     })
                 .PrimaryKey(t => t.Id)
                 .Index(t => t.UserName, unique: true, name: "UserNameIndex");

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
 using System.Web;
-using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Database;
 using System;
 
@@ -51,7 +51,7 @@ namespace Secure_Password_Repository.Models
         public string userFullName { get; set; }
         [Display(Name = "Account authorised by Admin")]
         public bool isAuthorised { get; set; }
-        public DateTime userLastEncryptionKeyUpdate { get; set; }
+        public DateTime? userLastEncryptionKeyUpdate { get; set; }
 
         public string GetRoleName()
         {

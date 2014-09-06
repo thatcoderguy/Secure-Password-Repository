@@ -14,7 +14,7 @@ using Owin;
 using Secure_Password_Repository.ViewModels;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository.Controllers
@@ -162,7 +162,7 @@ namespace Secure_Password_Repository.Controllers
                     EncryptionAndHashing.Encrypt_DPAPI(ref userPrivateKeyBytes);
 
                     //Encrypt privateKey with the user's password
-                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256(userPrivateKeyBytes, model.Password, false);
+                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_To_String(userPrivateKeyBytes, model.Password, false);
 
                     //clear the PrivateKey data - for security
                     Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);

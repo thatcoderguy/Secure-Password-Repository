@@ -4,7 +4,7 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Secure_Password_Repository.Models;
-using Secure_Password_Repository.Utilities;
+using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Database;
 using System;
 using System.Collections.Generic;

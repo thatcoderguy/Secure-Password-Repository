@@ -6,7 +6,7 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.WebPages;
 
-namespace Secure_Password_Repository.Utilities
+namespace Secure_Password_Repository.Extensions
 {
     /// <summary>
     /// Utility class to render controller-specific scripts and css content

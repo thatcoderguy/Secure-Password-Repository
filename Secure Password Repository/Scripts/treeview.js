@@ -1,4 +1,8 @@
-﻿//category treeview
+﻿//semaphor - do stop double population
+var isPopulating = false;
+
+
+//category treeview
 $(function () {
 
     setupTreeView('treeview');
@@ -43,6 +47,10 @@ function refreshTreeView(className) {
 }
 
 function bindPasswordClickEvent() {
+
+    //unbind all of the click events - so that we dont get multiple events per item
+    $('a.fancyboxbutton').unbind('click');
+
     $('a.fancyboxbutton').on('click', function (event) {
         $.fancybox({
             padding: 0,
@@ -50,23 +58,33 @@ function bindPasswordClickEvent() {
             'type': 'iframe'
         });
     });
+
 }
 
 function bindClickEvent() {
 
+    //unbind all of the click events - so that we dont get multiple events per item
+    $('.clickable').unbind('click');
+
     //when a tree item is clicked, load its children
-    $('.clickable').on('click', function (event) {
+    $('.clickable').on('click', function (event) {     
 
         //make sure item isnt already open and hasnt already has its children loaded
-        if (!$(this).parent().hasClass('ui-state-active') && !$(this).parent().parent().has('ul').length)
-            treeListItemClick(event, $(this));
-        //not open
-        else if (!$(this).parent().hasClass('ui-state-active')) {
+        if (!$(this).parent().hasClass('ui-state-active') && !$(this).parent().parent().has('ul').length) {
+
+            if (!isPopulating) {
+                isPopulating = true;
+                treeListItemClick(event, $(this));
+            }
+
+            //not open
+        } else if (!$(this).parent().hasClass('ui-state-active')) {
 
             $(this).parent().parent().find('ul').slideDown();
             $(this).parent().addClass('ui-state-active');
             $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus');
 
+            //already populated and open
         } else {
 
             $(this).parent().parent().find('ul').slideUp();

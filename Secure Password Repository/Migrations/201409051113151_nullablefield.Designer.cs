@@ -7,13 +7,13 @@ namespace Secure_Password_Repository.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.1.0-30225")]
-    public sealed partial class encryptionkeychangedate : IMigrationMetadata
+    public sealed partial class nullablefield : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(encryptionkeychangedate));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(nullablefield));
         
         string IMigrationMetadata.Id
         {
-            get { return "201409042046052_encryptionkeychangedate"; }
+            get { return "201409051113151_nullablefield"; }
         }
         
         string IMigrationMetadata.Source

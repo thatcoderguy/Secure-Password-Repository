@@ -17,6 +17,10 @@
 
 # DONE
 
+## Remember:
+
+Assume passwd cookie has been altered - verify PK after description - if bad, logout
+
 
 ## Implementation ideas (1)
 

@@ -14,6 +14,8 @@ namespace Secure_Password_Repository.Extensions
     public static class SecurePasswordRepositorySpecificFunctions
     {
 
+        //when decrypting the PK, assume this passwd has been modified - veryfy data, if bad, logout
+
         public static void GenerateEncryptedCookie(string PlainTextUserPassword)
         {
             byte[] bEncryptionKey = EncryptionAndHashing.Generate_RandomBytes(32);
@@ -22,7 +24,7 @@ namespace Secure_Password_Repository.Extensions
             EncryptionAndHashing.Encrypt_DPAPI(ref bEncryptedPassword);
             EncryptionAndHashing.Encrypt_DPAPI(ref bEncryptionKey);
 
-            //http://msdn.microsoft.com/en-us/magazine/cc300437.aspx
+            //
 
             Convert.ToBase64String(bEncryptedPassword);
 

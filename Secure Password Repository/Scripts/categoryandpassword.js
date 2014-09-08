@@ -85,7 +85,11 @@ function deleteCategory(categoryid) {
                     alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
                     return false;
                 },
-                error: function (xhr, err) {
+                error: function (jqXHR, textStatus, errorThrown) {
+                    if (textStatus == "Unauthorised")
+                    {
+                        //redirect
+                    }
                     alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
                     return false;
                 }
@@ -132,7 +136,10 @@ function treeListItemClick(event, listItem) {
                 alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
                 return false;
             },
-            error: function (xhr, err) {
+            error: function (jqXHR, textStatus, errorThrown) {
+                if (textStatus == "Unauthorised") {
+                    //redirect
+                }
                 isPopulating = false;
                 alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
                 return false;
@@ -164,7 +171,10 @@ function updatePosition(event, ui)
             alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
             return false;
         },
-        error: function (xhr, err) {
+        error: function (jqXHR, textStatus, errorThrown) {
+            if (textStatus == "Unauthorised") {
+                //redirect
+            }
             alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
             return false;
         }

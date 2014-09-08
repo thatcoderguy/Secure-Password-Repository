@@ -16,6 +16,7 @@ using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Settings;
+using System.Web.Caching;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -89,6 +90,8 @@ namespace Secure_Password_Repository.Controllers
                     //encrypted with the user's public key
                     if (user.isAuthorised)
                     {
+                        //HttpContext.Cache.Add(model.Username, "", null, DateTime.MaxValue, TimeSpan.FromHours(1), CacheItemPriority.High, null);
+                        HttpContext.Cache.Add(model.Username, "", null, DateTime.MaxValue, TimeSpan.FromSeconds(30), CacheItemPriority.High, null);
                         await SignInAsync(user, false);
                         return RedirectToLocal(returnUrl);
                     }

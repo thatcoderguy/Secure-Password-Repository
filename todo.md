@@ -1,3 +1,8 @@
+# Remeber
+
+Setup generic AJAX error, so all AJAX calls use it.
+Include Ajax.BeginForm
+
 # TO DO
 
 - [ ] 1. Store password in encrypted cookie

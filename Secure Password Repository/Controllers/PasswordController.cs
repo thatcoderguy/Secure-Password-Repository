@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System.Net;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -70,7 +71,7 @@ namespace Secure_Password_Repository.Controllers
 
             } catch { }
 
-            return new HttpStatusCodeResult(500);
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
         }
 
@@ -95,12 +96,12 @@ namespace Secure_Password_Repository.Controllers
                     return PartialView("_CategoryModelItem", newCategory);
 
                 } else {
-                    return new HttpStatusCodeResult(500);
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
                 }
 
             } catch { }
 
-            return new HttpStatusCodeResult(500);
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
         }
 
@@ -127,7 +128,7 @@ namespace Secure_Password_Repository.Controllers
                 }
             } catch {}
 
-            return new HttpStatusCodeResult(500);
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
         }
 
@@ -173,7 +174,7 @@ namespace Secure_Password_Repository.Controllers
             }
             catch {}
 
-            return new HttpStatusCodeResult(500);
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
 
         #endregion

@@ -13,6 +13,10 @@ using Secure_Password_Repository.Extensions;
 
 namespace Secure_Password_Repository.Settings
 {
+    /// <summary>
+    /// Application settings class
+    /// This stores the options that can be configured in this web application
+    /// </summary>
     [Serializable]
     public sealed partial class ApplicationSettings
     {
@@ -35,8 +39,13 @@ namespace Secure_Password_Repository.Settings
             {
                 serial.Serialize(sw, instance);
             }
+
+            //make sure the changed values are copied back into cache
+            Cache cache = HttpRuntime.Cache;
+            cache[filename] = instance;
         }
 
+        //set default option valus
         public static void ResetAppSettings()
         {
             Default.LogoImage = "logo.png";
@@ -56,11 +65,13 @@ namespace Secure_Password_Repository.Settings
             Save();
         }
 
+        //this returns the default instance of this class
         public static ApplicationSettings Default
         {
             get
             {
 
+                //get cache and the file name
                 Cache cache = HttpRuntime.Cache;
                 string filename = Path.Combine(HttpRuntime.AppDomainAppPath, "system-config.xml");
 
@@ -83,15 +94,19 @@ namespace Secure_Password_Repository.Settings
                         return (ApplicationSettings)cache[filename];
                     }
 
+                    //if the file does not exist
                     if (!File.Exists(Path.Combine(HttpRuntime.AppDomainAppPath, "system-config.xml")))
                     {
+                        //create a new instance of this class
                         instance = new ApplicationSettings();
 
                         //insert the object into cache - with no expiration (we want this to be persistant in memory)
                         cache.Insert(filename, instance, null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration);
 
+                        //save to disk
                         Save();
 
+                        //set the default values
                         ResetAppSettings();
 
                         //return the newly created object

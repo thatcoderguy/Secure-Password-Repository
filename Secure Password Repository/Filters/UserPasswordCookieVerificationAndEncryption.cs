@@ -8,6 +8,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Net.Http;
 using Microsoft.Owin.Security;
+using System.Web.Routing;
 
 namespace Secure_Password_Repository.Filters
 {
@@ -29,7 +30,12 @@ namespace Secure_Password_Repository.Filters
                     filterContext.HttpContext.Response.Clear();
                     filterContext.HttpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     filterContext.HttpContext.Response.TrySkipIisCustomErrors = true;
-                    filterContext.HttpContext.Response.End();
+
+                    if(filterContext.HttpContext.Request.IsAjaxRequest())
+                        filterContext.HttpContext.Response.End();
+                    else
+                        filterContext.Result = new RedirectToRouteResult(new RouteValueDictionary { { "Controller", "Account" }, { "Action", "Login" }, { "ReturnUrl", "Password" } });
+
                 }
                 else
                 {

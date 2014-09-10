@@ -20,7 +20,7 @@
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
                 <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnFailure = "failAlert()", OnSuccess = "createCategorySuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
+                @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createCategorySuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
                 {
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.Category_ParentID, new { Value=@Model.CategoryId })
@@ -48,7 +48,7 @@
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
                 <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                @using (Ajax.BeginForm("AddPassword", "Password", new AjaxOptions { HttpMethod = "post", OnFailure = "failAlert()", OnSuccess = "createPasswordSuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
+                @using (Ajax.BeginForm("AddPassword", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createPasswordSuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
                 {
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.Category_ParentID, new { Value = @Model.CategoryId })
@@ -72,7 +72,7 @@
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
                 <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnFailure = "failAlert()", OnSuccess = "createCategorySuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
+                @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createCategorySuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
                 {
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.Category_ParentID, new { Value = @Model.CategoryId })
@@ -93,7 +93,7 @@
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
                 <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                @using (Ajax.BeginForm("AddPassword", "Password", new AjaxOptions { HttpMethod = "post", OnFailure = "failAlert()", OnSuccess = "createPasswordSuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
+                @using (Ajax.BeginForm("AddPassword", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createPasswordSuccess(data,'" + @Model.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.CategoryId }))
                 {
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.Category_ParentID, new { Value = @Model.CategoryId })

@@ -19,13 +19,6 @@ function cancelAction(categoryid) {
 
 }
 
-//generic error
-function failAlert() {
-
-    alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-
-}
-
 //category updates successfully
 function updateCategorySuccess(data) {
 
@@ -80,18 +73,6 @@ function deleteCategory(categoryid) {
 
                     $('#' + data.CategoryId).remove();
 
-                },
-                failure: function (msg) {
-                    alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                    return false;
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    if (textStatus == "Unauthorised")
-                    {
-                        //redirect
-                    }
-                    alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                    return false;
                 }
             });
 
@@ -130,19 +111,6 @@ function treeListItemClick(event, listItem) {
 
                 isPopulating = false;
 
-            },
-            failure: function (msg) {
-                isPopulating = false;
-                alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                return false;
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                if (textStatus == "Unauthorised") {
-                    //redirect
-                }
-                isPopulating = false;
-                alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-                return false;
             }
         });
 }
@@ -166,17 +134,6 @@ function updatePosition(event, ui)
             if (data.Status == 'Failed')
                 alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
 
-        },
-        failure: function (msg) {
-            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-            return false;
-        },
-        error: function (jqXHR, textStatus, errorThrown) {
-            if (textStatus == "Unauthorised") {
-                //redirect
-            }
-            alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
-            return false;
         }
     });
 

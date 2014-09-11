@@ -162,7 +162,6 @@ namespace Secure_Password_Repository.Extensions
         public static void Decrypt_DPAPI(ref byte[] EncryptedText)
         {
             ProtectedMemory.Unprotect(EncryptedText, MemoryProtectionScope.SameProcess);
-            //EncryptedText is now PlainText
         }
 
         ///<summary>
@@ -173,8 +172,12 @@ namespace Secure_Password_Repository.Extensions
         ///</param>
         public static void Encrypt_DPAPI(ref byte[] PlainText)
         {
+
+            //if the private key length isnt a multiple of 16, then make it so (requirment of DPAPI)
+            if (PlainText.Length % 16 != 0)
+                EncryptionAndHashing.Add_BytePadding(ref PlainText, 16 - (PlainText.Length % 16));
+
             ProtectedMemory.Protect(PlainText, MemoryProtectionScope.SameProcess);
-            //PlainText is now EncryptedText
         }
 
         ///<summary>
@@ -916,6 +919,19 @@ namespace Secure_Password_Repository.Extensions
             return Convert.ToBase64String(salt);
         }
 
+        public static string Hash_SHA1(string PlainText)
+        {
+            string sha1hash = "";
+
+            using (SHA1 sha = new SHA1CryptoServiceProvider())
+            {
+                sha1hash = Convert.ToBase64String(sha.ComputeHash(Encoding.Default.GetBytes(PlainText)));
+            }
+
+            return sha1hash;
+        }
+
+
         ///<summary>
         ///Generates a number random bytes using cryptographically secure RNG
         ///</summary>
@@ -945,15 +961,47 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An string of random bytes converted to Base64
         ///</returns>
-        public static string Generate_RandomString(int NumberOfBytes)
+        public static string Generate_RandomString(int NumberOfChars)
         {
-            byte[] randombytes = new byte[NumberOfBytes];
+            byte[] randombytes = new byte[NumberOfChars];
             using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider())
             {
                 rngCsp.GetBytes(randombytes);
             }
 
             return Convert.ToBase64String(randombytes);
+        }
+
+        ///<summary>
+        ///Generates a number random string of readable chars (A-Z a-z 0-9) using the cryptographically secure RNG
+        ///</summary>
+        ///<param name="NumberOfBytes">
+        ///The number of chars to return
+        ///</param>
+        ///<returns>
+        ///An string of random bytes
+        ///</returns>
+        public static string Generate_Random_ReadableString(int NumberOfChars)
+        {
+            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
+            var buffer = new char[NumberOfChars];
+            var usableChars = characterSet.ToCharArray();
+            var usableLength = usableChars.Length;
+
+            using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider()) {
+
+                var random = new byte[NumberOfChars];
+                rngCsp.GetNonZeroBytes(random);
+
+                for (int index = 0; index < NumberOfChars; index++)
+                {
+                    buffer[index] = usableChars[random[index] % usableLength];
+                }
+
+            }
+
+
+            return new string(buffer);
         }
 
         /// <summary>
@@ -997,34 +1045,41 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="OriginalBytes">
         /// The byte array to add padding to
         /// </param>
-        /// <param name="NumberOfCharsToAdd">
+        /// <param name="NumberOfBytesToAdd">
         /// The number of chars to add to the string
         /// </param>
-        public static void Add_BytePadding(ref byte[] OriginalBytes, int NumberOfCharsToAdd)
+        public static void Add_BytePadding(ref byte[] OriginalBytes, int NumberOfBytesToAdd)
         {
             //if the number of chars to add is greater then the length of the data
-            if (NumberOfCharsToAdd > OriginalBytes.Length)
+            if (NumberOfBytesToAdd > OriginalBytes.Length)
             {
 
                 byte[] CopyOfBytes = new byte[OriginalBytes.Length];
-                OriginalBytes.CopyTo(CopyOfBytes, OriginalBytes.Length);
+                OriginalBytes.CopyTo(CopyOfBytes, 0);
 
                 //keep appending data until bytes to add is not longer greater then the length of the data
-                while (NumberOfCharsToAdd > CopyOfBytes.Length)
+                while (NumberOfBytesToAdd > CopyOfBytes.Length)
                 {
                     System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, CopyOfBytes.Length);
-                    NumberOfCharsToAdd -= CopyOfBytes.Length;
+                    NumberOfBytesToAdd -= CopyOfBytes.Length;
                 }
 
                 //any remaining chars
-                System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfCharsToAdd);
+                System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfBytesToAdd);
 
                 //clear the array (for security)
                 Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
             }
             //number of chars to add was less than the length of the data, so just append what is needed.
             else
-                System.Buffer.BlockCopy(OriginalBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfCharsToAdd);
+            {
+                byte[] CopyOfBytes = new byte[OriginalBytes.Length];
+                OriginalBytes.CopyTo(CopyOfBytes,0);
+                System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfBytesToAdd);
+                //clear the array (for security)
+                Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
+            }
+                
 
         }
 

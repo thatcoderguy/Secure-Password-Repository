@@ -16,7 +16,7 @@ namespace Secure_Password_Repository.Filters
     /// Verify that the encryption key still exists in cache - otherwise return an error
     /// </summary>
 
-    public class UserPasswordCookieVerificationAndEncryption : IActionFilter
+    public class UserEncryptionKeyCacheVerification : IActionFilter
     {
         public void OnActionExecuted(ActionExecutedContext filterContext)
         {

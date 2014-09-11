@@ -9,7 +9,7 @@ namespace Secure_Password_Repository
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
             filters.Add(new HandleErrorAttribute());
-            filters.Add(new UserPasswordCookieVerificationAndEncryption());     //register a custom filter
+            filters.Add(new UserEncryptionKeyCacheVerification());     //register a custom filter
         }
     }
 }

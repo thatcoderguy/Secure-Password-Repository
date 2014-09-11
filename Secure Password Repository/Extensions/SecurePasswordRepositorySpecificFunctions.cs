@@ -1,4 +1,5 @@
 ﻿using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,28 +14,39 @@ namespace Secure_Password_Repository.Extensions
     /// </summary>
     public static class SecurePasswordRepositorySpecificFunctions
     {
-
-        public static void GenerateEncryptedCookie(string PlainTextUserPassword)
+        public static string Generate_UserEncryptionKey(string plainTextPassword)
         {
-            byte[] bEncryptionKey = EncryptionAndHashing.Generate_RandomBytes(32);
-            byte[] bEncryptedPassword = EncryptionAndHashing.Encrypt_AES256_To_Bytes(Encoding.Default.GetBytes(PlainTextUserPassword), bEncryptionKey);
+            string hashedPassword = EncryptionAndHashing.Hash_SHA1(plainTextPassword);
 
-            EncryptionAndHashing.Encrypt_DPAPI(ref bEncryptedPassword);
-            EncryptionAndHashing.Encrypt_DPAPI(ref bEncryptionKey);
+            hashedPassword = EncryptionAndHashing.Hash_PBKDF2(hashedPassword, ApplicationSettings.Default.SystemSalt);
 
-            Convert.ToBase64String(bEncryptedPassword);
-
-
+            return hashedPassword;
         }
 
-        public static string RetreivePlainTextUserPasswordFromEncryptedCookie()
+        public static string Generate_Encrypted_UserEncryptionKey(string plainTextPassword)
         {
-            return "";
+            string encryptedPassword = EncryptionAndHashing.Hash_SHA1(plainTextPassword);
+
+            encryptedPassword = EncryptionAndHashing.Hash_PBKDF2(encryptedPassword, ApplicationSettings.Default.SystemSalt);
+
+            encryptedPassword = "";
+            byte[] hashedPasswordBytes = Encoding.Default.GetBytes(encryptedPassword);
+
+            EncryptionAndHashing.Encrypt_DPAPI(ref hashedPasswordBytes);
+
+            encryptedPassword = Convert.ToBase64String(hashedPasswordBytes);
+
+            return encryptedPassword;
         }
 
-        public static Password RetreivePlainTextStoredPasswordDetailsFromDatabase()
+        public static string Decrypt_UserEncryptionKey(string encryptedKey)
         {
-            return new Password();
+
+            byte[] encryptedBytes = Convert.FromBase64String(encryptedKey);
+
+            EncryptionAndHashing.Decrypt_DPAPI(ref encryptedBytes);
+
+            return Encoding.Default.GetString(encryptedBytes);
         }
 
     }

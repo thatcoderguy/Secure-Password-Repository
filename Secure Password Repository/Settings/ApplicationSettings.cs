@@ -53,7 +53,7 @@ namespace Secure_Password_Repository.Settings
             Default.SMTPServerUsername = "";
             Default.SMTPServerPassword = "";
             Default.SystemInitilisationVector = EncryptionAndHashing.Generate_RandomString(16);
-            Default.SystemSalt = EncryptionAndHashing.Generate_RandomString(32);
+            Default.SystemSalt = EncryptionAndHashing.Generate_Random_ReadableString(32);
             Default.SCryptHashCost = "262144";
             Default.DefaultAccountRole = "User";
             Default.PBKDF2IterationCount = "1000";

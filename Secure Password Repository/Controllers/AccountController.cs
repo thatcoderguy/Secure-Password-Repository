@@ -90,8 +90,8 @@ namespace Secure_Password_Repository.Controllers
                     //encrypted with the user's public key
                     if (user.isAuthorised)
                     {
-                        //HttpContext.Cache.Add(model.Username, "", null, DateTime.MaxValue, TimeSpan.FromHours(1), CacheItemPriority.High, null);
-                        HttpContext.Cache.Add(model.Username, "", null, DateTime.MaxValue, TimeSpan.FromSeconds(30), CacheItemPriority.High, null);
+                        HttpContext.Cache.Add(model.Username, SecurePasswordRepositorySpecificFunctions.Generate_Encrypted_UserEncryptionKey(model.Password), null, DateTime.MaxValue, TimeSpan.FromHours(1), CacheItemPriority.High, null);
+
                         await SignInAsync(user, false);
                         return RedirectToLocal(returnUrl);
                     }
@@ -135,7 +135,7 @@ namespace Secure_Password_Repository.Controllers
                 var user = new ApplicationUser() { UserName = model.Username, Email = model.Email, userFullName = model.FullName };
 
                 //store whether this was the first account created in the system (gets returned in the querystring)
-                string FirstUserAccount = "";
+                string FirstUserAccount = ApplicationSettings.Default.DefaultAccountRole;
 
                 string UserDefaultRole = "";
 
@@ -154,15 +154,11 @@ namespace Secure_Password_Repository.Controllers
                     //convert the private key to bytes, then clear the original string
                     byte[] userPrivateKeyBytes = Encoding.Default.GetBytes(await EncryptionAndHashing.Retrieve_PrivateKey());
 
-                    //if the private key length isnt a multiple of 16, then make it so (requirment of DPAPI)
-                    if (userPrivateKeyBytes.Length % 16 != 0)
-                        EncryptionAndHashing.Add_BytePadding(ref userPrivateKeyBytes, 16 - (userPrivateKeyBytes.Length % 16));
-
                     //Encrypt private key with DPAPI
                     EncryptionAndHashing.Encrypt_DPAPI(ref userPrivateKeyBytes);
 
-                    //Encrypt privateKey with the user's password
-                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_To_String(userPrivateKeyBytes, model.Password, false);
+                    //Encrypt privateKey with the user's encryptionkey (based on their password)
+                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_To_String(userPrivateKeyBytes, SecurePasswordRepositorySpecificFunctions.Generate_UserEncryptionKey(model.Password), false);
 
                     //clear the PrivateKey data - for security
                     Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);
@@ -199,7 +195,6 @@ namespace Secure_Password_Repository.Controllers
 
                     user.isAuthorised = true;
                     FirstUserAccount = "Yes";
-                    UserDefaultRole = "Administrator";
 
                 }
                 else
@@ -208,13 +203,13 @@ namespace Secure_Password_Repository.Controllers
                     //user needs to be authorised by an admin, so the encryption key can be copied to the user's account
                     user.isAuthorised = false;
                     FirstUserAccount = "No";
-                    UserDefaultRole = "User";
 
                 }
 
                 if (RoleMgr.RoleExists(UserDefaultRole))
                 {
                     IdentityResult result = await UserMgr.CreateAsync(user, model.Password);
+                    string blah = user.PasswordHash;
                     if (result.Succeeded)
                     {
                         //await SignInAsync(user, isPersistent: false);

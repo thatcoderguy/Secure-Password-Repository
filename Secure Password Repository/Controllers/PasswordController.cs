@@ -179,6 +179,19 @@ namespace Secure_Password_Repository.Controllers
 
         #endregion
 
+        #region PasswordActions
+
+        public ActionResult CreatePassword(int ParentCategoryId)
+        {
+            Password n = new Password();
+            n.Parent_CategoryId = ParentCategoryId;
+            return View(n);
+        }
+
+        #endregion
+
+        #region CategoryAndPasswordActions
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
@@ -258,11 +271,7 @@ namespace Secure_Password_Repository.Controllers
             });
         }
 
-        public ActionResult CreatePassword(int ParentCategoryId)
-        {
-            Password n = new Password();
-            n.Parent_CategoryId = ParentCategoryId;
-            return View(n);
-        }
+        #endregion
+
     }
 }

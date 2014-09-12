@@ -1003,7 +1003,8 @@ namespace Secure_Password_Repository.Extensions
             var usableChars = characterSet.ToCharArray();
             var usableLength = usableChars.Length;
 
-            using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider()) {
+            using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider())
+            {
 
                 var random = new byte[NumberOfChars];
                 rngCsp.GetNonZeroBytes(random);
@@ -1077,7 +1078,7 @@ namespace Secure_Password_Repository.Extensions
             //if the number of chars to add is greater then the length of the data
             if (NumberOfBytesToAdd > OriginalBytes.Length)
             {
-
+                //clone the original array
                 byte[] CopyOfBytes = new byte[OriginalBytes.Length];
                 OriginalBytes.CopyTo(CopyOfBytes, 0);
 
@@ -1090,21 +1091,27 @@ namespace Secure_Password_Repository.Extensions
 
                 //any remaining chars
                 Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfBytesToAdd);
-                
+
                 //clear the array (for security)
                 Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
             }
             //number of chars to add was less than the length of the data, so just append what is needed.
             else
             {
+                //clone the original array
                 byte[] CopyOfBytes = new byte[OriginalBytes.Length];
                 OriginalBytes.CopyTo(CopyOfBytes, 0);
+
+                //resize the original array
                 Array.Resize(ref OriginalBytes, OriginalBytes.Length + NumberOfBytesToAdd);
+
+                //append bytes
                 Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, CopyOfBytes.Length, NumberOfBytesToAdd);
+                
                 //clear the array (for security)
                 Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
             }
-                
+
 
         }
 

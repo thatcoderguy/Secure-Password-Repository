@@ -46,6 +46,13 @@ namespace Secure_Password_Repository.Models
 
         public Int16 PasswordOrder { get; set; }
 
+        public ApplicationUser Creator { get; set; }
+
+        public UserPassword Parent_UserPassword { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+
+        public DateTime? ModifiedDate { get; set; }
     }
 
 }

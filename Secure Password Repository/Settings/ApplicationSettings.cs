@@ -55,7 +55,6 @@ namespace Secure_Password_Repository.Settings
             Default.SystemInitilisationVector = EncryptionAndHashing.Generate_RandomString(16);
             Default.SystemSalt = EncryptionAndHashing.Generate_Random_ReadableString(32);
             Default.SCryptHashCost = "262144";
-            Default.DefaultAccountRole = "User";
             Default.PBKDF2IterationCount = "1000";
             Default.AdminsHaveAccessToAllPasswords = true;
             Default.RoleAllowDeletePasswords = "Administrator";
@@ -137,7 +136,6 @@ namespace Secure_Password_Repository.Settings
 
         //class properties (settings for this app)
         public string LogoImage { get; set; }
-        public string DefaultAccountRole { get; set; }
         public string SMTPServerAddress { get; set; }
         public string SMTPServerUsername { get; set; }
         public string SMTPServerPassword { get; set; }

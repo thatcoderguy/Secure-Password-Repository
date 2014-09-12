@@ -90,6 +90,8 @@ namespace Secure_Password_Repository.Controllers
                     //encrypted with the user's public key
                     if (user.isAuthorised)
                     {
+
+                        //generate the user encryption key (used to decrypt the user's private key) from the password and store in cache
                         HttpContext.Cache.Add(model.Username, SecurePasswordRepositorySpecificFunctions.Generate_Encrypted_UserEncryptionKey(model.Password), null, DateTime.MaxValue, TimeSpan.FromHours(1), CacheItemPriority.High, null);
 
                         await SignInAsync(user, false);
@@ -135,7 +137,7 @@ namespace Secure_Password_Repository.Controllers
                 var user = new ApplicationUser() { UserName = model.Username, Email = model.Email, userFullName = model.FullName };
 
                 //store whether this was the first account created in the system (gets returned in the querystring)
-                string FirstUserAccount = ApplicationSettings.Default.DefaultAccountRole;
+                string FirstUserAccount = "";
 
                 string UserDefaultRole = "";
 
@@ -195,6 +197,7 @@ namespace Secure_Password_Repository.Controllers
 
                     user.isAuthorised = true;
                     FirstUserAccount = "Yes";
+                    UserDefaultRole = "Administrator";
 
                 }
                 else
@@ -203,6 +206,7 @@ namespace Secure_Password_Repository.Controllers
                     //user needs to be authorised by an admin, so the encryption key can be copied to the user's account
                     user.isAuthorised = false;
                     FirstUserAccount = "No";
+                    UserDefaultRole = "User";
 
                 }
 
@@ -225,7 +229,7 @@ namespace Secure_Password_Repository.Controllers
                 } 
                 else
                 {
-                    AddErrors(IdentityResult.Failed(new string []{ "The role: " + ApplicationSettings.Default.DefaultAccountRole + " does not exist" }));
+                    AddErrors(IdentityResult.Failed(new string []{ "The role: " + UserDefaultRole + " does not exist" }));
                 }
             }
 

@@ -331,7 +331,10 @@ namespace Secure_Password_Repository.Extensions
                 else
                 {
                     //we need the key to be 32 chars long (256 bits)
-                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                    if (EncryptionKey.Length < 32)
+                        Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                    else if (EncryptionKey.Length > 32)
+                        EncryptionKey = EncryptionKey.Substring(0, 32);
 
                     aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
                 }
@@ -452,7 +455,10 @@ namespace Secure_Password_Repository.Extensions
                 else
                 {
                     //we need the key to be 32 chars long (256 bits)
-                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                    if (EncryptionKey.Length < 32)
+                        Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                    else if (EncryptionKey.Length > 32)
+                        EncryptionKey = EncryptionKey.Substring(0, 32);
 
                     aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
                 }
@@ -569,7 +575,10 @@ namespace Secure_Password_Repository.Extensions
                 else
                 {
                     //we need the key to be 32 chars long (256 bits)
-                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                    if (EncryptionKey.Length < 32)
+                        Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                    else if (EncryptionKey.Length > 32)
+                        EncryptionKey = EncryptionKey.Substring(0, 32);
 
                     aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
                 }
@@ -690,7 +699,10 @@ namespace Secure_Password_Repository.Extensions
                 else
                 {
                     //we need the key to be 32 chars long (256 bits)
-                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                    if (DecryptionKey.Length < 32)
+                        Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                    else if (DecryptionKey.Length > 32)
+                        DecryptionKey = DecryptionKey.Substring(0, 32);
 
                     aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
                 }
@@ -751,7 +763,10 @@ namespace Secure_Password_Repository.Extensions
                 else
                 {
                     //we need the key to be 32 chars long (256 bits)
-                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                    if (DecryptionKey.Length < 32)
+                        Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                    else if (DecryptionKey.Length > 32)
+                        DecryptionKey = DecryptionKey.Substring(0, 32);
 
                     aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
                 }
@@ -1039,6 +1054,15 @@ namespace Secure_Password_Repository.Extensions
 
         }
 
+        public static void Add_NullStringPadding(ref string OriginalString, int NumberOfCharsToAdd)
+        {
+            //"Hello World".PadRight(256, '\0');
+        }
+
+        public static void Add_NullBytePadding(ref byte[] OriginalBytes, int NumberOfBytesToAdd)
+        {
+        }
+
         /// <summary>
         /// Pads the byte array with more chars from the original array
         /// </summary>
@@ -1060,13 +1084,13 @@ namespace Secure_Password_Repository.Extensions
                 //keep appending data until bytes to add is not longer greater then the length of the data
                 while (NumberOfBytesToAdd > CopyOfBytes.Length)
                 {
-                    System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, CopyOfBytes.Length);
+                    Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, CopyOfBytes.Length);
                     NumberOfBytesToAdd -= CopyOfBytes.Length;
                 }
 
                 //any remaining chars
-                System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfBytesToAdd);
-
+                Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfBytesToAdd);
+                
                 //clear the array (for security)
                 Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
             }
@@ -1074,8 +1098,9 @@ namespace Secure_Password_Repository.Extensions
             else
             {
                 byte[] CopyOfBytes = new byte[OriginalBytes.Length];
-                OriginalBytes.CopyTo(CopyOfBytes,0);
-                System.Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfBytesToAdd);
+                OriginalBytes.CopyTo(CopyOfBytes, 0);
+                Array.Resize(ref OriginalBytes, OriginalBytes.Length + NumberOfBytesToAdd);
+                Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, CopyOfBytes.Length, NumberOfBytesToAdd);
                 //clear the array (for security)
                 Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
             }

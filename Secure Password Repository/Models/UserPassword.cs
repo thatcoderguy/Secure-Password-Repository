@@ -22,6 +22,9 @@ namespace Secure_Password_Repository.Models
         public Password UsersPassword { get; set; }
         public ApplicationUser UserPasswordUser { get; set; }
 
+        public bool CanEditPassword { get; set; }
+        public bool CanDeletePassword { get; set; }
+
     }
 
 }

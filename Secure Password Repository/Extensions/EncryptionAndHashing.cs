@@ -201,7 +201,7 @@ namespace Secure_Password_Repository.Extensions
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
 
             //clear the original text (for security)
-            PlainText = "";
+            //PlainText = string.Empty;
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -264,7 +264,7 @@ namespace Secure_Password_Repository.Extensions
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
 
             //clear the original text (for security)
-            PlainText = "";
+            //PlainText = string.Empty;
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -442,7 +442,7 @@ namespace Secure_Password_Repository.Extensions
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
 
             //clear the original text (for security)
-            PlainText = "";
+            //PlainText = string.Empty;
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -508,7 +508,7 @@ namespace Secure_Password_Repository.Extensions
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
 
             //clear the original text (for security)
-            PlainText = "";
+            //PlainText = string.Empty;
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -936,7 +936,7 @@ namespace Secure_Password_Repository.Extensions
 
         public static string Hash_SHA1(string PlainText)
         {
-            string sha1hash = "";
+            string sha1hash = string.Empty;
 
             using (SHA1 sha = new SHA1CryptoServiceProvider())
             {
@@ -1047,7 +1047,7 @@ namespace Secure_Password_Repository.Extensions
                 OriginalString += CopyOfString.Substring(0, NumberOfCharsToAdd);
 
                 //clear the string (for security)
-                CopyOfString = "";
+                //CopyOfString = string.Empty;
             }
             //number of chars to add was less than the length of the data, so just append what is needed.
             else

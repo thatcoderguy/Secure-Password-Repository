@@ -137,9 +137,9 @@ namespace Secure_Password_Repository.Controllers
                 var user = new ApplicationUser() { UserName = model.Username, Email = model.Email, userFullName = model.FullName };
 
                 //store whether this was the first account created in the system (gets returned in the querystring)
-                string FirstUserAccount = "";
+                string FirstUserAccount = string.Empty;
 
-                string UserDefaultRole = "";
+                string UserDefaultRole = string.Empty;
 
                 //generate a set of RSA keys - this set of keys are persistant until Destroy_RSAKeys() is called
                 //so we'll want to call Destroy_RSAKeys ASAP, for security purposes!

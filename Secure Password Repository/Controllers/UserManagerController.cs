@@ -121,7 +121,7 @@ namespace Secure_Password_Repository.Controllers
                     else
                     {
                         //list any errors (e.g. email/username already exists)
-                        string errorlist = "";
+                        string errorlist = string.Empty;
                         foreach (string error in result.Errors.ToList())
                             errorlist += error + " and ";
 
@@ -192,7 +192,7 @@ namespace Secure_Password_Repository.Controllers
                     else
                     {
                         //list any errors (e.g. email/username already exists)
-                        string errorlist = "";
+                        string errorlist = string.Empty;
                         foreach (string error in result.Errors.ToList())
                             errorlist += error + " and ";
 

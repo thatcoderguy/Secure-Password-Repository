@@ -29,8 +29,9 @@ namespace Secure_Password_Repository.Extensions
 
             encryptedPassword = EncryptionAndHashing.Hash_PBKDF2(encryptedPassword, ApplicationSettings.Default.SystemSalt);
 
-            encryptedPassword = "";
+
             byte[] hashedPasswordBytes = Encoding.Default.GetBytes(encryptedPassword);
+            encryptedPassword = string.Empty;
 
             EncryptionAndHashing.Encrypt_DPAPI(ref hashedPasswordBytes);
 

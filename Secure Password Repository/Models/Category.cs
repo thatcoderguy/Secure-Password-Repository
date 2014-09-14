@@ -21,13 +21,13 @@ namespace Secure_Password_Repository.Models
         public Int32? Category_ParentID { get; set; }
 
         [ScriptIgnore]
-        public virtual Category Parent_Category { get; set; }
+        public Category Parent_Category { get; set; }
 
         [ScriptIgnore]
-        public virtual ICollection<Category> SubCategories { get; set; }
+        public ICollection<Category> SubCategories { get; set; }
 
         [ScriptIgnore]
-        public virtual ICollection<Password> Passwords { get; set; }
+        public ICollection<Password> Passwords { get; set; }
 
         public Int16 CategoryOrder { get; set; }
 

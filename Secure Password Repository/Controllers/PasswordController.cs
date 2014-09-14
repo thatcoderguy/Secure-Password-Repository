@@ -25,9 +25,13 @@ namespace Secure_Password_Repository.Controllers
         public ActionResult Index()
         {
 
+            DatabaseContext.Configuration.LazyLoadingEnabled = false;
+
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
-                .ToList().Select(c => new Category()
+                .Include("SubCategories")
+                .ToList()
+                .Select(c => new Category()
                 {
                     SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),        //make sure only undeleted subcategories are returned
                     CategoryId = c.CategoryId,
@@ -35,9 +39,11 @@ namespace Secure_Password_Repository.Controllers
                     Category_ParentID = c.Category_ParentID,
                     CategoryOrder = c.CategoryOrder,
                     Parent_Category = c.Parent_Category,
-                    Passwords = c.Passwords,
                     Deleted = c.Deleted
-                }).Single(c => c.CategoryId == 1);
+                })
+                .Single(c => c.CategoryId == 1);
+
+            DatabaseContext.Configuration.LazyLoadingEnabled = true;
              
             return View(rootCategoryItem);
         }
@@ -54,6 +60,8 @@ namespace Secure_Password_Repository.Controllers
 
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
+                        .Include("SubCategories")
+                        .Include("Passwords")
                         .ToList().Select(c => new Category()
                         {
                             SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),    //make sure only undeleted subcategories are returned
@@ -87,7 +95,10 @@ namespace Secure_Password_Repository.Controllers
                     var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == newCategory.Category_ParentID);
 
                     //set the order of the category by getting the number of subcategories
-                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count + 1);
+                    if (categoryList.SubCategories.Count > 0)
+                        newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
+                    else
+                        newCategory.CategoryOrder = 1;
 
                     //save the new category
                     DatabaseContext.Categories.Add(newCategory);
@@ -141,10 +152,21 @@ namespace Secure_Password_Repository.Controllers
             {
 
                 //get the category item to delete
-                var deleteCategory = DatabaseContext.Categories.Include("Parent_Category").Single(c => c.CategoryId == CategoryId);
+                var deleteCategory = DatabaseContext.Categories
+                                                        .Include("Parent_Category")
+                                                        .Single(c => c.CategoryId == CategoryId);
+
+                //load in the parent's subcategories
+                DatabaseContext.Entry(deleteCategory.Parent_Category)
+                                        .Collection(c => c.SubCategories)
+                                        .Query()
+                                        .Where(c => !c.Deleted)
+                                        .Load();
 
                 //loop through and adjust category order
-                foreach(Category siblingCategory in deleteCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > deleteCategory.CategoryOrder).Where(c => !c.Deleted))
+                foreach(Category siblingCategory in deleteCategory.Parent_Category.SubCategories
+                                                                                        .Where(c => c.CategoryOrder > deleteCategory.CategoryOrder)
+                                                                                        .Where(c => !c.Deleted))
                 {
                     siblingCategory.CategoryOrder--;
                     DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
@@ -163,11 +185,15 @@ namespace Secure_Password_Repository.Controllers
                 await DatabaseContext.SaveChangesAsync();
 
                 //proxies are no longer needed, so remove to avoid the "cicular reference" issue
-                deleteCategory.SubCategories.Clear();
-                deleteCategory.SubCategories = null;
+                if (deleteCategory.SubCategories != null) {
+                    deleteCategory.SubCategories.Clear();
+                    deleteCategory.SubCategories = null;
+                }
+                if (deleteCategory.Passwords != null){
+                    deleteCategory.Passwords.Clear();
+                    deleteCategory.Passwords = null;
+                }
                 deleteCategory.Parent_Category = null;
-                deleteCategory.Passwords.Clear();
-                deleteCategory.Passwords = null;
 
                 //return the item, so that it can be removed from the UI
                 return Json(deleteCategory);
@@ -186,6 +212,15 @@ namespace Secure_Password_Repository.Controllers
             Password n = new Password();
             n.Parent_CategoryId = ParentCategoryId;
             return View(n);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CreatePassword(int ParentCategoryId, Password model)
+        {
+            //Password n = new Password();
+            model.Parent_CategoryId = ParentCategoryId;
+            return View(model);
         }
 
         #endregion

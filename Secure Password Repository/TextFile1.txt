@@ -1,4 +1,4 @@
-namespace Secure_Password_Repository.Migrations
+﻿namespace Secure_Password_Repository.Migrations
 {
     using System;
     using System.Data.Entity.Migrations;
@@ -7,6 +7,7 @@ namespace Secure_Password_Repository.Migrations
     {
         public override void Up()
         {
+
             CreateTable(
                 "dbo.Category",
                 c => new
@@ -20,7 +21,7 @@ namespace Secure_Password_Repository.Migrations
                 .PrimaryKey(t => t.CategoryId)
                 .ForeignKey("dbo.Category", t => t.Category_ParentID, cascadeDelete: false)
                 .Index(t => t.Category_ParentID);
-            
+
             CreateTable(
                 "dbo.Password",
                 c => new
@@ -34,12 +35,17 @@ namespace Secure_Password_Repository.Migrations
                         Notes = c.String(),
                         Parent_CategoryId = c.Int(nullable: true),
                         Deleted = c.Boolean(nullable: false),
-                        PasswordOrder = c.Int(nullable: false)
+                        CreatedDate = c.DateTime(nullable: false),
+                        ModifiedDate = c.DateTime(nullable: true),
+                        Creator_Id = c.Int(nullable: false),
+                        PasswordOrder = c.Short(nullable: false)
                     })
                 .PrimaryKey(t => t.PasswordId)
                 .ForeignKey("dbo.Category", t => t.Parent_CategoryId, cascadeDelete: false)
-                .Index(t => t.Parent_CategoryId);
-            
+                .ForeignKey("dbo.AspNetUsers", t => t.Creator_Id, cascadeDelete: false)
+                .Index(t => t.Parent_CategoryId)
+                .Index(t => t.Creator_Id);
+
             CreateTable(
                 "dbo.AspNetRoles",
                 c => new
@@ -69,13 +75,15 @@ namespace Secure_Password_Repository.Migrations
                     {
                         Id = c.Int(nullable: false),
                         PasswordId = c.Int(nullable: false),
+                        CanEditPassword = c.Boolean(nullable: false),
+                        CanDeletePassword = c.Boolean(nullable: false)
                     })
                 .PrimaryKey(t => new { t.Id, t.PasswordId })
                 .ForeignKey("dbo.AspNetUsers", t => t.Id, cascadeDelete: false)
                 .ForeignKey("dbo.Password", t => t.PasswordId, cascadeDelete: false)
                 .Index(t => t.Id)
                 .Index(t => t.PasswordId);
-            
+
             CreateTable(
                 "dbo.AspNetUsers",
                 c => new
@@ -101,7 +109,7 @@ namespace Secure_Password_Repository.Migrations
                     })
                 .PrimaryKey(t => t.Id)
                 .Index(t => t.UserName, unique: true, name: "UserNameIndex");
-            
+                
             CreateTable(
                 "dbo.AspNetUserClaims",
                 c => new

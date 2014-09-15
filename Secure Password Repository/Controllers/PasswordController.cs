@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Net;
+using System.Security.Principal;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -209,17 +210,23 @@ namespace Secure_Password_Repository.Controllers
 
         public ActionResult CreatePassword(int ParentCategoryId)
         {
-            Password n = new Password();
-            n.Parent_CategoryId = ParentCategoryId;
-            return View(n);
+            return View("CreatePassword");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult CreatePassword(int ParentCategoryId, Password model)
         {
-            //Password n = new Password();
+            IPrincipal user = User;
+
             model.Parent_CategoryId = ParentCategoryId;
+            model.EncryptedPassword = ""; //encrypt password
+            model.EncryptedSecondCredential = ""; //encrypt credential
+            model.EncryptedUserName = ""; //encypt credential
+            model.PasswordOrder = 0; //set order
+            model.CreatedDate = DateTime.Now;
+            model.Creator = user.Identity;
+
             return View(model);
         }
 
@@ -240,8 +247,17 @@ namespace Secure_Password_Repository.Controllers
                     //disable auto detect changes (as this slows everything down)
                     DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
 
-                    //get the category that has been moved
-                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == ItemId);
+                    //get the category item to delete
+                    var currentCategory = DatabaseContext.Categories
+                                                            .Include("Parent_Category")
+                                                            .Single(c => c.CategoryId == ItemId);
+
+                    //load in the parent's subcategories
+                    DatabaseContext.Entry(currentCategory.Parent_Category)
+                                            .Collection(c => c.SubCategories)
+                                            .Query()
+                                            .Where(c => !c.Deleted)
+                                            .Load();
 
                     //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
                     foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
@@ -269,8 +285,17 @@ namespace Secure_Password_Repository.Controllers
                     //disable auto detect changes (as this slows everything down)
                     DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
 
-                    //get the category that has been moved
-                    Category currentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == ItemId);
+                    //get the category item to delete
+                    var currentCategory = DatabaseContext.Categories
+                                                            .Include("Parent_Category")
+                                                            .Single(c => c.CategoryId == ItemId);
+
+                    //load in the parent's subcategories
+                    DatabaseContext.Entry(currentCategory.Parent_Category)
+                                            .Collection(c => c.SubCategories)
+                                            .Query()
+                                            .Where(c => !c.Deleted)
+                                            .Load();
 
                     //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
                     foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
@@ -292,7 +317,7 @@ namespace Secure_Password_Repository.Controllers
                     await DatabaseContext.SaveChangesAsync();
                 }
             }
-            catch
+            catch(Exception ex)
             {
                 return Json(new
                 {

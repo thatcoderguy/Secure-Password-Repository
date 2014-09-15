@@ -40,7 +40,7 @@ namespace Secure_Password_Repository.Models
         public Int32 Parent_CategoryId { get; set; }
 
         [ScriptIgnore]
-        public virtual Category Parent { get; set; }
+        public virtual Category Parent_Category { get; set; }
 
         public bool Deleted { get; set; }
 
@@ -48,7 +48,8 @@ namespace Secure_Password_Repository.Models
 
         public ApplicationUser Creator { get; set; }
 
-        public UserPassword Parent_UserPassword { get; set; }
+        [ScriptIgnore]
+        public ICollection<UserPassword> Parent_UserPasswords { get; set; }
 
         public DateTime CreatedDate { get; set; }
 

@@ -53,11 +53,13 @@ namespace Secure_Password_Repository.Models
         public bool isAuthorised { get; set; }
         public DateTime? userLastEncryptionKeyUpdate { get; set; }
 
+        public ICollection<UserPassword> UserPasswords { get; set; }
+
         public string GetRoleName()
         {
 
             ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-            string MyRoles = "";
+            string MyRoles = string.Empty;
             
             DatabaseContext.Users.Load();
 
@@ -73,12 +75,12 @@ namespace Secure_Password_Repository.Models
                         MyRoles += myRole.Name;
                     else
                         //throw new PasswordRepositoryException("User does not have any roles");
-                        MyRoles = "";
+                        MyRoles = string.Empty;
                 }
                 //user does not exist... some how
             else
                 //throw new PasswordRepositoryException("User does not exist");
-                MyRoles = "";
+                MyRoles = string.Empty;
 
             return MyRoles;
         }

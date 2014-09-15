@@ -3,6 +3,10 @@
     padding-bottom: 20px;
 }
 
+#popup-body {
+    padding-top:10px;
+}
+
 /* Set padding to keep content from hitting the edges */
 .body-content {
     padding-left: 15px;

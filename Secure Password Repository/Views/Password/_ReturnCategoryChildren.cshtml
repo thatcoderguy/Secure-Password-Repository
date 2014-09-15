@@ -1,6 +1,6 @@
 ﻿@using Microsoft.AspNet.Identity;
 @using Secure_Password_Repository.Settings;
-@model Secure_Password_Repository.Models.Category
+@model Secure_Password_Repository.Models.CategoryModel
 <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
     @if (Model.SubCategories.Count > 0)
     {
@@ -40,7 +40,7 @@
         <li id="addnew-password-@Model.CategoryId" class="treeignore">
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
-                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("CreatePassword", new { ParentCategoryId = @Model.CategoryId })?iframe">
+                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("AddPassword", new { ParentCategoryId = @Model.CategoryId })?iframe">
                         <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password
                     </a>
                 </span>
@@ -85,7 +85,7 @@
         <li id="addnew-password-@Model.CategoryId" class="treeignore">
             <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
-                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("CreatePassword", new { ParentCategoryId = @Model.CategoryId })?iframe">
+                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("AddPassword", new { ParentCategoryId = @Model.CategoryId })?iframe">
                         <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password
                     </a>
                 </span>

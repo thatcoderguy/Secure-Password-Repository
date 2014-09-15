@@ -37,7 +37,7 @@ namespace Secure_Password_Repository
             routes.MapRoute("UpdatePosition", "Password/UpdatePosition/{categoryid}", new { controller = "Password", action = "UpdatePosition", CategoryId = UrlParameter.Optional, NewPosition = UrlParameter.Optional, isCategoryItem = UrlParameter.Optional });
 
             //passwords
-            routes.MapRoute("CreatePassword", "Password/CreatePassword/{parentcategoryid}", new { controller = "Password", action = "CreatePassword", ParentCategoryId = UrlParameter.Optional });
+            routes.MapRoute("AddPassword", "Password/AddPassword/{parentcategoryid}", new { controller = "Password", action = "AddPassword", ParentCategoryId = UrlParameter.Optional });
             
 
             //account handling

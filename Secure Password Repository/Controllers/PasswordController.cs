@@ -118,14 +118,21 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> AddCategory(CategoryModel newCategory)
+        public async Task<ActionResult> AddCategory(CategoryViewModel model)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
+
+                    CategoryModel newCategory = new CategoryModel()
+                    {
+                        CategoryName = model.CategoryName,
+                        Category_ParentID = model.Category_ParentID
+                    };
+
                     //get the root node, and include it's subcategories
-                    var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == newCategory.Category_ParentID);
+                    var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == model.Category_ParentID);
 
                     //set the order of the category by getting the number of subcategories
                     if (categoryList.SubCategories.Count > 0)
@@ -137,7 +144,7 @@ namespace Secure_Password_Repository.Controllers
                     DatabaseContext.Categories.Add(newCategory);
                     await DatabaseContext.SaveChangesAsync();
 
-                    return PartialView("_CategoryModelItem", newCategory);
+                    return PartialView("_CategoryModelItem", model);
 
                 } else {
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);

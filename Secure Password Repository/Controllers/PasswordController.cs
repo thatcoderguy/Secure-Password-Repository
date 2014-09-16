@@ -22,7 +22,7 @@ namespace Secure_Password_Repository.Controllers
     public class PasswordController : Controller
     {
 
-        private ApplicationDbContext _databaseContext;
+        private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
 
         private ApplicationUserManager _userManager;
 
@@ -39,18 +39,6 @@ namespace Secure_Password_Repository.Controllers
             private set
             {
                 _userManager = value;
-            }
-        }
-
-        public ApplicationDbContext DatabaseContext
-        {
-            get
-            {
-                return _databaseContext ?? new ApplicationDbContext();
-            }
-            set
-            {
-                _databaseContext = value;
             }
         }
 
@@ -160,7 +148,7 @@ namespace Secure_Password_Repository.Controllers
                         newCategory.CategoryOrder = 1;
 
                     //save the new category
-                    DatabaseContext.Entry(newCategory).State = EntityState.Added;
+                    DatabaseContext.Categories.Add(newCategory);
                     await DatabaseContext.SaveChangesAsync();
 
                     AutoMapper.Mapper.CreateMap<CategoryAdd, CategoryList>();
@@ -194,8 +182,9 @@ namespace Secure_Password_Repository.Controllers
                     DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
 
                     //dont update the categoryorder value
-                    //DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified=false;
-
+                    DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified=false;
+                    DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
+                    
                     //save changes
                     await DatabaseContext.SaveChangesAsync();
 

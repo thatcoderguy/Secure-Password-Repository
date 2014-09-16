@@ -6,7 +6,17 @@ using System.Web;
 
 namespace Secure_Password_Repository.ViewModels
 {
-    public class PasswordViewModel
+
+    public class PasswordList
+    {
+        public Int32 PasswordId { get; set; }
+        [Required]
+        public string Description { get; set; }
+        [Required]
+        public Int32 Parent_CategoryId { get; set; }
+    }
+
+    public class PasswordAdd
     {
         [Display(Name = "Description - Displayed in the list (so make this meaningful e.g. Company PayPal Login)")]
         [Required]
@@ -31,6 +41,6 @@ namespace Secure_Password_Repository.ViewModels
         public string Notes { get; set; }
 
         [Required]
-        public Int32 Parent_CategoryId { get; set; }
+        public Int32? Parent_CategoryId { get; set; }
     }
 }

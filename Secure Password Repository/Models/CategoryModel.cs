@@ -10,7 +10,7 @@ namespace Secure_Password_Repository.Models
 {
 
     [Table("Category")]
-    public class Category
+    public class CategoryModel
     {
 
         [Key]
@@ -21,13 +21,13 @@ namespace Secure_Password_Repository.Models
         public Int32? Category_ParentID { get; set; }
 
         [ScriptIgnore]
-        public Category Parent_Category { get; set; }
+        public virtual CategoryModel Parent_Category { get; set; }
 
         [ScriptIgnore]
-        public ICollection<Category> SubCategories { get; set; }
+        public virtual ICollection<CategoryModel> SubCategories { get; set; }
 
         [ScriptIgnore]
-        public ICollection<Password> Passwords { get; set; }
+        public virtual ICollection<PasswordModel> Passwords { get; set; }
 
         public Int16 CategoryOrder { get; set; }
 

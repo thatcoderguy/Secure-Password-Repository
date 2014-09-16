@@ -12,7 +12,9 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Net;
-using System.Security.Principal;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
+using Microsoft.Owin.Security;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -20,19 +22,49 @@ namespace Secure_Password_Repository.Controllers
     public class PasswordController : Controller
     {
 
-        ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+        private ApplicationDbContext _databaseContext;
+
+        private ApplicationUserManager _userManager;
+
+        public PasswordController()
+        {
+        }
+
+        public ApplicationUserManager UserMgr
+        {
+            get
+            {
+                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            }
+            private set
+            {
+                _userManager = value;
+            }
+        }
+
+        public ApplicationDbContext DatabaseContext
+        {
+            get
+            {
+                return _databaseContext ?? new ApplicationDbContext();
+            }
+            set
+            {
+                _databaseContext = value;
+            }
+        }
 
         // GET: Password
         public ActionResult Index()
         {
 
-            DatabaseContext.Configuration.LazyLoadingEnabled = false;
+            //DatabaseContext.Configuration.LazyLoadingEnabled = false;
 
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
                 .Include("SubCategories")
                 .ToList()
-                .Select(c => new Category()
+                .Select(c => new CategoryModel()
                 {
                     SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),        //make sure only undeleted subcategories are returned
                     CategoryId = c.CategoryId,
@@ -44,7 +76,7 @@ namespace Secure_Password_Repository.Controllers
                 })
                 .Single(c => c.CategoryId == 1);
 
-            DatabaseContext.Configuration.LazyLoadingEnabled = true;
+            //DatabaseContext.Configuration.LazyLoadingEnabled = true;
              
             return View(rootCategoryItem);
         }
@@ -63,7 +95,7 @@ namespace Secure_Password_Repository.Controllers
                 var selectedCategoryItem = DatabaseContext.Categories
                         .Include("SubCategories")
                         .Include("Passwords")
-                        .ToList().Select(c => new Category()
+                        .ToList().Select(c => new CategoryModel()
                         {
                             SubCategories = c.SubCategories.Where(sub => !sub.Deleted).ToList(),    //make sure only undeleted subcategories are returned
                             CategoryId = c.CategoryId,
@@ -86,7 +118,7 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> AddCategory(Category newCategory)
+        public async Task<ActionResult> AddCategory(CategoryModel newCategory)
         {
             try
             {
@@ -120,7 +152,7 @@ namespace Secure_Password_Repository.Controllers
         // POST: Password/EditCategory/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditCategory(Category editedCategory)
+        public async Task<ActionResult> EditCategory(CategoryModel editedCategory)
         {
             try
             {
@@ -165,7 +197,7 @@ namespace Secure_Password_Repository.Controllers
                                         .Load();
 
                 //loop through and adjust category order
-                foreach(Category siblingCategory in deleteCategory.Parent_Category.SubCategories
+                foreach(CategoryModel siblingCategory in deleteCategory.Parent_Category.SubCategories
                                                                                         .Where(c => c.CategoryOrder > deleteCategory.CategoryOrder)
                                                                                         .Where(c => !c.Deleted))
                 {
@@ -208,24 +240,45 @@ namespace Secure_Password_Repository.Controllers
 
         #region PasswordActions
 
-        public ActionResult CreatePassword(int ParentCategoryId)
+        public ActionResult AddPassword(int ParentCategoryId)
         {
-            return View("CreatePassword");
+            return View("AddPassword", new PasswordViewModel { Parent_CategoryId = ParentCategoryId });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult CreatePassword(int ParentCategoryId, Password model)
+        public async Task<ActionResult> AddPassword(int ParentCategoryId, PasswordViewModel model)
         {
-            IPrincipal user = User;
 
-            model.Parent_CategoryId = ParentCategoryId;
-            model.EncryptedPassword = ""; //encrypt password
-            model.EncryptedSecondCredential = ""; //encrypt credential
-            model.EncryptedUserName = ""; //encypt credential
-            model.PasswordOrder = 0; //set order
-            model.CreatedDate = DateTime.Now;
-            model.Creator = user.Identity;
+            if (ModelState.IsValid)
+            {
+
+                PasswordModel newPasswordItem = new PasswordModel()
+                {
+                    Parent_CategoryId = model.Parent_CategoryId,
+                    EncryptedPassword = model.EncryptedPassword,                    //encrypt password
+                    EncryptedSecondCredential = model.EncryptedSecondCredential,    //encrypt credential
+                    EncryptedUserName = model.EncryptedUserName,                    //encrypt credential
+                    PasswordOrder = 0,                                              //set order
+                    CreatedDate = DateTime.Now
+                };
+
+                var userId = int.Parse(User.Identity.GetUserId());
+                var user = await UserMgr.FindByIdAsync(userId);
+                var parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == ParentCategoryId);
+
+                newPasswordItem.Creator = user;
+                newPasswordItem.Parent_Category = parentCategory;
+
+                //save the new category
+                DatabaseContext.Passwords.Add(newPasswordItem);
+                await DatabaseContext.SaveChangesAsync();
+
+                // model.Creator_Id = User.Identity.GetUserId();
+                return View("thanks");
+            }
+
+            var errors = ModelState.Values.SelectMany(v => v.Errors);
 
             return View(model);
         }
@@ -260,7 +313,7 @@ namespace Secure_Password_Repository.Controllers
                                             .Load();
 
                     //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
-                    foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
+                    foreach (CategoryModel childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
                     {
                         //move the category up
                         childCategory.CategoryOrder--;
@@ -298,7 +351,7 @@ namespace Secure_Password_Repository.Controllers
                                             .Load();
 
                     //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
-                    foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
+                    foreach (CategoryModel childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
                     {
                         //move the category up
                         childCategory.CategoryOrder++;
@@ -317,7 +370,7 @@ namespace Secure_Password_Repository.Controllers
                     await DatabaseContext.SaveChangesAsync();
                 }
             }
-            catch(Exception ex)
+            catch
             {
                 return Json(new
                 {

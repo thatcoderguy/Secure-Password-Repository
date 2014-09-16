@@ -19,8 +19,8 @@ namespace Secure_Password_Repository.Models
         [Column(Order = 2)]
         public Int32 PasswordId { get; set; }
 
-        public Password UsersPassword { get; set; }
-        public ApplicationUser UserPasswordUser { get; set; }
+        public virtual PasswordModel UsersPassword { get; set; }
+        public virtual ApplicationUser UserPasswordUser { get; set; }
 
         public bool CanEditPassword { get; set; }
         public bool CanDeletePassword { get; set; }

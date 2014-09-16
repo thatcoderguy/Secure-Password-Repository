@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNet.Identity;
-@model Secure_Password_Repository.Models.Category
+@model Secure_Password_Repository.Models.CategoryModel
 @{
     ViewBag.Title = "Password List";
 }
@@ -17,7 +17,7 @@
                 @Html.Partial("_CategoryModelItem", categoryitem)
             }
             <li id="addnew-1" class="treeignore">
-                <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
+                <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-1" aria-selected="false" aria-expanded="false" tabindex="-1">
                     <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
                         <a class="btn btn-xs btn-primary" onclick="displayForm('addnew-1'); return false;" href="#">
                             <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category
@@ -27,7 +27,7 @@
                 <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
                     <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
                     <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                    @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnFailure = "failAlert()", OnSuccess = "createCategorySuccess(data,'1')" }, new { @class = "newcategoryform", role = "form", id = "addform-1" }))
+                    @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createCategorySuccess(data,'1')" }, new { @class = "newcategoryform", role = "form", id = "addform-1" }))
                     {
                         @Html.AntiForgeryToken()
                         @Html.HiddenFor(m => m.Category_ParentID, new { Value = "1" })

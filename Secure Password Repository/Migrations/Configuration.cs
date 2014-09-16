@@ -25,7 +25,7 @@ namespace Secure_Password_Repository.Migrations
 
             context.Categories.AddOrUpdate(
                 c => c.CategoryId,
-                new Category { CategoryName = "Root", Deleted = false, Parent_Category = null, Category_ParentID = null }
+                new CategoryModel { CategoryName = "Root", Deleted = false, Parent_Category = null, Category_ParentID = null }
             );
         }
     }

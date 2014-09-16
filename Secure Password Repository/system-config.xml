@@ -5,8 +5,8 @@
   <SMTPServerAddress>localhost</SMTPServerAddress>
   <SMTPServerUsername />
   <SMTPServerPassword />
-  <SystemSalt>yi8ZHAGMUCEEL923EbTOgl55pC6amtLmzF2zKcLFOnI=</SystemSalt>
-  <SystemInitilisationVector>6OuGmTi7tgGf7v5axhtY1w==</SystemInitilisationVector>
+  <SystemSalt>nwtSuJJF08ti39q+qB+OWF6GPVm4DYhCeAMQHlU9ZWQ=</SystemSalt>
+  <SystemInitilisationVector>vdSVv+3xfyCFOfcpAm5j+w==</SystemInitilisationVector>
   <SCryptHashCost>262144</SCryptHashCost>
   <PBKDF2IterationCount>1000</PBKDF2IterationCount>
   <RoleAllowEditCategories>Administrator</RoleAllowEditCategories>

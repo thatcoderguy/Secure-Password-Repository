@@ -46,8 +46,6 @@ namespace Secure_Password_Repository.Controllers
         public ActionResult Index()
         {
 
-            //DatabaseContext.Configuration.LazyLoadingEnabled = false;
-
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
                 .Include("SubCategories")
@@ -64,12 +62,12 @@ namespace Secure_Password_Repository.Controllers
                 })
                 .Single(c => c.CategoryId == 1);
 
+            //create the model view from the model
             AutoMapper.Mapper.CreateMap<Category, CategoryList>();
             CategoryList rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryList>(rootCategoryItem);
 
-            //DatabaseContext.Configuration.LazyLoadingEnabled = true;
-
-            return View(new CategoryDisplay()
+            //return wrapper class
+            return View(new CategoryDisplayTree()
             {
                 categoryListItem = rootCategoryViewItem,
                 categoryAddItem = new CategoryAdd()
@@ -104,10 +102,12 @@ namespace Secure_Password_Repository.Controllers
                         })
                         .Single(c => c.CategoryId == ParentCategoryId);
 
+                //create view model from model
                 AutoMapper.Mapper.CreateMap<Category, CategoryList>();
                 CategoryList selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryList>(selectedCategoryItem);
 
-                return PartialView("_ReturnCategoryChildren", new CategoryDisplay()
+                //return wrapper class
+                return PartialView("_ReturnCategoryChildren", new CategoryDisplayTree()
                 {
                     categoryListItem = selectedCategoryViewItem,
                     categoryAddItem = new CategoryAdd()
@@ -134,7 +134,7 @@ namespace Secure_Password_Repository.Controllers
             {
                 if (ModelState.IsValid)
                 {
-
+                    //create model from view model
                     AutoMapper.Mapper.CreateMap<CategoryAdd, Category>();
                     Category newCategory = AutoMapper.Mapper.Map<Category>(model);
 
@@ -151,10 +151,19 @@ namespace Secure_Password_Repository.Controllers
                     DatabaseContext.Categories.Add(newCategory);
                     await DatabaseContext.SaveChangesAsync();
 
+                    //map add view model to display view model
                     AutoMapper.Mapper.CreateMap<CategoryAdd, CategoryList>();
                     CategoryList returnCategoryItem = AutoMapper.Mapper.Map<CategoryList>(model);
 
-                    return PartialView("_CategoryItem", returnCategoryItem);
+                    return PartialView("_CategoryItem", new CategoryDisplayItem()
+                    {
+                        categoryListItem = returnCategoryItem,
+                        categoryEditItem = new CategoryEdit()
+                        {
+                            CategoryId =  returnCategoryItem.CategoryId,
+                            CategoryName = returnCategoryItem.CategoryName
+                        }
+                    });
 
                 } else {
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
@@ -189,7 +198,7 @@ namespace Secure_Password_Repository.Controllers
                     await DatabaseContext.SaveChangesAsync();
 
                     //return the object, so that the UI can be updated
-                    return Json(editedCategory);
+                    return Json(model);
                 }
             } catch {}
 

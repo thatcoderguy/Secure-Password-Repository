@@ -32,11 +32,17 @@ namespace Secure_Password_Repository.ViewModels
         public virtual ICollection<PasswordList> Passwords { get; set; }
     }
 
-    public class CategoryDisplay
+    public class CategoryDisplayTree
     {
         public CategoryList categoryListItem { get; set; }
         public CategoryAdd categoryAddItem { get; set; }
         public PasswordAdd passwordAddItem { get; set; }
+    }
+
+    public class CategoryDisplayItem
+    {
+        public CategoryList categoryListItem { get; set; }
+        public CategoryEdit categoryEditItem { get; set; }
     }
 
 }

@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNet.Identity;
-@model Secure_Password_Repository.ViewModels.CategoryDisplay
+@model Secure_Password_Repository.ViewModels.CategoryDisplayTree
 @{
     ViewBag.Title = "Password List";
 }
@@ -14,7 +14,7 @@
         <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
             @foreach (var categoryitem in Model.categoryListItem.SubCategories)
             {
-                @Html.Partial("_CategoryItem", categoryitem)
+                @Html.Partial("_CategoryItem", Model.categoryListItem)
             }
             @Html.Partial("_CreateCategory", Model.categoryAddItem)
         </ul>

@@ -9,62 +9,25 @@
         {
             @Html.Partial("_CategoryItem", categoryitem);
         }
-       
+        
         @Html.Partial("_CreateCategory", Model.categoryAddItem)
-
+        
     }
     else if (Model.categoryListItem.Passwords.Count > 0)
     {
         foreach (var passworditem in Model.categoryListItem.Passwords)
         {
         }
-
-        <li id="addnew-password-@Model.categoryListItem.CategoryId" class="treeignore">
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
-                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
-                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("AddPassword", new { ParentCategoryId = @Model.categoryListItem.CategoryId })?iframe">
-                        <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password
-                    </a>
-                </span>
-            </div>
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
-                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-                <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                @using (Ajax.BeginForm("AddPassword", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createPasswordSuccess(data,'" + @Model.categoryListItem.CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.categoryListItem.CategoryId }))
-                {
-                    @Html.AntiForgeryToken()
-                    @Html.HiddenFor(m => m.categoryAddItem.Category_ParentID)
-                    @Html.TextBoxFor(m => m.categoryAddItem.CategoryName, new { Value = "" })
-                    <span class="btn-group groupalign"><a href="#" onclick="submitAjaxForm('addform-@Model.categoryListItem.CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a></span>
-                }
-            </div>
-        </li>
-
+        
+        @Html.Partial("_CreatePassword", Model.passwordAddItem)
+        
     }
     else
     {
+        
         @Html.Partial("_CreateCategory", Model.categoryAddItem)
-
-        <li id="addnew-password-@Model.passwordAddItem.Parent_CategoryId" class="treeignore">
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-8" aria-selected="false" aria-expanded="false" tabindex="-1">
-                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span><span class="btn-group">
-                    <a class="btn btn-xs btn-primary fancyboxbutton" onclick="return false;" href="@Url.Action("AddPassword", new { ParentCategoryId = @Model.passwordAddItem.Parent_CategoryId })?iframe">
-                        <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Password
-                    </a>
-                </span>
-            </div>
-            <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
-                <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-                <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-                @using (Ajax.BeginForm("AddPassword", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createPasswordSuccess(data,'" + @Model.passwordAddItem.Parent_CategoryId + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.passwordAddItem.Parent_CategoryId }))
-                {
-                    @Html.AntiForgeryToken()
-                    @Html.HiddenFor(m => m.passwordAddItem.Parent_CategoryId)
-                    <span class="btn-group groupalign"><a href="#" onclick="submitAjaxForm('addform-@Model.passwordAddItem.Parent_CategoryId'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a></span>
-                }
-            </div>
-        </li>
-
+        @Html.Partial("_CreatePassword", Model.passwordAddItem)
+        
     }
 
 </ul>

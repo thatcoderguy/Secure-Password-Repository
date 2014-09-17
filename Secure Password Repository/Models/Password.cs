@@ -10,7 +10,7 @@ namespace Secure_Password_Repository.Models
 {
 
     [Table("Password")]
-    public class PasswordModel
+    public class Password
     {
         [Key]
         public Int32 PasswordId { get; set; }
@@ -25,7 +25,7 @@ namespace Secure_Password_Repository.Models
         public string Location { get; set; }
         public string Notes { get; set; }
         public Int32 Parent_CategoryId { get; set; }
-        public virtual CategoryModel Parent_Category { get; set; }
+        public virtual Category Parent_Category { get; set; }
         public bool Deleted { get; set; }
         public Int16 PasswordOrder { get; set; }
         public virtual ApplicationUser Creator { get; set; }

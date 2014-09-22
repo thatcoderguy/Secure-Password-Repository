@@ -63,11 +63,11 @@ namespace Secure_Password_Repository.Controllers
                 .Single(c => c.CategoryId == 1);
 
             //create the model view from the model
-            AutoMapper.Mapper.CreateMap<Category, CategoryList>();
-            CategoryList rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryList>(rootCategoryItem);
+            AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
+            CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
 
             //return wrapper class
-            return View(new CategoryDisplayTree()
+            return View(new CategoryDisplayItem()
             {
                 categoryListItem = rootCategoryViewItem,
                 categoryAddItem = new CategoryAdd()
@@ -103,11 +103,11 @@ namespace Secure_Password_Repository.Controllers
                         .Single(c => c.CategoryId == ParentCategoryId);
 
                 //create view model from model
-                AutoMapper.Mapper.CreateMap<Category, CategoryList>();
-                CategoryList selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryList>(selectedCategoryItem);
+                AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
+                CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
 
                 //return wrapper class
-                return PartialView("_ReturnCategoryChildren", new CategoryDisplayTree()
+                return PartialView("_ReturnCategoryChildren", new CategoryDisplayItem()
                 {
                     categoryListItem = selectedCategoryViewItem,
                     categoryAddItem = new CategoryAdd()
@@ -116,7 +116,7 @@ namespace Secure_Password_Repository.Controllers
                     },
                     passwordAddItem = new PasswordAdd()
                     {
-                        Parent_CategoryId = selectedCategoryViewItem.CategoryId
+                        Parent_CategoryId = (Int32)selectedCategoryViewItem.CategoryId
                     }
                 });
 
@@ -151,19 +151,11 @@ namespace Secure_Password_Repository.Controllers
                     DatabaseContext.Categories.Add(newCategory);
                     await DatabaseContext.SaveChangesAsync();
 
-                    //map add view model to display view model
-                    AutoMapper.Mapper.CreateMap<CategoryAdd, CategoryList>();
-                    CategoryList returnCategoryItem = AutoMapper.Mapper.Map<CategoryList>(model);
-
-                    return PartialView("_CategoryItem", new CategoryDisplayItem()
-                    {
-                        categoryListItem = returnCategoryItem,
-                        categoryEditItem = new CategoryEdit()
-                        {
-                            CategoryId =  returnCategoryItem.CategoryId,
-                            CategoryName = returnCategoryItem.CategoryName
-                        }
-                    });
+                    //map new category to display view model
+                    AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
+                    CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
+                    
+                    return PartialView("_CategoryItem", returnCategoryViewItem);
 
                 } else {
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
@@ -277,7 +269,7 @@ namespace Secure_Password_Repository.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> AddPassword(int ParentCategoryId, PasswordAdd model)
+        public async Task<ActionResult> AddPassword(PasswordAdd model)
         {
 
             if (ModelState.IsValid)
@@ -301,10 +293,11 @@ namespace Secure_Password_Repository.Controllers
 
                 var userId = int.Parse(User.Identity.GetUserId());
                 var user = await UserMgr.FindByIdAsync(userId);
-                var parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == ParentCategoryId);
+                newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
+                //var parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == model.Parent_CategoryId);
 
-                newPasswordItem.Creator = user;
-                newPasswordItem.Parent_Category = parentCategory;
+                //newPasswordItem.Creator = user;
+                //newPasswordItem.Parent_Category = parentCategory;
 
                 //save the new category
                 DatabaseContext.Passwords.Add(newPasswordItem);

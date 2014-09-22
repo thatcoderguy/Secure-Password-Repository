@@ -1,6 +1,6 @@
-﻿@using Microsoft.AspNet.Identity;
-@using Secure_Password_Repository.Settings;
-@model Secure_Password_Repository.ViewModels.CategoryDisplayItem
+﻿@using Secure_Password_Repository.Settings;
+@using Secure_Password_Repository.ViewModels;
+@model Secure_Password_Repository.ViewModels.CategoryItem
 
     <li class="treelistitem" id="@Model.CategoryId" data-type="Category">
         <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle first">
@@ -21,6 +21,6 @@
         </div>
         @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))
         {
-            @Html.Partial("_EditCategory", Model.categoryEditItem)
+            @Html.Partial("_EditCategory", (CategoryEdit)Model)
         }
     </li>

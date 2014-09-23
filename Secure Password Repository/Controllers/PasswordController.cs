@@ -294,6 +294,7 @@ namespace Secure_Password_Repository.Controllers
                 var userId = int.Parse(User.Identity.GetUserId());
                 var user = await UserMgr.FindByIdAsync(userId);
                 newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
+                newPasswordItem.CreatedDate = DateTime.Now;
                 //var parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == model.Parent_CategoryId);
 
                 //newPasswordItem.Creator = user;

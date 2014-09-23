@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Secure_Password_Repository.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -37,6 +38,7 @@ namespace Secure_Password_Repository.ViewModels
         public Int32 PasswordId { get; set; }
         public string Description { get; set; }
         public Int32 Parent_CategoryId { get; set; }
+        public ApplicationUser currentUserPassword { get; set; }
     }
 
     public class PasswordEdit : PasswordBase

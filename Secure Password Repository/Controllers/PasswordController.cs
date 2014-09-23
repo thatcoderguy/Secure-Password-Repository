@@ -46,13 +46,26 @@ namespace Secure_Password_Repository.Controllers
         public ActionResult Index()
         {
 
+            DatabaseContext.Configuration.LazyLoadingEnabled = false;
+
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
                 .Include("SubCategories")
                 .ToList()
                 .Select(c => new Category()
                 {
-                    SubCategories = c.SubCategories.Where(sub => !sub.Deleted).OrderBy(sub => sub.CategoryOrder).ToList(),        //make sure only undeleted subcategories are returned
+                    SubCategories = c.SubCategories
+                    .Where(sub => !sub.Deleted)
+                    .OrderBy(sub => sub.CategoryOrder)
+                    .Select(s => new Category()                 //remove subcategories and passwords - as these cant be mapped
+                    {
+                        Category_ParentID = s.Category_ParentID,
+                        CategoryId = s.CategoryId,
+                        CategoryName = s.CategoryName,
+                        CategoryOrder = s.CategoryOrder
+                    })
+                    .ToList(),                                  //make sure only undeleted subcategories are returned
+
                     CategoryId = c.CategoryId,
                     CategoryName = c.CategoryName,
                     Category_ParentID = c.Category_ParentID,
@@ -61,6 +74,8 @@ namespace Secure_Password_Repository.Controllers
                     Deleted = c.Deleted
                 })
                 .Single(c => c.CategoryId == 1);
+
+            DatabaseContext.Configuration.LazyLoadingEnabled = true;
 
             //create the model view from the model
             AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
@@ -91,19 +106,35 @@ namespace Secure_Password_Repository.Controllers
                         .Include("Passwords")
                         .ToList().Select(c => new Category()
                         {
-                            SubCategories = c.SubCategories.Where(sub => !sub.Deleted).OrderBy(sub => sub.CategoryOrder).ToList(),    //make sure only undeleted subcategories are returned
+                            SubCategories = c.SubCategories
+                            .Where(sub => !sub.Deleted)
+                            .OrderBy(sub => sub.CategoryOrder)
+                            .Select(s => new Category()         //remove subcategories and passwords - as these cant be mapped
+                            {
+                                Category_ParentID = s.Category_ParentID,
+                                CategoryId = s.CategoryId,
+                                CategoryName = s.CategoryName,
+                                CategoryOrder = s.CategoryOrder
+                            })
+                            .ToList(),                          //make sure only undeleted subcategories are returned
+
                             CategoryId = c.CategoryId,
                             CategoryName = c.CategoryName,
                             Category_ParentID = c.Category_ParentID,
                             CategoryOrder = c.CategoryOrder,
                             Parent_Category = c.Parent_Category,
-                            Passwords = c.Passwords.Where(pass => !pass.Deleted).OrderBy(pass => pass.PasswordOrder).ToList(),          //make sure only undeleted passwords are returned
-                            Deleted = c.Deleted
+                            Deleted = c.Deleted,
+
+                            Passwords = c.Passwords
+                            .Where(pass => !pass.Deleted)
+                            .OrderBy(pass => pass.PasswordOrder)
+                            .ToList()                           //make sure only undeleted passwords are returned
                         })
                         .Single(c => c.CategoryId == ParentCategoryId);
 
                 //create view model from model
                 AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
+                AutoMapper.Mapper.CreateMap<Password, PasswordItem>();
                 CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
 
                 //return wrapper class
@@ -120,7 +151,8 @@ namespace Secure_Password_Repository.Controllers
                     }
                 });
 
-            } catch { }
+            }
+            catch { }
 
             return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
@@ -274,37 +306,31 @@ namespace Secure_Password_Repository.Controllers
 
             if (ModelState.IsValid)
             {
-
-                /*
-                Password newPasswordItem = new Password()
-                {
-                    Parent_CategoryId = model.Parent_CategoryId,
-                    EncryptedPassword = model.EncryptedPassword,                    //encrypt password
-                    EncryptedSecondCredential = model.EncryptedSecondCredential,    //encrypt credential
-                    EncryptedUserName = model.EncryptedUserName,                    //encrypt credential
-                    PasswordOrder = 0,                                              //set order
-                    CreatedDate = DateTime.Now
-                };*/
-
-                //Password newPasswordItem = new Password();
-
                 AutoMapper.Mapper.CreateMap<PasswordAdd, Password>();
                 Password newPasswordItem = AutoMapper.Mapper.Map<Password>(model);
 
                 var userId = int.Parse(User.Identity.GetUserId());
                 var user = await UserMgr.FindByIdAsync(userId);
+
                 newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
                 newPasswordItem.CreatedDate = DateTime.Now;
-                //var parentCategory = DatabaseContext.Categories.Single(c => c.CategoryId == model.Parent_CategoryId);
-
-                //newPasswordItem.Creator = user;
-                //newPasswordItem.Parent_Category = parentCategory;
+                newPasswordItem.Creator_Id = user.Id;
 
                 //save the new category
                 DatabaseContext.Passwords.Add(newPasswordItem);
                 await DatabaseContext.SaveChangesAsync();
 
-                // model.Creator_Id = User.Identity.GetUserId();
+                UserPassword newUserPassword = new UserPassword()
+                {
+                    CanDeletePassword = true,
+                    CanEditPassword = true,
+                    PasswordId = newPasswordItem.PasswordId,
+                    Id = user.Id
+                };
+
+                DatabaseContext.UserPasswords.Add(newUserPassword);
+                await DatabaseContext.SaveChangesAsync();
+
                 return View("thanks");
             }
 

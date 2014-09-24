@@ -15,7 +15,7 @@ namespace Secure_Password_Repository.Migrations
                         CategoryName = c.String(),
                         Category_ParentID = c.Int(nullable: true),
                         CategoryOrder = c.Short(nullable: false),
-                        Deleted = c.Boolean(nullable: false),
+                        Deleted = c.Boolean(nullable: false)
                     })
                 .PrimaryKey(t => t.CategoryId)
                 .ForeignKey("dbo.Category", t => t.Category_ParentID)
@@ -35,9 +35,9 @@ namespace Secure_Password_Repository.Migrations
                         Parent_CategoryId = c.Int(nullable: false),
                         Deleted = c.Boolean(nullable: false),
                         PasswordOrder = c.Short(nullable: false),
+                        Creator_Id = c.Int(nullable: false),
                         CreatedDate = c.DateTime(nullable: false),
-                        ModifiedDate = c.DateTime(),
-                        Creator_Id = c.Int(nullable: true),
+                        ModifiedDate = c.DateTime()
                     })
                 .PrimaryKey(t => t.PasswordId)
                 .ForeignKey("dbo.AspNetUsers", t => t.Creator_Id)
@@ -66,7 +66,7 @@ namespace Secure_Password_Repository.Migrations
                         LockoutEndDateUtc = c.DateTime(),
                         LockoutEnabled = c.Boolean(nullable: false),
                         AccessFailedCount = c.Int(nullable: false),
-                        UserName = c.String(nullable: false, maxLength: 256),
+                        UserName = c.String(nullable: false, maxLength: 256)
                     })
                 .PrimaryKey(t => t.Id)
                 .Index(t => t.UserName, unique: true, name: "UserNameIndex");
@@ -78,7 +78,7 @@ namespace Secure_Password_Repository.Migrations
                         Id = c.Int(nullable: false, identity: true),
                         UserId = c.Int(nullable: false),
                         ClaimType = c.String(),
-                        ClaimValue = c.String(),
+                        ClaimValue = c.String()
                     })
                 .PrimaryKey(t => t.Id)
                 .ForeignKey("dbo.AspNetUsers", t => t.UserId, cascadeDelete: true)
@@ -90,7 +90,7 @@ namespace Secure_Password_Repository.Migrations
                     {
                         LoginProvider = c.String(nullable: false, maxLength: 128),
                         ProviderKey = c.String(nullable: false, maxLength: 128),
-                        UserId = c.Int(nullable: false),
+                        UserId = c.Int(nullable: false)
                     })
                 .PrimaryKey(t => new { t.LoginProvider, t.ProviderKey, t.UserId })
                 .ForeignKey("dbo.AspNetUsers", t => t.UserId, cascadeDelete: true)
@@ -101,7 +101,7 @@ namespace Secure_Password_Repository.Migrations
                 c => new
                     {
                         UserId = c.Int(nullable: false),
-                        RoleId = c.Int(nullable: false),
+                        RoleId = c.Int(nullable: false)
                     })
                 .PrimaryKey(t => new { t.UserId, t.RoleId })
                 .ForeignKey("dbo.AspNetUsers", t => t.UserId, cascadeDelete: true)
@@ -116,7 +116,7 @@ namespace Secure_Password_Repository.Migrations
                         Id = c.Int(nullable: false),
                         PasswordId = c.Int(nullable: false),
                         CanEditPassword = c.Boolean(nullable: false),
-                        CanDeletePassword = c.Boolean(nullable: false),
+                        CanDeletePassword = c.Boolean(nullable: false)
                     })
                 .PrimaryKey(t => new { t.Id, t.PasswordId })
                 .ForeignKey("dbo.AspNetUsers", t => t.Id, cascadeDelete: true)
@@ -129,7 +129,7 @@ namespace Secure_Password_Repository.Migrations
                 c => new
                     {
                         Id = c.Int(nullable: false, identity: true),
-                        Name = c.String(nullable: false, maxLength: 256),
+                        Name = c.String(nullable: false, maxLength: 256)
                     })
                 .PrimaryKey(t => t.Id)
                 .Index(t => t.Name, unique: true, name: "RoleNameIndex");

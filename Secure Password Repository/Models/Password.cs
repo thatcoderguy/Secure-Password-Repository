@@ -29,6 +29,7 @@ namespace Secure_Password_Repository.Models
         public bool Deleted { get; set; }
         public Int16 PasswordOrder { get; set; }
         public virtual ApplicationUser Creator { get; set; }
+        public Int32 Creator_Id { get; set; }
         public virtual ICollection<UserPassword> Parent_UserPasswords { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? ModifiedDate { get; set; }

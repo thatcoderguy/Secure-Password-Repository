@@ -45,6 +45,12 @@ namespace Secure_Password_Repository.Database
                 .HasForeignKey(c => c.Parent_CategoryId) // FK_Parent_CategoryId
                 .WillCascadeOnDelete(false);
 
+            modelBuilder.Entity<Password>()
+                .HasRequired(a => a.Creator)
+                .WithMany(b => b.Passwords)
+                .HasForeignKey(c => c.Creator_Id) // FK_Creator_Id
+                .WillCascadeOnDelete(false);
+
             modelBuilder.Entity<UserPassword>()
                 .HasRequired(a => a.UsersPassword)
                 .WithMany(b => b.Parent_UserPasswords)

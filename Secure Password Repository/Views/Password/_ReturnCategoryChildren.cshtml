@@ -17,6 +17,7 @@
     {
         foreach (var passworditem in Model.categoryListItem.Passwords)
         {
+            @Html.Partial("_PasswordItem", passworditem);
         }
         
         @Html.Partial("_CreatePassword", Model.passwordAddItem)

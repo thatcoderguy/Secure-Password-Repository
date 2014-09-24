@@ -38,7 +38,8 @@ namespace Secure_Password_Repository.ViewModels
         public Int32 PasswordId { get; set; }
         public string Description { get; set; }
         public Int32 Parent_CategoryId { get; set; }
-        public ApplicationUser currentUserPassword { get; set; }
+        //public ApplicationUser currentUserPassword { get; set; }
+        ICollection<PasswordUserPermission> PasswordUser { get; set; }
     }
 
     public class PasswordEdit : PasswordBase
@@ -51,5 +52,14 @@ namespace Secure_Password_Repository.ViewModels
     {
         [Required]
         public Int32 Parent_CategoryId { get; set; }
+    }
+
+    public class PasswordUserPermission
+    {
+        public Int32 Id { get; set; }
+        public Int32 PasswordId { get; set; }
+        public bool CanEditPassword { get; set; }
+        public bool CanDeletePassword { get; set; }
+        public bool CanViewPassword { get; set; }
     }
 }

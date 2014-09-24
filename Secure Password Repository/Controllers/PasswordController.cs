@@ -15,6 +15,7 @@ using System.Net;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
+using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -100,6 +101,9 @@ namespace Secure_Password_Repository.Controllers
         {
             try
             {
+
+                var userId = int.Parse(User.Identity.GetUserId());
+
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
                         .Include("SubCategories")
@@ -126,9 +130,34 @@ namespace Secure_Password_Repository.Controllers
                             Deleted = c.Deleted,
 
                             Passwords = c.Passwords
-                            .Where(pass => !pass.Deleted)
+                            .Where(pass => !pass.Deleted
+                                        && (DatabaseContext.UserPasswords
+                                                    .Any(up => up.PasswordId == pass.PasswordId && up.Id == userId))
+                                        || (
+                                                User.IsInRole("Administrator")
+                                                && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords
+                                           ))
                             .OrderBy(pass => pass.PasswordOrder)
-                            .ToList()                           //make sure only undeleted passwords are returned
+                            .Select(pass => new Password()
+                            {
+                                CreatedDate = pass.CreatedDate,
+                                Creator_Id = pass.Creator_Id,
+                                Creator = pass.Creator,
+                                Deleted = pass.Deleted,
+                                Description = pass.Description,
+                                EncryptedPassword = pass.EncryptedPassword,
+                                EncryptedSecondCredential = pass.EncryptedSecondCredential,
+                                EncryptedUserName = pass.EncryptedUserName,
+                                Location = pass.Location,
+                                Notes = pass.Notes,
+                                ModifiedDate = pass.ModifiedDate,
+                                PasswordId = pass.PasswordId,
+                                PasswordOrder = pass.PasswordOrder,
+                                Parent_Category  = pass.Parent_Category,
+                                Parent_CategoryId =pass.Parent_CategoryId,
+                                Parent_UserPasswords = NULL
+                            })
+                            .ToList()                           //make sure only undeleted passwords - that the current user has acccess to - are returned
                         })
                         .Single(c => c.CategoryId == ParentCategoryId);
 
@@ -315,6 +344,7 @@ namespace Secure_Password_Repository.Controllers
                 newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
                 newPasswordItem.CreatedDate = DateTime.Now;
                 newPasswordItem.Creator_Id = user.Id;
+                newPasswordItem.PasswordOrder ==
 
                 //save the new category
                 DatabaseContext.Passwords.Add(newPasswordItem);

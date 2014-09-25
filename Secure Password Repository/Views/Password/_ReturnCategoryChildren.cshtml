@@ -5,6 +5,7 @@
 <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
     @if (Model.categoryListItem.SubCategories.Count > 0)
     {
+        
         foreach (var categoryitem in Model.categoryListItem.SubCategories)
         {
             @Html.Partial("_CategoryItem", categoryitem);
@@ -15,6 +16,7 @@
     }
     else if (Model.categoryListItem.Passwords.Count > 0)
     {
+        
         foreach (var passworditem in Model.categoryListItem.Passwords)
         {
             @Html.Partial("_PasswordItem", passworditem);

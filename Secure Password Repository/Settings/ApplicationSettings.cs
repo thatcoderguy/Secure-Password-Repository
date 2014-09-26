@@ -25,7 +25,7 @@ namespace Secure_Password_Repository.Settings
         private static readonly XmlSerializer serial = new XmlSerializer(typeof(ApplicationSettings));
 
         //an instance of this class - thus this is a Singleton
-        private static ApplicationSettings instance;
+        private static volatile ApplicationSettings instance;
 
         //for locking
         private static Object thisLock = new Object();

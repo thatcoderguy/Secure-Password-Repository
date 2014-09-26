@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
+using System.Web.UI;
 using System.Web.WebPages;
 
 namespace Secure_Password_Repository.Extensions
 {
     /// <summary>
-    /// Utility class to render controller-specific scripts and css content
-    /// The bundles returned must begin with [controllername]_  e.g.  home_
+    /// Utility class to render views and bundles in ways they couldn't normally be rendered
     /// </summary>
     public static class RenderViewContent
     {
@@ -47,5 +49,33 @@ namespace Secure_Password_Repository.Extensions
             return Scripts.Render(bundlePaths.ToArray());
         }
 
+        /// <summary>
+        /// Populates a Partial View with data from a supplied model and then returns the view as a string
+        /// </summary>
+        /// <param name="partialViewName">Name of the partial view</param>
+        /// <param name="viewModel">Name of the view model</param>
+        /// <returns>String containing partial view HTML</returns>
+        public static string RenderPartialToString(string partialViewName, object viewModel)
+        {
+            ViewPage viewPage = new ViewPage() { ViewContext = new ViewContext() };
+
+            viewPage.ViewData = new ViewDataDictionary(viewModel);
+            viewPage.Controls.Add(viewPage.LoadControl(partialViewName));
+
+            StringBuilder sb = new StringBuilder();
+            using (StringWriter sw = new StringWriter(sb))
+            {
+                using (HtmlTextWriter tw = new HtmlTextWriter(sw))
+                {
+                    viewPage.RenderControl(tw);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+
     }
+
+
 }

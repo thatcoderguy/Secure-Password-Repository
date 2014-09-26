@@ -1,51 +1,43 @@
-﻿using System;
+﻿using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Hubs;
+using Secure_Password_Repository.Hubs;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
 namespace Secure_Password_Repository.Extensions
 {
-    public class PushNotifications
+    public sealed class PushNotifications
     {
-        //singleton instance of hub here
 
-        //remove all direct calls in Controller
+        private static volatile PushNotifications _instance;
+        private static object syncRoot = new Object();
 
+        private PushNotifications() { }
 
-        /*
-             public class StockTicker
-    {
-        // Singleton instance
-        private readonly static Lazy<StockTicker> _instance = new Lazy<StockTicker>(
-            () => new StockTicker(GlobalHost.ConnectionManager.GetHubContext<StockTickerHub>().Clients));
-
-        private readonly object _marketStateLock = new object();
-        private readonly object _updateStockPricesLock = new object();
-
-        private readonly ConcurrentDictionary<string, Stock> _stocks = new ConcurrentDictionary<string, Stock>();
-
-        // Stock can go up or down by a percentage of this factor on each change
-        private readonly double _rangePercent = 0.002;
-        
-        private readonly TimeSpan _updateInterval = TimeSpan.FromMilliseconds(250);
-        private readonly Random _updateOrNotRandom = new Random();
-
-        private Timer _timer;
-        private volatile bool _updatingStockPrices;
-        private volatile MarketState _marketState;
-
-        private StockTicker(IHubConnectionContext<dynamic> clients)
-        {
-            Clients = clients;
-            LoadDefaultStocks();
-        }
-
-        public static StockTicker Instance
+        public static PushNotifications Instance
         {
             get
             {
-                return _instance.Value;
+                if (_instance == null)
+                {
+                    lock (syncRoot)
+                    {
+                        if (_instance == null)
+                            _instance = new PushNotifications(GlobalHost.ConnectionManager.GetHubContext<CategoryAndPasswordHub>().Clients);
+                    }
+                }
+
+                return _instance;
             }
+        }
+
+        private PushNotifications(IHubConnectionContext<dynamic> clients)
+        {
+            Clients = clients;
         }
 
         private IHubConnectionContext<dynamic> Clients
@@ -54,152 +46,35 @@ namespace Secure_Password_Repository.Extensions
             set;
         }
 
-        public MarketState MarketState
+        public void sendUpdatedCategoryDetails(CategoryEdit updatedCategory)
         {
-            get { return _marketState; }
-            private set { _marketState = value; }
+            _instance.Clients.All.sendCategoryDetails(updatedCategory);
         }
 
-        public IEnumerable<Stock> GetAllStocks()
+        public void sendUpdatedPasswordDetails(PasswordEdit updatedPassword)
         {
-            return _stocks.Values;
+            _instance.Clients.All.sendCategoryDetails(updatedPassword);
         }
 
-        public void OpenMarket()
+        public void sendDeletedCategoryDetails(Category deletedCategory)
         {
-            lock (_marketStateLock)
-            {
-                if (MarketState != MarketState.Open)
-                {
-                    _timer = new Timer(UpdateStockPrices, null, _updateInterval, _updateInterval);
-
-                    MarketState = MarketState.Open;
-
-                    BroadcastMarketStateChange(MarketState.Open);
-                }
-            }
+            _instance.Clients.All.sendDeletedCategoryDetails(deletedCategory);
         }
 
-        public void CloseMarket()
+        public void sendDeletedPasswordDetails(Password deletedPassword)
         {
-            lock (_marketStateLock)
-            {
-                if (MarketState == MarketState.Open)
-                {
-                    if (_timer != null)
-                    {
-                        _timer.Dispose();
-                    }
-
-                    MarketState = MarketState.Closed;
-
-                    BroadcastMarketStateChange(MarketState.Closed);
-                }
-            }
+            _instance.Clients.All.sendDeletedPasswordDetails(deletedPassword);
         }
 
-        public void Reset()
+        public void sendAddedCategoryDetails(string addedCategory)
         {
-            lock (_marketStateLock)
-            {
-                if (MarketState != MarketState.Closed)
-                {
-                    throw new InvalidOperationException("Market must be closed before it can be reset.");
-                }
-                
-                LoadDefaultStocks();
-                BroadcastMarketReset();
-            }
+            _instance.Clients.All.sendAddedCategoryDetails(addedCategory);
         }
 
-        private void LoadDefaultStocks()
+        public void sendAddedPasswordDetails(string addedPassword)
         {
-            _stocks.Clear();
-
-            var stocks = new List<Stock>
-            {
-                new Stock { Symbol = "MSFT", Price = 41.68m },
-                new Stock { Symbol = "AAPL", Price = 92.08m },
-                new Stock { Symbol = "GOOG", Price = 543.01m }
-            };
-
-            stocks.ForEach(stock => _stocks.TryAdd(stock.Symbol, stock));
+            _instance.Clients.All.sendAddedPasswordDetail(addedPassword);
         }
 
-        private void UpdateStockPrices(object state)
-        {
-            // This function must be re-entrant as it's running as a timer interval handler
-            lock (_updateStockPricesLock)
-            {
-                if (!_updatingStockPrices)
-                {
-                    _updatingStockPrices = true;
-
-                    foreach (var stock in _stocks.Values)
-                    {
-                        if (TryUpdateStockPrice(stock))
-                        {
-                            BroadcastStockPrice(stock);
-                        }
-                    }
-
-                    _updatingStockPrices = false;
-                }
-            }
-        }
-
-        private bool TryUpdateStockPrice(Stock stock)
-        {
-            // Randomly choose whether to udpate this stock or not
-            var r = _updateOrNotRandom.NextDouble();
-            if (r > 0.1)
-            {
-                return false;
-            }
-
-            // Update the stock price by a random factor of the range percent
-            var random = new Random((int)Math.Floor(stock.Price));
-            var percentChange = random.NextDouble() * _rangePercent;
-            var pos = random.NextDouble() > 0.51;
-            var change = Math.Round(stock.Price * (decimal)percentChange, 2);
-            change = pos ? change : -change;
-
-            stock.Price += change;
-            return true;
-        }
-
-        private void BroadcastMarketStateChange(MarketState marketState)
-        {
-            switch (marketState)
-            {
-                case MarketState.Open:
-                    Clients.All.marketOpened();
-                    break;
-                case MarketState.Closed:
-                    Clients.All.marketClosed();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void BroadcastMarketReset()
-        {
-            Clients.All.marketReset();
-        }
-
-        private void BroadcastStockPrice(Stock stock)
-        {
-            Clients.All.updateStockPrice(stock);
-        }
-    }
-
-    public enum MarketState
-    {
-        Closed,
-        Open
-    }
-}
-         */
     }
 }

@@ -93,7 +93,7 @@ function treeListItemClick(event, listItem) {
             success: function (data) {
 
                 listItem.parent().addClass('ui-state-active');
-                listItem.find('span').removeClass('treeviewplus').addClass('treeviewminus');
+                listItem.find('span').removeClass('treeviewplus').addClass('treeviewminus').parent().find('i').removeClass('glyphicon-folder-close').addClass('glyphicon-folder-open');
 
                 //append the generated HTML to the category item
                 listItem.parent().parent().append(data);

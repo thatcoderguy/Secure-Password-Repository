@@ -6,7 +6,7 @@
         <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle first">
             <span class="clickable">
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
-                <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i><span class="categoryname">@Model.CategoryName</span>
+                <i class="glyphicon glyphicon-folder-close rightfolderpadding"></i><span class="categoryname">@Model.CategoryName</span>
             </span>
             <span class="btn-group">
                 @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administator")))

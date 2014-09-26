@@ -16,6 +16,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using Secure_Password_Repository.Settings;
+using Secure_Password_Repository.Hubs;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -47,7 +48,7 @@ namespace Secure_Password_Repository.Controllers
         public ActionResult Index()
         {
 
-            DatabaseContext.Configuration.LazyLoadingEnabled = false;
+            //DatabaseContext.Configuration.LazyLoadingEnabled = false;
 
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
@@ -76,7 +77,7 @@ namespace Secure_Password_Repository.Controllers
                 })
                 .Single(c => c.CategoryId == 1);
 
-            DatabaseContext.Configuration.LazyLoadingEnabled = true;
+            //DatabaseContext.Configuration.LazyLoadingEnabled = true;
 
             //create the model view from the model
             AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
@@ -155,7 +156,7 @@ namespace Secure_Password_Repository.Controllers
                                 PasswordOrder = pass.PasswordOrder,
                                 Parent_Category  = pass.Parent_Category,
                                 Parent_CategoryId =pass.Parent_CategoryId,
-                                Parent_UserPasswords = NULL
+                                Parent_UserPasswords = pass.Parent_UserPasswords.Where(p => p.Id == userId).ToList()
                             })
                             .ToList()                           //make sure only undeleted passwords - that the current user has acccess to - are returned
                         })
@@ -164,6 +165,7 @@ namespace Secure_Password_Repository.Controllers
                 //create view model from model
                 AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
                 AutoMapper.Mapper.CreateMap<Password, PasswordItem>();
+                AutoMapper.Mapper.CreateMap<UserPassword, PasswordUserPermission>();
                 CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
 
                 //return wrapper class
@@ -199,7 +201,7 @@ namespace Secure_Password_Repository.Controllers
                     AutoMapper.Mapper.CreateMap<CategoryAdd, Category>();
                     Category newCategory = AutoMapper.Mapper.Map<Category>(model);
 
-                    //get the root node, and include it's subcategories
+                    //get the parent node, and include it's subcategories
                     var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == model.Category_ParentID);
 
                     //set the order of the category by getting the number of subcategories
@@ -215,7 +217,10 @@ namespace Secure_Password_Repository.Controllers
                     //map new category to display view model
                     AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
                     CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
-                    
+
+                    //var hubContext = Microsoft.AspNet.SignalR.GlobalHost.ConnectionManager.GetHubContext<CategoryAndPasswordHub>();
+                    //hubContext.Clients.All.SendNewCategoryDetails(newCategory.CategoryId, newCategory.CategoryName);
+
                     return PartialView("_CategoryItem", returnCategoryViewItem);
 
                 } else {
@@ -249,6 +254,9 @@ namespace Secure_Password_Repository.Controllers
                     
                     //save changes
                     await DatabaseContext.SaveChangesAsync();
+
+                    var hubContext = Microsoft.AspNet.SignalR.GlobalHost.ConnectionManager.GetHubContext<CategoryAndPasswordHub>();
+                    hubContext.Clients.All.SendUpdatedCategoryDetails(editedCategory.CategoryId, editedCategory.CategoryName);
 
                     //return the object, so that the UI can be updated
                     return Json(model);
@@ -311,6 +319,9 @@ namespace Secure_Password_Repository.Controllers
                 }
                 deleteCategory.Parent_Category = null;
 
+                var hubContext = Microsoft.AspNet.SignalR.GlobalHost.ConnectionManager.GetHubContext<CategoryAndPasswordHub>();
+                hubContext.Clients.All.SendDeletedCategoryDetails(deleteCategory.CategoryId);
+
                 //return the item, so that it can be removed from the UI
                 return Json(deleteCategory);
             }
@@ -341,15 +352,24 @@ namespace Secure_Password_Repository.Controllers
                 var userId = int.Parse(User.Identity.GetUserId());
                 var user = await UserMgr.FindByIdAsync(userId);
 
+                //get the parent category node, and include it's passwords
+                var passwordList = DatabaseContext.Categories.Include("Passwords").Single(c => c.CategoryId == model.Parent_CategoryId);
+
+                //set the order of the category by getting the number of subcategories
+                if (passwordList.Passwords.Count > 0)
+                    newPasswordItem.PasswordOrder = (Int16)(passwordList.Passwords.Where(p => !p.Deleted).Max(p => p.PasswordOrder) + 1);
+                else
+                    newPasswordItem.PasswordOrder = 1;
+
                 newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
                 newPasswordItem.CreatedDate = DateTime.Now;
                 newPasswordItem.Creator_Id = user.Id;
-                newPasswordItem.PasswordOrder ==
 
                 //save the new category
                 DatabaseContext.Passwords.Add(newPasswordItem);
                 await DatabaseContext.SaveChangesAsync();
 
+                //also create the UserPassword record
                 UserPassword newUserPassword = new UserPassword()
                 {
                     CanDeletePassword = true,
@@ -361,10 +381,11 @@ namespace Secure_Password_Repository.Controllers
                 DatabaseContext.UserPasswords.Add(newUserPassword);
                 await DatabaseContext.SaveChangesAsync();
 
+                //var hubContext = Microsoft.AspNet.SignalR.GlobalHost.ConnectionManager.GetHubContext<CategoryAndPasswordHub>();
+                //hubContext.Clients.All.SendNewPasswordDetails(newPasswordItem.PasswordId, editedCategory.CategoryName);
+
                 return View("thanks");
             }
-
-            var errors = ModelState.Values.SelectMany(v => v.Errors);
 
             return View(model);
         }

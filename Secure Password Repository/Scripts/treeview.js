@@ -82,14 +82,14 @@ function bindClickEvent() {
 
             $(this).parent().parent().find('ul').slideDown();
             $(this).parent().addClass('ui-state-active');
-            $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus');
+            $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus').parent().find('i').removeClass('glyphicon-folder-close').addClass('glyphicon-folder-open');
 
             //already populated and open
         } else {
 
             $(this).parent().parent().find('ul').slideUp();
             $(this).parent().removeClass('ui-state-active');
-            $(this).find('span').removeClass('treeviewminus').addClass('treeviewplus');
+            $(this).find('span').removeClass('treeviewminus').addClass('treeviewplus').parent().find('i').removeClass('glyphicon-folder-open').addClass('glyphicon-folder-close');
 
         }
 

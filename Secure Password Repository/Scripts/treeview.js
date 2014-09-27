@@ -1,8 +1,9 @@
-﻿//semaphor - do stop double population
+﻿"use strict";
+
+//semaphor - do stop double population
 var isPopulating = false;
 
-
-//category treeview
+//category treeview - called upon script load
 $(function () {
 
     setupTreeView('treeview');
@@ -10,7 +11,7 @@ $(function () {
     
 });
 
-function setupTreeView(className) {
+var setupTreeView = function(className) {
 
     $("." + className)
       .sortable({
@@ -41,12 +42,12 @@ function setupTreeView(className) {
 
 }
 
-function refreshTreeView(className) {
+var refreshTreeView = function(className) {
 
     $("." + className).sortable('refresh');
 }
 
-function bindPasswordClickEvent() {
+var bindPasswordClickEvent = function() {
 
     //unbind all of the click events - so that we dont get multiple events per item
     $('a.fancyboxbutton').unbind('click');
@@ -61,7 +62,7 @@ function bindPasswordClickEvent() {
 
 }
 
-function bindClickEvent() {
+var bindClickEvent = function() {
 
     //unbind all of the click events - so that we dont get multiple events per item
     $('.clickable').unbind('click');

@@ -33,12 +33,12 @@ namespace Secure_Password_Repository
                       "~/Scripts/jquery.fancybox-thumbs.js",
                       "~/Scripts/jquery.mousewheel-*"));
 
-            bundles.Add(new ScriptBundle("~/bundles/password_treeviewandforms").Include(
+            bundles.Add(new ScriptBundle("~/bundles/password_controller_scripts").Include(
                        "~/Scripts/treeview.js",
                        "~/Scripts/categoryandpassword.js",
                        "~/Scripts/jquery.unobtrusive-ajax.min.js",
                        "~/Scripts/jquery.signalR-{version}.min.js",
-                       "~/Scripts/pushnotifications"));
+                       "~/Scripts/pushnotifications.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/extensions").Include(
                         "~/Scripts/extensions.js"));

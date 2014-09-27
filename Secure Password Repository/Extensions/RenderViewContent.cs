@@ -37,7 +37,7 @@ namespace Secure_Password_Repository.Extensions
             bundlecontext.EnableInstrumentation = false;
             
             //return a list of bundle items that start with the name of the current controller
-            var bundleList = bundlecontext.BundleCollection.ToList().Where(b => b.Path.StartsWith(bundlename));
+            var bundleList = bundlecontext.BundleCollection.Where(b => b.Path.StartsWith(bundlename)).ToList();
             
             //store the path of each bundle item in the returned list
             foreach (Bundle bundleItem in bundleList)
@@ -55,23 +55,17 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="partialViewName">Name of the partial view</param>
         /// <param name="viewModel">Name of the view model</param>
         /// <returns>String containing partial view HTML</returns>
-        public static string RenderPartialToString(string partialViewName, object viewModel)
+        public static string RenderPartialToString(this Controller controller, string viewName, object model)
         {
-            ViewPage viewPage = new ViewPage() { ViewContext = new ViewContext() };
-
-            viewPage.ViewData = new ViewDataDictionary(viewModel);
-            viewPage.Controls.Add(viewPage.LoadControl(partialViewName));
-
-            StringBuilder sb = new StringBuilder();
-            using (StringWriter sw = new StringWriter(sb))
+            controller.ViewData.Model = model;
+            using (var sw = new StringWriter())
             {
-                using (HtmlTextWriter tw = new HtmlTextWriter(sw))
-                {
-                    viewPage.RenderControl(tw);
-                }
+                var viewResult = ViewEngines.Engines.FindPartialView(controller.ControllerContext, viewName);
+                var viewContext = new ViewContext(controller.ControllerContext, viewResult.View, controller.ViewData, controller.TempData, sw);
+                viewResult.View.Render(viewContext, sw);
+                viewResult.ViewEngine.ReleaseView(controller.ControllerContext, viewResult.View);
+                return sw.GetStringBuilder().ToString();
             }
-
-            return sb.ToString();
         }
 
 

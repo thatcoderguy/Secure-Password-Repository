@@ -19,7 +19,6 @@ namespace Secure_Password_Repository.Hubs
     /// to clients, so that the UI can be updated
     /// </summary>
     /// 
-    [HubName("applicationHub")]
     public class CategoryAndPasswordHub : Hub
     {
 

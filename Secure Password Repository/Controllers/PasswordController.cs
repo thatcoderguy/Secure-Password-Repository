@@ -214,8 +214,10 @@ namespace Secure_Password_Repository.Controllers
                     AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
                     CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
 
+                    
                     string categoryParticalView = RenderViewContent.RenderPartialToString(this,"_CategoryItem", returnCategoryViewItem);
-                    PushNotifications.Instance.sendAddedCategoryDetails(categoryParticalView);
+
+                    //PushNotifications.Instance.sendAddedCategoryDetails(categoryParticalView);
 
                     return PartialView("_CategoryItem", returnCategoryViewItem);
 
@@ -316,7 +318,7 @@ namespace Secure_Password_Repository.Controllers
 
                 deletedCategory.Parent_Category = null;
 
-                PushNotifications.Instance.sendDeletedCategoryDetails(deletedCategory);
+                PushNotifications.sendDeletedCategoryDetails(deletedCategory);
 
                 //return the item, so that it can be removed from the UI
                 return Json(deletedCategory);

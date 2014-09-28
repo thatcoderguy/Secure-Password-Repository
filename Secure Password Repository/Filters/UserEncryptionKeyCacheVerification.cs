@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using System.Net.Http;
 using Microsoft.Owin.Security;
 using System.Web.Routing;
+using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Filters
 {
@@ -30,8 +31,8 @@ namespace Secure_Password_Repository.Filters
             //make sure they are autenticated
             if (user.Identity.IsAuthenticated)
 
-                //if the encryption key doesnt exist in cache
-                if (HttpContext.Current.Cache[user.Identity.Name] == null)
+                //if the encryption key doesnt exist in cache - should only happen if the app was restarted
+                if (MemoryCache.Default.Get(user.Identity.Name) == null)
                 {
 
                     //log out the user

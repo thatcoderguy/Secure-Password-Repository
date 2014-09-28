@@ -52,8 +52,9 @@ namespace Secure_Password_Repository.Extensions
         /// <summary>
         /// Populates a Partial View with data from a supplied model and then returns the view as a string
         /// </summary>
-        /// <param name="partialViewName">Name of the partial view</param>
-        /// <param name="viewModel">Name of the view model</param>
+        /// <param name="controller">Current controller</param>
+        /// <param name="viewName">Name of the view to render</param>
+        /// <param name="model">Name of the view model</param>
         /// <returns>String containing partial view HTML</returns>
         public static string RenderPartialToString(this Controller controller, string viewName, object model)
         {

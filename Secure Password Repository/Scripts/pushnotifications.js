@@ -3,7 +3,7 @@ $(function () {
 
     // the generated client-side hub proxy
     var connection = $.hubConnection();
-    var pushnotifierProxy = connection.createHubProxy('CategoryAndPasswordHub');
+    var pushnotifierProxy = connection.createHubProxy('BroadcastHub');
 
     pushnotifierProxy.on('sendDeletedCategoryDetails', function (deletedCategory) {
         alert('q');
@@ -27,7 +27,7 @@ $(function () {
     });
 
     // Start the connection
-    connection.start({ transport: ['foreverFrame', 'longPolling'] }).done(function () {
+    connection.start().done(function () {
     });
 
 });

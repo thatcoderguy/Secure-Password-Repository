@@ -71,11 +71,14 @@ namespace Secure_Password_Repository.Extensions
         /// </summary>
         /// <param name="addedCategory">View rendered to a string of the new category</param>
         /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
-        public static void sendAddedCategoryDetails(string addedCategory)
+        public static void sendAddedCategoryDetails(string addedCategory, int? categoryParentId)
         {
+            if (categoryParentId == null)
+                categoryParentId = 0;
+
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendAddedCategoryDetails(addedCategory);
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendAddedCategoryDetails(addedCategory, categoryParentId);
         }
 
         /// <summary>

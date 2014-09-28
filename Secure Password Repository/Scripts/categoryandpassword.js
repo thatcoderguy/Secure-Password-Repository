@@ -14,27 +14,25 @@ var displayForm = function(categoryid) {
 }
 
 //hide the form
-var cancelAction = function(categoryid) {
-
+var cancelAction = function (categoryid)
+{
     $('#' + categoryid).find('.first').first().show();
     $('#' + categoryid).find('.second').first().hide();
-
 }
 
 //category updates successfully
-var updateCategorySuccess = function(data) {
-
+var updateCategorySuccess = function (data)
+{
     //update text
     $('#' + data.CategoryId).find('.categoryname').text(data.CategoryName);
 
     //hide the form
     cancelAction(data.CategoryId);
-
 }
 
 //called when category successfully created
-var createCategorySuccess = function(data, parentid) {
-
+var createCategorySuccess = function (data, parentid)
+{
     //append the new item to the list
     $('#addnew-' + parentid).parent().append(data);
     
@@ -55,12 +53,11 @@ var createCategorySuccess = function(data, parentid) {
 
     //hide the form
     cancelAction('addnew-' + parentid);
-
 }
 
 //click event to delete category
-var deleteCategory = function(categoryid) {
-
+var deleteCategory = function (categoryid)
+{
     //double confirm
     if (confirm('Are you sure you wish to delete this category?\n\nYou will not be able to view any passwords linked to it\n\nHowever, Administrators can undelete Categories\n\n'))
     {
@@ -82,12 +79,11 @@ var deleteCategory = function(categoryid) {
 
         }
     }
-
 }
 
 //load children of the category clicked on
-var treeListItemClick = function(event, listItem) {
-
+var treeListItemClick = function (event, listItem)
+{
         var result = $.ajax({
             type: "POST",
             url: "/Password/GetCategoryChildren",
@@ -139,5 +135,4 @@ var updatePosition = function(event, ui)
 
         }
     });
-
 }

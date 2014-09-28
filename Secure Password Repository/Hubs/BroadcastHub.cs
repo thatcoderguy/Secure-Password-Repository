@@ -21,32 +21,20 @@ namespace Secure_Password_Repository.Hubs
     /// </summary>
     public class BroadcastHub : Hub
     {
-        CacheEntryRemovedCallback onRemove = null;
-
-        public BroadcastHub()
-        {
-            onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
-        }
 
         public override Task OnConnected()
         {
-            System.Runtime.Caching.MemoryCache.Default.Set(HttpContext.Current.User.Identity.Name + "-connectionId", Context.ConnectionId, new CacheItemPolicy() { RemovedCallback = onRemove, Priority = CacheItemPriority.Default, SlidingExpiration = TimeSpan.FromHours(1), AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration });
+            System.Runtime.Caching.MemoryCache.Default.Set(HttpContext.Current.User.Identity.Name + "-connectionId", Context.ConnectionId, new CacheItemPolicy() { Priority = CacheItemPriority.Default, SlidingExpiration = TimeSpan.FromHours(1), AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration });
 
             return base.OnConnected();
         }
 
         public override Task OnReconnected()
         {
-            System.Runtime.Caching.MemoryCache.Default.Set(HttpContext.Current.User.Identity.Name + "-connectionId", Context.ConnectionId, new CacheItemPolicy() { RemovedCallback = onRemove, Priority = CacheItemPriority.Default, SlidingExpiration = TimeSpan.FromHours(1), AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration });
+            System.Runtime.Caching.MemoryCache.Default.Set(HttpContext.Current.User.Identity.Name + "-connectionId", Context.ConnectionId, new CacheItemPolicy() { Priority = CacheItemPriority.Default, SlidingExpiration = TimeSpan.FromHours(1), AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration });
 
             return base.OnReconnected();
         }
-
-        public void RemovedCallback(CacheEntryRemovedArguments arguments)
-        {
-            System.Runtime.Caching.MemoryCache.Default.Set(arguments.CacheItem.Key, arguments.CacheItem.Value, new CacheItemPolicy() { RemovedCallback = onRemove, Priority = CacheItemPriority.Default, SlidingExpiration = TimeSpan.FromHours(1), AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration });
-        }
-
 
     }
 

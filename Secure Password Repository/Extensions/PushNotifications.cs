@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
+using Microsoft.AspNet.SignalR.Infrastructure;
+using Microsoft.AspNet.SignalR.Transports;
 using Secure_Password_Repository.Hubs;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.ViewModels;
@@ -7,73 +9,88 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Extensions
 {
-    public sealed class PushNotifications
+    /// <summary>
+    /// Class to handle broadcasting of messages from the SignalR Hub
+    /// </summary>
+    public static class PushNotifications
     {
 
-        private static volatile PushNotifications _instance;
-        private static object syncRoot = new Object();
-
-        private PushNotifications() { }
-
-        public static PushNotifications Instance
+        /// <summary>
+        /// Broadcasts the details of an updated category, so that the clients can update their UI
+        /// </summary>
+        /// <param name="updatedCategory">Instance of the updated category view model</param>
+        public static void sendUpdatedCategoryDetails(CategoryEdit updatedCategory)
         {
-            get
-            {
-                if (_instance == null)
-                {
-                    lock (syncRoot)
-                    {
-                        if (_instance == null)
-                            _instance = new PushNotifications(GlobalHost.ConnectionManager.GetHubContext<CategoryAndPasswordHub>().Clients);
-                    }
-                }
-
-                return _instance;
-            }
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendUpdatedCategoryDetails(updatedCategory);
         }
 
-        private PushNotifications(IHubConnectionContext<dynamic> clients)
+        /// <summary>
+        /// Broadcasts the details of an updated password, so that the clients can update their UI
+        /// </summary>
+        /// <param name="updatedPassword">Instance of the updated password view model</param>
+        /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
+        public static void sendUpdatedPasswordDetails(PasswordEdit updatedPassword)
         {
-            Clients = clients;
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendCategoryDetails(updatedPassword);
         }
 
-        private IHubConnectionContext<dynamic> Clients
+        /// <summary>
+        /// Broadcasts the details of a deleted category, so that the clients can update their UI
+        /// </summary>
+        /// <param name="deletedCategory">Instance of the deleted category model</param>
+        /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
+        public static void sendDeletedCategoryDetails(Category deletedCategory)
         {
-            get;
-            set;
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendDeletedCategoryDetails(deletedCategory);
         }
 
-        public void sendUpdatedCategoryDetails(CategoryEdit updatedCategory)
+        /// <summary>
+        /// Broadcasts the details of a deleted password, so that the clients can update their UI
+        /// </summary>
+        /// <param name="deletedPassword">Instance of the deleted password model</param>
+        /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
+        public static void sendDeletedPasswordDetails(Password deletedPassword)
         {
-            _instance.Clients.All.sendCategoryDetails(updatedCategory);
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendDeletedPasswordDetails(deletedPassword);
         }
 
-        public void sendUpdatedPasswordDetails(PasswordEdit updatedPassword)
+        /// <summary>
+        /// Broadcasts the details of a newly created category, so that the clients can update their UI
+        /// </summary>
+        /// <param name="addedCategory">View rendered to a string of the new category</param>
+        /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
+        public static void sendAddedCategoryDetails(string addedCategory, int? categoryParentId)
         {
-            _instance.Clients.All.sendCategoryDetails(updatedPassword);
+            if (categoryParentId == null)
+                categoryParentId = 0;
+
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendAddedCategoryDetails(addedCategory, categoryParentId);
         }
 
-        public void sendDeletedCategoryDetails(Category deletedCategory)
+        /// <summary>
+        /// Broadcasts the details of a newly created password, so that the clients can update their UI
+        /// </summary>
+        /// <param name="addedPassword">View rendered to a string of the new password</param>
+        /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
+        public static void sendAddedPasswordDetails(string addedPassword)
         {
-            _instance.Clients.All.sendDeletedCategoryDetails(deletedCategory);
-        }
-
-        public void sendDeletedPasswordDetails(Password deletedPassword)
-        {
-            _instance.Clients.All.sendDeletedPasswordDetails(deletedPassword);
-        }
-
-        public void sendAddedCategoryDetails(string addedCategory)
-        {
-            _instance.Clients.All.sendAddedCategoryDetails(addedCategory);
-        }
-
-        public void sendAddedPasswordDetails(string addedPassword)
-        {
-            _instance.Clients.All.sendAddedPasswordDetail(addedPassword);
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendAddedPasswordDetail(addedPassword);
         }
 
     }

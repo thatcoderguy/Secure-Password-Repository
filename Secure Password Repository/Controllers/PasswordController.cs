@@ -214,6 +214,10 @@ namespace Secure_Password_Repository.Controllers
                     AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
                     CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
 
+                    
+                    string categoryPartialView = RenderViewContent.RenderPartialToString(this,"_CategoryItem", returnCategoryViewItem);
+
+                    PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);
 
                     return PartialView("_CategoryItem", returnCategoryViewItem);
 
@@ -268,20 +272,20 @@ namespace Secure_Password_Repository.Controllers
             {
 
                 //get the category item to delete
-                var deleteCategory = DatabaseContext.Categories
+                var deletedCategory = DatabaseContext.Categories
                                                         .Include("Parent_Category")
                                                         .Single(c => c.CategoryId == CategoryId);
 
                 //load in the parent's subcategories
-                DatabaseContext.Entry(deleteCategory.Parent_Category)
+                DatabaseContext.Entry(deletedCategory.Parent_Category)
                                         .Collection(c => c.SubCategories)
                                         .Query()
                                         .Where(c => !c.Deleted)
                                         .Load();
 
                 //loop through and adjust category order
-                foreach(Category siblingCategory in deleteCategory.Parent_Category.SubCategories
-                                                                                        .Where(c => c.CategoryOrder > deleteCategory.CategoryOrder)
+                foreach (Category siblingCategory in deletedCategory.Parent_Category.SubCategories
+                                                                                        .Where(c => c.CategoryOrder > deletedCategory.CategoryOrder)
                                                                                         .Where(c => !c.Deleted))
                 {
                     siblingCategory.CategoryOrder--;
@@ -289,31 +293,35 @@ namespace Secure_Password_Repository.Controllers
                 }
 
                 //set the item to deleted
-                deleteCategory.Deleted = true;
+                deletedCategory.Deleted = true;
 
                 //move it to the very end
-                deleteCategory.CategoryOrder = 9999;
+                deletedCategory.CategoryOrder = 9999;
 
                 //set the item to be deleted
-                DatabaseContext.Entry(deleteCategory).State = EntityState.Modified;
+                DatabaseContext.Entry(deletedCategory).State = EntityState.Modified;
 
                 //save changes
                 await DatabaseContext.SaveChangesAsync();
 
                 //proxies are no longer needed, so remove to avoid the "cicular reference" issue
-                if (deleteCategory.SubCategories != null) {
-                    deleteCategory.SubCategories.Clear();
-                    deleteCategory.SubCategories = null;
+                if (deletedCategory.SubCategories != null)
+                {
+                    deletedCategory.SubCategories.Clear();
+                    deletedCategory.SubCategories = null;
                 }
-                if (deleteCategory.Passwords != null){
-                    deleteCategory.Passwords.Clear();
-                    deleteCategory.Passwords = null;
+                if (deletedCategory.Passwords != null)
+                {
+                    deletedCategory.Passwords.Clear();
+                    deletedCategory.Passwords = null;
                 }
 
-                deleteCategory.Parent_Category = null;
+                deletedCategory.Parent_Category = null;
+
+                PushNotifications.sendDeletedCategoryDetails(deletedCategory);
 
                 //return the item, so that it can be removed from the UI
-                return Json(deleteCategory);
+                return Json(deletedCategory);
             }
             catch {}
 

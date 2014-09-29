@@ -3,6 +3,7 @@ using Secure_Password_Repository.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Caching;
 using System.Text;
 using System.Web;
 
@@ -14,6 +15,9 @@ namespace Secure_Password_Repository.Extensions
     /// </summary>
     public static class SecurePasswordRepositorySpecificFunctions
     {
+
+        private static CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(RemovedCallback);
+
         public static string Generate_UserEncryptionKey(string plainTextPassword)
         {
             string hashedPassword = EncryptionAndHashing.Hash_SHA1(plainTextPassword);
@@ -48,6 +52,11 @@ namespace Secure_Password_Repository.Extensions
             EncryptionAndHashing.Decrypt_DPAPI(ref encryptedBytes);
 
             return Encoding.Default.GetString(encryptedBytes);
+        }
+
+        public static void RemovedCallback(CacheEntryRemovedArguments arguments)
+        {
+            System.Runtime.Caching.MemoryCache.Default.Set(arguments.CacheItem.Key, arguments.CacheItem.Value, new CacheItemPolicy() { RemovedCallback = onRemove, Priority = CacheItemPriority.Default, SlidingExpiration = TimeSpan.FromHours(1), AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration });
         }
 
     }

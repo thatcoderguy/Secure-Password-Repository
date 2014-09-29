@@ -16,7 +16,7 @@ using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Settings;
-using System.Web.Caching;
+using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -92,7 +92,7 @@ namespace Secure_Password_Repository.Controllers
                     {
 
                         //generate the user encryption key (used to decrypt the user's private key) from the password and store in cache
-                        HttpContext.Cache.Add(model.Username, SecurePasswordRepositorySpecificFunctions.Generate_Encrypted_UserEncryptionKey(model.Password), null, DateTime.MaxValue, TimeSpan.FromHours(1), CacheItemPriority.High, null);
+                        MemoryCache.Default.Set(model.Username, SecurePasswordRepositorySpecificFunctions.Generate_Encrypted_UserEncryptionKey(model.Password), new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration=TimeSpan.FromHours(1), Priority=CacheItemPriority.Default, RemovedCallback = SecurePasswordRepositorySpecificFunctions.RemovedCallback });
 
                         await SignInAsync(user, false);
                         return RedirectToLocal(returnUrl);

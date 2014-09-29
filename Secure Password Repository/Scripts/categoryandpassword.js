@@ -1,10 +1,12 @@
-﻿//submit form
-function submitAjaxForm(formid) {
+﻿"use strict";
+
+//submit form
+var submitAjaxForm = function(formid) {
     $('#' + formid).submit();
 }
 
 //display the edit category form
-function displayForm(categoryid) {
+var displayForm = function(categoryid) {
 
     $('#' + categoryid).find('.first').first().hide();
     $('#' + categoryid).find('.second').first().show();
@@ -12,26 +14,25 @@ function displayForm(categoryid) {
 }
 
 //hide the form
-function cancelAction(categoryid) {
-
+var cancelAction = function (categoryid)
+{
     $('#' + categoryid).find('.first').first().show();
     $('#' + categoryid).find('.second').first().hide();
-
 }
 
 //category updates successfully
-function updateCategorySuccess(data) {
-
+var updateCategorySuccess = function (data)
+{
     //update text
     $('#' + data.CategoryId).find('.categoryname').text(data.CategoryName);
 
     //hide the form
     cancelAction(data.CategoryId);
-
 }
 
-function createCategorySuccess(data,parentid) {
-
+//called when category successfully created
+var createCategorySuccess = function (data, parentid)
+{
     //append the new item to the list
     $('#addnew-' + parentid).parent().append(data);
     
@@ -52,12 +53,12 @@ function createCategorySuccess(data,parentid) {
 
     //hide the form
     cancelAction('addnew-' + parentid);
-
 }
 
-
-function deleteCategory(categoryid) {
-
+//click event to delete category
+var deleteCategory = function (categoryid)
+{
+    //double confirm
     if (confirm('Are you sure you wish to delete this category?\n\nYou will not be able to view any passwords linked to it\n\nHowever, Administrators can undelete Categories\n\n'))
     {
         if(confirm('ARE YOU REALLY SURE YOU WISH TO DELETE THIS CATEGORY?\n\nYou will NOT be able to VIEW any PASSWORDS linked to it\n\n'))
@@ -78,12 +79,11 @@ function deleteCategory(categoryid) {
 
         }
     }
-
 }
 
 //load children of the category clicked on
-function treeListItemClick(event, listItem) {
-
+var treeListItemClick = function (event, listItem)
+{
         var result = $.ajax({
             type: "POST",
             url: "/Password/GetCategoryChildren",
@@ -103,7 +103,6 @@ function treeListItemClick(event, listItem) {
 
                 //bind click events
                 bindClickEvent();
-
                 bindPasswordClickEvent();
 
                 //open the parent item
@@ -116,7 +115,7 @@ function treeListItemClick(event, listItem) {
 }
 
 //update the ordering position of the category
-function updatePosition(event, ui)
+var updatePosition = function(event, ui)
 {
     var itemid = ui.item.attr('id');
     var newposition = ui.item.index() + 1;
@@ -136,5 +135,4 @@ function updatePosition(event, ui)
 
         }
     });
-
 }

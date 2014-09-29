@@ -6,7 +6,7 @@ using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Configuration;
 using System.Xml.Serialization;
-using System.Web.Caching;
+using System.Runtime.Caching;
 using System.IO;
 using Microsoft.VisualBasic;
 using Secure_Password_Repository.Extensions;
@@ -41,8 +41,7 @@ namespace Secure_Password_Repository.Settings
             }
 
             //make sure the changed values are copied back into cache
-            Cache cache = HttpRuntime.Cache;
-            cache[filename] = instance;
+            MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration = MemoryCache.NoSlidingExpiration, Priority = CacheItemPriority.Default });
         }
 
         //set default option valus
@@ -71,13 +70,12 @@ namespace Secure_Password_Repository.Settings
             {
 
                 //get cache and the file name
-                Cache cache = HttpRuntime.Cache;
                 string filename = Path.Combine(HttpRuntime.AppDomainAppPath, "system-config.xml");
 
                 //check if an instance of this class is already in cache
-                if (cache[filename] != null)
+                if (MemoryCache.Default.Get(filename) != null)
                 {
-                    return (ApplicationSettings)cache[filename];
+                    return (ApplicationSettings)MemoryCache.Default.Get(filename);
                 }
 
                 //there isnt an instance in cache, so we need to create one
@@ -88,9 +86,9 @@ namespace Secure_Password_Repository.Settings
                     //the thread has been unlocked
 
                     //check that the object hasnt already been put into cache by another thread
-                    if (cache[filename] != null)
+                    if (MemoryCache.Default.Get(filename) != null)
                     {
-                        return (ApplicationSettings)cache[filename];
+                        return (ApplicationSettings)MemoryCache.Default.Get(filename);
                     }
 
                     //if the file does not exist
@@ -100,7 +98,7 @@ namespace Secure_Password_Repository.Settings
                         instance = new ApplicationSettings();
 
                         //insert the object into cache - with no expiration (we want this to be persistant in memory)
-                        cache.Insert(filename, instance, null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration);
+                        MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration = MemoryCache.NoSlidingExpiration, Priority = CacheItemPriority.Default });
 
                         //save to disk
                         Save();
@@ -109,7 +107,7 @@ namespace Secure_Password_Repository.Settings
                         ResetAppSettings();
 
                         //return the newly created object
-                        return (ApplicationSettings)cache[filename];
+                        return (ApplicationSettings)MemoryCache.Default.Get(filename);
 
                     }
 
@@ -121,10 +119,10 @@ namespace Secure_Password_Repository.Settings
                         instance = (ApplicationSettings)serial.Deserialize(sr);
 
                         //insert the object into cache - with no expiration (we want this to be persistant in memory)
-                        cache.Insert(filename, instance, null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration);
+                        MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration = MemoryCache.NoSlidingExpiration, Priority = CacheItemPriority.Default });
 
                         //return the newly created object
-                        return (ApplicationSettings)cache[filename];
+                        return (ApplicationSettings)MemoryCache.Default.Get(filename);
 
                     }
 

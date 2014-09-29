@@ -189,43 +189,50 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddCategory(CategoryAdd model)
         {
-            try
+            if (User.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || User.IsInRole("Administrator"))
             {
-                if (ModelState.IsValid)
+                try
                 {
-                    //create model from view model
-                    AutoMapper.Mapper.CreateMap<CategoryAdd, Category>();
-                    Category newCategory = AutoMapper.Mapper.Map<Category>(model);
+                    if (ModelState.IsValid)
+                    {
+                        //create model from view model
+                        AutoMapper.Mapper.CreateMap<CategoryAdd, Category>();
+                        Category newCategory = AutoMapper.Mapper.Map<Category>(model);
 
-                    //get the parent node, and include it's subcategories
-                    var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == model.Category_ParentID);
+                        //get the parent node, and include it's subcategories
+                        var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == model.Category_ParentID);
 
-                    //set the order of the category by getting the number of subcategories
-                    if (categoryList.SubCategories.Count > 0)
-                        newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
+                        //set the order of the category by getting the number of subcategories
+                        if (categoryList.SubCategories.Count > 0)
+                            newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
+                        else
+                            newCategory.CategoryOrder = 1;
+
+                        //save the new category
+                        DatabaseContext.Categories.Add(newCategory);
+                        await DatabaseContext.SaveChangesAsync();
+
+                        //map new category to display view model
+                        AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
+                        CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
+
+
+                        string categoryPartialView = RenderViewContent.RenderPartialToString(this, "_CategoryItem", returnCategoryViewItem);
+
+                        PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);
+
+                        return PartialView("_CategoryItem", returnCategoryViewItem);
+
+                    }
                     else
-                        newCategory.CategoryOrder = 1;
+                    {
+                        return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+                    }
 
-                    //save the new category
-                    DatabaseContext.Categories.Add(newCategory);
-                    await DatabaseContext.SaveChangesAsync();
-
-                    //map new category to display view model
-                    AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
-                    CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
-
-                    
-                    string categoryPartialView = RenderViewContent.RenderPartialToString(this,"_CategoryItem", returnCategoryViewItem);
-
-                    PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);
-
-                    return PartialView("_CategoryItem", returnCategoryViewItem);
-
-                } else {
-                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
                 }
+                catch { }
+            }
 
-            } catch { }
 
             return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
@@ -236,28 +243,33 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> EditCategory(CategoryEdit model)
         {
-            try
+            if (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administrator"))
             {
-                if(ModelState.IsValid) {
+                try
+                {
+                    if (ModelState.IsValid)
+                    {
 
-                    AutoMapper.Mapper.CreateMap<CategoryEdit, Category>();
-                    Category editedCategory = AutoMapper.Mapper.Map<Category>(model);
-                
-                    //update the category
-                    DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
+                        AutoMapper.Mapper.CreateMap<CategoryEdit, Category>();
+                        Category editedCategory = AutoMapper.Mapper.Map<Category>(model);
 
-                    //dont update the categoryorder value
-                    DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified=false;
-                    DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
-                    
-                    //save changes
-                    await DatabaseContext.SaveChangesAsync();
+                        //update the category
+                        DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
+
+                        //dont update the categoryorder value
+                        DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified = false;
+                        DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
+
+                        //save changes
+                        await DatabaseContext.SaveChangesAsync();
 
 
-                    //return the object, so that the UI can be updated
-                    return Json(model);
+                        //return the object, so that the UI can be updated
+                        return Json(model);
+                    }
                 }
-            } catch {}
+                catch { }
+            }
 
             return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
@@ -268,62 +280,65 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int CategoryId)
         {
-            try
+            if (User.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || User.IsInRole("Administrator"))
             {
-
-                //get the category item to delete
-                var deletedCategory = DatabaseContext.Categories
-                                                        .Include("Parent_Category")
-                                                        .Single(c => c.CategoryId == CategoryId);
-
-                //load in the parent's subcategories
-                DatabaseContext.Entry(deletedCategory.Parent_Category)
-                                        .Collection(c => c.SubCategories)
-                                        .Query()
-                                        .Where(c => !c.Deleted)
-                                        .Load();
-
-                //loop through and adjust category order
-                foreach (Category siblingCategory in deletedCategory.Parent_Category.SubCategories
-                                                                                        .Where(c => c.CategoryOrder > deletedCategory.CategoryOrder)
-                                                                                        .Where(c => !c.Deleted))
+                try
                 {
-                    siblingCategory.CategoryOrder--;
-                    DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
+
+                    //get the category item to delete
+                    var deletedCategory = DatabaseContext.Categories
+                                                            .Include("Parent_Category")
+                                                            .Single(c => c.CategoryId == CategoryId);
+
+                    //load in the parent's subcategories
+                    DatabaseContext.Entry(deletedCategory.Parent_Category)
+                                            .Collection(c => c.SubCategories)
+                                            .Query()
+                                            .Where(c => !c.Deleted)
+                                            .Load();
+
+                    //loop through and adjust category order
+                    foreach (Category siblingCategory in deletedCategory.Parent_Category.SubCategories
+                                                                                            .Where(c => c.CategoryOrder > deletedCategory.CategoryOrder)
+                                                                                            .Where(c => !c.Deleted))
+                    {
+                        siblingCategory.CategoryOrder--;
+                        DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
+                    }
+
+                    //set the item to deleted
+                    deletedCategory.Deleted = true;
+
+                    //move it to the very end
+                    deletedCategory.CategoryOrder = 9999;
+
+                    //set the item to be deleted
+                    DatabaseContext.Entry(deletedCategory).State = EntityState.Modified;
+
+                    //save changes
+                    await DatabaseContext.SaveChangesAsync();
+
+                    //proxies are no longer needed, so remove to avoid the "cicular reference" issue
+                    if (deletedCategory.SubCategories != null)
+                    {
+                        deletedCategory.SubCategories.Clear();
+                        deletedCategory.SubCategories = null;
+                    }
+                    if (deletedCategory.Passwords != null)
+                    {
+                        deletedCategory.Passwords.Clear();
+                        deletedCategory.Passwords = null;
+                    }
+
+                    deletedCategory.Parent_Category = null;
+
+                    PushNotifications.sendDeletedCategoryDetails(deletedCategory);
+
+                    //return the item, so that it can be removed from the UI
+                    return Json(deletedCategory);
                 }
-
-                //set the item to deleted
-                deletedCategory.Deleted = true;
-
-                //move it to the very end
-                deletedCategory.CategoryOrder = 9999;
-
-                //set the item to be deleted
-                DatabaseContext.Entry(deletedCategory).State = EntityState.Modified;
-
-                //save changes
-                await DatabaseContext.SaveChangesAsync();
-
-                //proxies are no longer needed, so remove to avoid the "cicular reference" issue
-                if (deletedCategory.SubCategories != null)
-                {
-                    deletedCategory.SubCategories.Clear();
-                    deletedCategory.SubCategories = null;
-                }
-                if (deletedCategory.Passwords != null)
-                {
-                    deletedCategory.Passwords.Clear();
-                    deletedCategory.Passwords = null;
-                }
-
-                deletedCategory.Parent_Category = null;
-
-                PushNotifications.sendDeletedCategoryDetails(deletedCategory);
-
-                //return the item, so that it can be removed from the UI
-                return Json(deletedCategory);
+                catch { }
             }
-            catch {}
 
             return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
@@ -393,189 +408,192 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
         {
-
-            try
+            if ((User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) && isCategoryItem) || !isCategoryItem || User.IsInRole("Administrator"))
             {
-                //disable auto detect changes (as this slows everything down)
-                DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
-
-                //moved down
-                if (NewPosition > OldPosition)
+                try
                 {
+                    //disable auto detect changes (as this slows everything down)
+                    DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
 
-
-                    if (isCategoryItem)
+                    //moved down
+                    if (NewPosition > OldPosition)
                     {
 
-                        #region movecategorydown
 
-                        //get the category item to move
-                        var currentCategory = DatabaseContext.Categories
-                                                                .Include("Parent_Category")
-                                                                .Single(c => c.CategoryId == ItemId);
-
-                        //load in the parent's subcategories
-                        DatabaseContext.Entry(currentCategory.Parent_Category)
-                                                .Collection(c => c.SubCategories)
-                                                .Query()
-                                                .Where(c => !c.Deleted)
-                                                .Load();
-
-                        //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
-                        foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
+                        if (isCategoryItem)
                         {
-                            //move the category up
-                            childCategory.CategoryOrder--;
 
-                            //tell EF that the category has been altered
-                            DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                            #region movecategorydown
+
+                            //get the category item to move
+                            var currentCategory = DatabaseContext.Categories
+                                                                    .Include("Parent_Category")
+                                                                    .Single(c => c.CategoryId == ItemId);
+
+                            //load in the parent's subcategories
+                            DatabaseContext.Entry(currentCategory.Parent_Category)
+                                                    .Collection(c => c.SubCategories)
+                                                    .Query()
+                                                    .Where(c => !c.Deleted)
+                                                    .Load();
+
+                            //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
+                            foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
+                            {
+                                //move the category up
+                                childCategory.CategoryOrder--;
+
+                                //tell EF that the category has been altered
+                                DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                            }
+
+                            //set its new position
+                            currentCategory.CategoryOrder = NewPosition;
+                            DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
+
+                            //save changes to database
+                            await DatabaseContext.SaveChangesAsync();
+
+                            #endregion
+
+                        }
+                        else
+                        {
+
+                            #region movepasswordown
+
+                            //get the password item to move
+                            var currentPassword = DatabaseContext.Passwords
+                                                                    .Include("Parent_Category")
+                                                                    .Single(p => p.PasswordId == ItemId);
+
+                            //load in the parent's subcategories
+                            DatabaseContext.Entry(currentPassword.Parent_Category)
+                                                    .Collection(c => c.Passwords)
+                                                    .Query()
+                                                    .Where(p => !p.Deleted)
+                                                    .Load();
+
+                            //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
+                            foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder > OldPosition).Where(p => p.PasswordOrder < NewPosition + 1))
+                            {
+                                //move the password up
+                                childPassword.PasswordOrder--;
+
+                                //tell EF that the password has been altered
+                                DatabaseContext.Entry(childPassword).State = EntityState.Modified;
+                            }
+
+                            //set its new position
+                            currentPassword.PasswordOrder = NewPosition;
+                            DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
+
+                            //save changes to database
+                            await DatabaseContext.SaveChangesAsync();
+
+                            #endregion
+
                         }
 
-                        //set its new position
-                        currentCategory.CategoryOrder = NewPosition;
-                        DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
-
-                        //save changes to database
-                        await DatabaseContext.SaveChangesAsync();
-
-                        #endregion
-
                     }
+                    //moved up
                     else
                     {
 
-                        #region movepasswordown
-
-                        //get the password item to move
-                        var currentPassword = DatabaseContext.Passwords
-                                                                .Include("Parent_Category")
-                                                                .Single(p => p.PasswordId == ItemId);
-
-                        //load in the parent's subcategories
-                        DatabaseContext.Entry(currentPassword.Parent_Category)
-                                                .Collection(c => c.Passwords)
-                                                .Query()
-                                                .Where(p => !p.Deleted)
-                                                .Load();
-
-                        //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                        foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder > OldPosition).Where(p => p.PasswordOrder < NewPosition + 1))
+                        if (isCategoryItem)
                         {
-                            //move the password up
-                            childPassword.PasswordOrder--;
 
-                            //tell EF that the password has been altered
-                            DatabaseContext.Entry(childPassword).State = EntityState.Modified;
+                            #region movecategoryup
+
+                            //get the category item to move
+                            var currentCategory = DatabaseContext.Categories
+                                                                    .Include("Parent_Category")
+                                                                    .Single(c => c.CategoryId == ItemId);
+
+                            //load in the parent's subcategories
+                            DatabaseContext.Entry(currentCategory.Parent_Category)
+                                                    .Collection(c => c.SubCategories)
+                                                    .Query()
+                                                    .Where(c => !c.Deleted)
+                                                    .Load();
+
+                            //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
+                            foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
+                            {
+                                //move the category up
+                                childCategory.CategoryOrder++;
+
+                                //tell EF that the category has been altered
+                                DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                            }
+
+                            //set its new position
+                            currentCategory.CategoryOrder = NewPosition;
+                            DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
+
+                            //save changes to database
+                            await DatabaseContext.SaveChangesAsync();
+
+                            #endregion
+
+                        }
+                        else
+                        {
+
+                            #region movepasswordup
+
+                            //get the password item to move
+                            var currentPassword = DatabaseContext.Passwords
+                                                                    .Include("Parent_Category")
+                                                                    .Single(p => p.PasswordId == ItemId);
+
+                            //load in the parent's subcategories
+                            DatabaseContext.Entry(currentPassword.Parent_Category)
+                                                    .Collection(c => c.Passwords)
+                                                    .Query()
+                                                    .Where(p => !p.Deleted)
+                                                    .Load();
+
+                            //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
+                            foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder < OldPosition).Where(p => p.PasswordOrder > NewPosition - 1))
+                            {
+                                //move the password up
+                                childPassword.PasswordOrder++;
+
+                                //tell EF that the password has been altered
+                                DatabaseContext.Entry(childPassword).State = EntityState.Modified;
+                            }
+
+                            //set its new position
+                            currentPassword.PasswordOrder = NewPosition;
+                            DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
+
+                            //save changes to database
+                            await DatabaseContext.SaveChangesAsync();
+
+                            #endregion
+
                         }
 
-                        //set its new position
-                        currentPassword.PasswordOrder = NewPosition;
-                        DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
-
-                        //save changes to database
-                        await DatabaseContext.SaveChangesAsync();
-
-                        #endregion
-
                     }
+
+                    DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+
+                    return Json(new
+                    {
+                        Status = "Completed"
+                    });
 
                 }
-                //moved up
-                else
-                {
+                catch { }
 
-                    if (isCategoryItem)
-                    {
-
-                        #region movecategoryup
-
-                        //get the category item to move
-                        var currentCategory = DatabaseContext.Categories
-                                                                .Include("Parent_Category")
-                                                                .Single(c => c.CategoryId == ItemId);
-
-                        //load in the parent's subcategories
-                        DatabaseContext.Entry(currentCategory.Parent_Category)
-                                                .Collection(c => c.SubCategories)
-                                                .Query()
-                                                .Where(c => !c.Deleted)
-                                                .Load();
-
-                        //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
-                        foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
-                        {
-                            //move the category up
-                            childCategory.CategoryOrder++;
-
-                            //tell EF that the category has been altered
-                            DatabaseContext.Entry(childCategory).State = EntityState.Modified;
-                        }
-
-                        //set its new position
-                        currentCategory.CategoryOrder = NewPosition;
-                        DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
-
-                        //save changes to database
-                        await DatabaseContext.SaveChangesAsync();
-
-                        #endregion
-
-                    }
-                    else
-                    {
-
-                        #region movepasswordup
-
-                        //get the password item to move
-                        var currentPassword = DatabaseContext.Passwords
-                                                                .Include("Parent_Category")
-                                                                .Single(p => p.PasswordId == ItemId);
-
-                        //load in the parent's subcategories
-                        DatabaseContext.Entry(currentPassword.Parent_Category)
-                                                .Collection(c => c.Passwords)
-                                                .Query()
-                                                .Where(p => !p.Deleted)
-                                                .Load();
-
-                        //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                        foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder < OldPosition).Where(p => p.PasswordOrder > NewPosition - 1))
-                        {
-                            //move the password up
-                            childPassword.PasswordOrder++;
-
-                            //tell EF that the password has been altered
-                            DatabaseContext.Entry(childPassword).State = EntityState.Modified;
-                        }
-
-                        //set its new position
-                        currentPassword.PasswordOrder = NewPosition;
-                        DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
-
-                        //save changes to database
-                        await DatabaseContext.SaveChangesAsync();
-
-                        #endregion
-
-                    }
-
-                }
-
-                DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
-
-            }
-            catch
-            {
-                return Json(new
-                {
-                    Status = "Failed"
-                });
             }
 
             return Json(new
             {
-                Status = "Completed"
+                Status = "Failed"
             });
+
         }
 
         #endregion

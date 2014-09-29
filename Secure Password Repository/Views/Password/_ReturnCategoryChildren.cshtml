@@ -27,10 +27,15 @@
     }
     else
     {
-        
-        @Html.Partial("_CreateCategory", Model.categoryAddItem)
-        @Html.Partial("_CreatePassword", Model.passwordAddItem)
-        
+        @if (ApplicationSettings.Default.RoleAllowAddCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || User.IsInRole("Administrator")))
+        { 
+            @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        }
+        @if (ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || User.IsInRole("Administrator")))
+        {
+            @Html.Partial("_CreatePassword", Model.passwordAddItem)    
+        }
+
     }
 
 </ul>

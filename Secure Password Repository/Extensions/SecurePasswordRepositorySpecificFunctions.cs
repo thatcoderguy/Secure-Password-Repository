@@ -20,28 +20,22 @@ namespace Secure_Password_Repository.Extensions
 
         public static string Generate_UserEncryptionKey(string plainTextPassword)
         {
-            string hashedPassword = EncryptionAndHashing.Hash_SHA1(plainTextPassword);
+            byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(plainTextPassword);
 
-            hashedPassword = EncryptionAndHashing.Hash_PBKDF2(hashedPassword, ApplicationSettings.Default.SystemSalt);
+            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt, false);
 
-            return hashedPassword;
+            return Convert.ToBase64String(hashedPassword);
         }
 
         public static string Generate_Encrypted_UserEncryptionKey(string plainTextPassword)
         {
-            string encryptedPassword = EncryptionAndHashing.Hash_SHA1(plainTextPassword);
+            byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(plainTextPassword);
 
-            encryptedPassword = EncryptionAndHashing.Hash_PBKDF2(encryptedPassword, ApplicationSettings.Default.SystemSalt);
+            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt, false);
 
+            EncryptionAndHashing.Encrypt_DPAPI(ref hashedPassword);
 
-            byte[] hashedPasswordBytes = Encoding.Default.GetBytes(encryptedPassword);
-            encryptedPassword = string.Empty;
-
-            EncryptionAndHashing.Encrypt_DPAPI(ref hashedPasswordBytes);
-
-            encryptedPassword = Convert.ToBase64String(hashedPasswordBytes);
-
-            return encryptedPassword;
+            return Convert.ToBase64String(hashedPassword);
         }
 
         public static string Decrypt_UserEncryptionKey(string encryptedKey)

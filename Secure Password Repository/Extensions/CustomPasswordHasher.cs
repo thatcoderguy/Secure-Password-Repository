@@ -38,7 +38,7 @@ namespace Secure_Password_Repository.Extensions
             string salt = EncryptionAndHashing.Get_PBKDF2Salt(hashedPassword);
 
             //now use the salt and the plain-text password to generate a HMAC and verify
-            if (hashedPassword.Equals(EncryptionAndHashing.Hash_PBKDF2(providedPassword, salt)))
+            if (hashedPassword.Equals(EncryptionAndHashing.Hash_PBKDF2(providedPassword, salt, true)))
                 return PasswordVerificationResult.Success;
             else
                 return PasswordVerificationResult.Failed;

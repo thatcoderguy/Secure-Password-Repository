@@ -51,7 +51,7 @@ namespace Secure_Password_Repository.Settings
             Default.SMTPServerAddress = "localhost";
             Default.SMTPServerUsername = string.Empty;
             Default.SMTPServerPassword = string.Empty;
-            Default.SystemInitilisationVector = EncryptionAndHashing.Generate_RandomString(16);
+            Default.SystemInitilisationVector = EncryptionAndHashing.Generate_Random_ReadableString(16);
             Default.SystemSalt = EncryptionAndHashing.Generate_Random_ReadableString(32);
             Default.SCryptHashCost = "262144";
             Default.PBKDF2IterationCount = "1000";

@@ -92,7 +92,13 @@ namespace Secure_Password_Repository.Controllers
                     {
 
                         //generate the user encryption key (used to decrypt the user's private key) from the password and store in cache
-                        MemoryCache.Default.Set(model.Username, SecurePasswordRepositorySpecificFunctions.Generate_Encrypted_UserEncryptionKey(model.Password), new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration=TimeSpan.FromHours(1), Priority=CacheItemPriority.Default, RemovedCallback = SecurePasswordRepositorySpecificFunctions.RemovedCallback });
+                        MemoryCache.Default.Set(model.Username, 
+                                                SecurePasswordRepositorySpecificFunctions.Generate_Encrypted_UserEncryptionKey(model.Password), 
+                                                new CacheItemPolicy() { 
+                                                                        AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
+                                                                        SlidingExpiration=TimeSpan.FromHours(1), 
+                                                                        Priority=CacheItemPriority.Default,
+                                                                        RemovedCallback = SecurePasswordRepositorySpecificFunctions.RemovedCallback });
 
                         await SignInAsync(user, false);
                         return RedirectToLocal(returnUrl);

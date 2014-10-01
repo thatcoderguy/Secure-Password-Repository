@@ -88,7 +88,10 @@ namespace Secure_Password_Repository.Extensions
             //import the provided public key
             rsa.FromXmlString(PublicKey);
 
-            encryptedtext = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(PlainText), true));
+            encryptedtext = Convert.ToBase64String(
+                                            rsa.Encrypt(
+                                                   Encoding.Default.GetBytes(PlainText)
+                                                   , true));
 
             rsa.Clear();
 
@@ -117,7 +120,10 @@ namespace Secure_Password_Repository.Extensions
             //import the provided public key
             rsa.FromXmlString(PublicKey);
 
-            encryptedtext = Convert.ToBase64String(rsa.Encrypt(EncryptedBytes, true));
+            encryptedtext = Convert.ToBase64String(
+                                                rsa.Encrypt(
+                                                        EncryptedBytes
+                                                        , true));
 
             rsa.Clear();
 
@@ -145,7 +151,7 @@ namespace Secure_Password_Repository.Extensions
             rsa.PersistKeyInCsp = false;
             rsa.FromXmlString(PrivateKey);
 
-            plaintext = System.Text.Encoding.Unicode.GetString(rsa.Encrypt(Encoding.UTF8.GetBytes(EncryptedText), true));
+            plaintext = System.Text.Encoding.Default.GetString(rsa.Encrypt(Encoding.Default.GetBytes(EncryptedText), true));
 
             rsa.Clear();
 
@@ -418,7 +424,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Convert.ToBase64String(BytesToEncrypt);
+            return Encoding.Default.GetBytes(BytesToEncrypt);
         }
 
         ///<summary>
@@ -430,40 +436,27 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="EncryptionKey">
         ///The key used to encrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
         public static byte[] Encrypt_AES256_To_Bytes(string PlainText, string EncryptionKey, bool KeyIsBase64)
         {
-
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
-
-            //clear the original text (for security)
-            //PlainText = string.Empty;
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
 
-                //the key may not be a base64 string
-                if (KeyIsBase64)
-                    aesAlg.Key = Convert.FromBase64String(EncryptionKey);
-                else
-                {
-                    //we need the key to be 32 chars long (256 bits)
-                    if (EncryptionKey.Length < 32)
-                        Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
-                    else if (EncryptionKey.Length > 32)
-                        EncryptionKey = EncryptionKey.Substring(0, 32);
+                //we need the key to be 32 chars long (256 bits)
+                if (EncryptionKey.Length < 32)
+                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                else if (EncryptionKey.Length > 32)
+                    EncryptionKey = EncryptionKey.Substring(0, 32);
 
-                    aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-                }
+                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -507,9 +500,6 @@ namespace Secure_Password_Repository.Extensions
 
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
 
-            //clear the original text (for security)
-            //PlainText = string.Empty;
-
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
@@ -520,7 +510,7 @@ namespace Secure_Password_Repository.Extensions
 
                 aesAlg.Key = EncryptionKey;
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -556,34 +546,25 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="EncryptionKey">
         ///The key used to encrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_AES256_To_Bytes(byte[] BytesToEncrypt, string EncryptionKey, bool KeyIsBase64)
+        public static byte[] Encrypt_AES256_To_Bytes(byte[] BytesToEncrypt, string EncryptionKey)
         {
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
 
-                //the key may not be a base64 string
-                if (KeyIsBase64)
-                    aesAlg.Key = Convert.FromBase64String(EncryptionKey);
-                else
-                {
-                    //we need the key to be 32 chars long (256 bits)
-                    if (EncryptionKey.Length < 32)
-                        Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
-                    else if (EncryptionKey.Length > 32)
-                        EncryptionKey = EncryptionKey.Substring(0, 32);
+                //we need the key to be 32 chars long (256 bits)
+                if (EncryptionKey.Length < 32)
+                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                else if (EncryptionKey.Length > 32)
+                    EncryptionKey = EncryptionKey.Substring(0, 32);
 
-                    aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-                }
+                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -620,9 +601,6 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="EncryptionKey">
         ///The byte array of the key used to encrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
@@ -638,7 +616,7 @@ namespace Secure_Password_Repository.Extensions
 
                 aesAlg.Key = EncryptionKey;
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -675,13 +653,10 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="DecryptionKey">
         ///The key used to decrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
         ///A string of decrypted data
         ///</returns>
-        public static string Decrypt_AES256(string EncryptedText, string DecryptionKey, bool KeyIsBase64)
+        public static string Decrypt_AES256(string EncryptedText, string DecryptionKey)
         {
 
             byte[] BytesToDecrypted = Encoding.Default.GetBytes(EncryptedText);
@@ -693,21 +668,15 @@ namespace Secure_Password_Repository.Extensions
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
 
-                //the key may not be a base64 string
-                if (KeyIsBase64)
-                    aesAlg.Key = Convert.FromBase64String(DecryptionKey);
-                else
-                {
-                    //we need the key to be 32 chars long (256 bits)
-                    if (DecryptionKey.Length < 32)
-                        Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                    else if (DecryptionKey.Length > 32)
-                        DecryptionKey = DecryptionKey.Substring(0, 32);
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    DecryptionKey = DecryptionKey.Substring(0, 32);
 
-                    aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
-                }
+                aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -729,7 +698,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.UTF8.GetString(BytesToDecrypted, 0, ByteCount);
+            return Encoding.Default.GetString(BytesToDecrypted, 0, ByteCount);
         }
 
         ///<summary>
@@ -741,13 +710,10 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="DecryptionKey">
         ///The key used to decrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
         ///A string of decrypted data
         ///</returns>
-        public static string Decrypt_AES256(byte[] BytesToDecrypted, string DecryptionKey, bool KeyIsBase64)
+        public static string Decrypt_AES256(byte[] BytesToDecrypted, string DecryptionKey)
         {
 
             int ByteCount = 0;
@@ -756,22 +722,15 @@ namespace Secure_Password_Repository.Extensions
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    DecryptionKey = DecryptionKey.Substring(0, 32);
 
-                //the key may not be a base64 string
-                if (KeyIsBase64)
-                    aesAlg.Key = Convert.FromBase64String(DecryptionKey);
-                else
-                {
-                    //we need the key to be 32 chars long (256 bits)
-                    if (DecryptionKey.Length < 32)
-                        Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                    else if (DecryptionKey.Length > 32)
-                        DecryptionKey = DecryptionKey.Substring(0, 32);
+                aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
 
-                    aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
-                }
-
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -793,7 +752,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.UTF8.GetString(BytesToDecrypted, 0, ByteCount);
+            return Encoding.Default.GetString(BytesToDecrypted, 0, ByteCount);
         }
 
         ///<summary>
@@ -807,11 +766,14 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static string Hash_SCrypt(string Password)
         {
-            byte[] saltbytes = System.Text.Encoding.UTF8.GetBytes(ApplicationSettings.Default.SystemSalt);
-            byte[] textbytes = System.Text.Encoding.UTF8.GetBytes(Password);
+            byte[] saltbytes = System.Text.Encoding.Default.GetBytes(ApplicationSettings.Default.SystemSalt);
+            byte[] textbytes = System.Text.Encoding.Default.GetBytes(Password);
 
-            //convert the text to an SCrypt hash, and then convert the hash to Base64
-            return Convert.ToBase64String(SCrypt.ComputeDerivedKey(textbytes, saltbytes, 262144, 8, 1, null, 1024));
+            //generate the hash
+            byte[] SCryptHash = SCrypt.ComputeDerivedKey(textbytes, saltbytes, 32768, 8, 1, null, int.Parse(ApplicationSettings.Default.SCryptHashCost));
+
+            //convert the text to an SCrypt hash, and then convert the hash to string
+            return Encoding.Default.GetString(SCryptHash);
         }
 
         ///<summary>
@@ -824,26 +786,28 @@ namespace Secure_Password_Repository.Extensions
         ///The salt, a unique salt means a unique SCrypt string
         ///</param>
         ///<returns>
-        ///A HMAC converted to Base64 string
+        ///A HMAC converted to a string
         ///</returns>
         public static string Hash_SCrypt(string Password, string Salt)
         {
-            byte[] saltbytes = System.Text.Encoding.UTF8.GetBytes(Salt);
-            byte[] textbytes = System.Text.Encoding.UTF8.GetBytes(Password);
+            byte[] saltbytes = Encoding.Default.GetBytes(Salt);
+            byte[] textbytes = Encoding.Default.GetBytes(Password);
 
-            //convert the text to an SCrypt hash, and then convert the hash to Base64
-            //262144
-            return Convert.ToBase64String(SCrypt.ComputeDerivedKey(textbytes, saltbytes, 32768, 8, 1, null, int.Parse(ApplicationSettings.Default.SCryptHashCost)));
+            //generate the hash
+            byte[] SCryptHash = SCrypt.ComputeDerivedKey(textbytes, saltbytes, 32768, 8, 1, null, int.Parse(ApplicationSettings.Default.SCryptHashCost));
+
+            //convert the text to an SCrypt hash, and then convert the hash to string
+            return Encoding.Default.GetString(SCryptHash);
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string using the PBKDF2 algorithm
+        /// Generates and returns a salted HMAC of the provided string using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Password to be converted into a HMAC
         /// </param>
         /// <returns>
-        /// A HMAC converted to Base64 string
+        /// A HMAC converted to a string
         /// </returns>
         public static string Hash_PBKDF2(string Password)
         {
@@ -851,10 +815,8 @@ namespace Secure_Password_Repository.Extensions
             byte[] buffer;
             byte[] hash = new byte[1056];
 
-            if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
+            if (Password == null || Password.Length == 0)
+                throw new ArgumentNullException("Missing Password");
 
             //generate a salt and a number of random bytes
             using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, 32, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
@@ -867,12 +829,11 @@ namespace Secure_Password_Repository.Extensions
             Buffer.BlockCopy(salt, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC 
-            return Convert.ToBase64String(hash);
+            return Encoding.Default.GetString(hash);
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string and salt using the PBKDF2 algorithm
+        /// Generates and returns a salted HMAC of the provided string and salt using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Password to be converted into a HMAC
@@ -880,51 +841,43 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="Salt">
         /// The salt, a unique salt means a unique PBKDF2 string
         /// </param>
-        /// <param name="isSaltBase64">
-        /// Is the salt in base64 format
-        /// </param>
         /// <returns>
-        /// A HMAC converted to Base64 string
+        /// A HMAC converted to a string
         /// </returns>
-        public static string Hash_PBKDF2(string Password, string Salt, bool isSaltBase64)
+        public static string Hash_PBKDF2(string Password, string Salt)
         {
             byte[] saltbytes;
             byte[] buffer;
             byte[] hash = new byte[1056];
 
-            if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
+            if (Password == null || Password.Length == 0)
+                throw new ArgumentNullException("Missing Password");
 
-            if (isSaltBase64)
-                saltbytes = Convert.FromBase64String(Salt);
-            else
-                saltbytes = Encoding.Default.GetBytes(Salt);
+            if (Salt == null || Salt.Length == 0)
+                throw new ArgumentNullException("Missing Salt");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, saltbytes, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
             }
 
-            //copy the hash and generated bytes into a byte array
+            //copy the hash and generated bytes into a byte array (so the HMAC also contains the Salt)
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC
-            return Convert.ToBase64String(hash);
+            return Encoding.Default.GetString(hash);
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string using the PBKDF2 algorithm
+        /// Generates and returns a salted HMAC of the provided string using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Byte array of Password chars to be converted into a HMAC
         /// </param>
         /// <returns>
-        /// A HMAC converted to Base64 string
+        /// A HMAC converted to a string
         /// </returns>
         public static string Hash_PBKDF2(byte[] Password)
         {
@@ -932,11 +885,9 @@ namespace Secure_Password_Repository.Extensions
             byte[] buffer;
             byte[] hash = new byte[1056];
 
-            if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
-
+            if (Password == null || Password.Length == 0)
+                throw new ArgumentNullException("Missing Password");
+        
             saltbytes = Generate_RandomBytes(32);
 
             //user specified hash
@@ -946,16 +897,15 @@ namespace Secure_Password_Repository.Extensions
                 buffer = bytes.GetBytes(1024);
             }
 
-            //copy the hash and generated bytes into a byte array
+            //copy the hash and generated bytes into a byte array (so the HMAC also contains the Salt)
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC
-            return Convert.ToBase64String(hash);
+            return Encoding.Default.GetString(hash);
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string and salt using the PBKDF2 algorithm
+        /// Generates and returns a salted HMAC of the provided string and salt using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Byte array of Password chars to be converted into a HMAC
@@ -963,45 +913,37 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="Salt">
         /// The salt, a unique salt means a unique PBKDF2 string
         /// </param>
-        /// <param name="isSaltBase64">
-        /// Is the salt in base64 format
-        /// </param>
         /// <returns>
-        /// A HMAC converted to Base64 string
+        /// A HMAC converted to a string
         /// </returns>
-        public static string Hash_PBKDF2(byte[] Password, string Salt, bool isSaltBase64)
+        public static string Hash_PBKDF2(byte[] Password, string Salt)
         {
             byte[] saltbytes;
             byte[] buffer;
             byte[] hash = new byte[1056];
 
-            if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
+            if (Password == null || Password.Length == 0)
+                throw new ArgumentNullException("Missing Password");
 
-            if (isSaltBase64)
-                saltbytes = Convert.FromBase64String(Salt);
-            else
-                saltbytes = Encoding.Default.GetBytes(Salt);
+            if (Salt == null || Salt == String.Empty)
+                throw new ArgumentNullException("Missing Salt");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, saltbytes, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
             }
 
-            //copy the hash and generated bytes into a byte array
+            //copy the hash and generated bytes into a byte array (so the HMAC also contains the Salt)
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC
-            return Convert.ToBase64String(hash);
+            return Encoding.Default.GetString(hash);
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string using the PBKDF2 algorithm
+        /// Generates and returns a salted HMAC of the provided string using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Password to be converted into a HMAC
@@ -1016,9 +958,7 @@ namespace Secure_Password_Repository.Extensions
             byte[] hash = new byte[1056];
 
             if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
+                throw new ArgumentNullException("Missing Password");
 
             //generate a salt and a number of random bytes
             using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, 32, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
@@ -1043,41 +983,30 @@ namespace Secure_Password_Repository.Extensions
         /// </param>
         /// <param name="Salt">
         /// The salt, a unique salt means a unique PBKDF2 string
-        /// </param>
-        /// <param name="isSaltBase64">
-        /// Is the salt in base64 format
-        /// </param>         
+        /// </param>  
         /// <returns>
         /// A HMAC converted to a Byte array
         /// </returns>
-        public static byte[] Hash_PBKDF2_To_Bytes(string Password, string Salt, bool isSaltBase64)
+        public static byte[] Hash_PBKDF2_To_Bytes(string Password, string Salt)
         {
             byte[] saltbytes;
             byte[] buffer;
             byte[] hash = new byte[1056];
 
-            if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
-
-            if (isSaltBase64)
-                saltbytes = Convert.FromBase64String(Salt);
-            else
-                saltbytes = Encoding.Default.GetBytes(Salt);
+            if (Password == null || Password.Length == 0)
+                throw new ArgumentNullException("Missing Password");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, saltbytes, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password,  Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
             }
 
-            //copy the hash and generated bytes into a byte array
+            //copy the hash and generated bytes into a byte array (so the HMAC also contains the Salt)
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC
             return hash;
         }
 
@@ -1088,7 +1017,7 @@ namespace Secure_Password_Repository.Extensions
         /// Byte array of Password chars to be converted into a HMAC
         /// </param>
         /// <returns>
-        /// A HMAC converted to Byte array
+        /// A hashed byte array
         /// </returns>
         public static byte[] Hash_PBKDF2_To_Bytes(byte[] Password)
         {
@@ -1096,11 +1025,10 @@ namespace Secure_Password_Repository.Extensions
             byte[] buffer;
             byte[] hash = new byte[1056];
 
-            if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
+            if (Password == null || Password.Length == 0)
+                throw new ArgumentNullException("Missing Password");
 
+            //generate a random salt
             saltbytes = Generate_RandomBytes(32);
 
             //user specified hash
@@ -1110,16 +1038,15 @@ namespace Secure_Password_Repository.Extensions
                 buffer = bytes.GetBytes(1024);
             }
 
-            //copy the hash and generated bytes into a byte array
+            //copy the hash and generated bytes into a byte array (so the HMAC also contains the Salt)
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC
             return hash;
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string and salt using the PBKDF2 algorithm
+        /// Generates and returns a salted  HMAC of the provided string and salt using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Byte array of Password chars to be converted into a HMAC
@@ -1127,40 +1054,33 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="Salt">
         /// The salt, a unique salt means a unique PBKDF2 string
         /// </param>
-        /// <param name="isSaltBase64">
-        /// Is the salt in base64 format
-        /// </param>
         /// <returns>
-        /// A HMAC converted to Base64 string
+        /// A hashed byte array
         /// </returns>
-        public static byte[] Hash_PBKDF2_To_Bytes(byte[] Password, string Salt, bool isSaltBase64)
+        public static byte[] Hash_PBKDF2_To_Bytes(byte[] Password, string Salt)
         {
             byte[] saltbytes;
             byte[] buffer;
             byte[] hash = new byte[1056];
 
-            if (Password == null)
-            {
-                throw new ArgumentNullException("password");
-            }
+            if (Password.Length==0 || Password == null)
+                throw new ArgumentNullException("Missing Password");
 
-            if (isSaltBase64)
-                saltbytes = Convert.FromBase64String(Salt);
-            else
-                saltbytes = Encoding.Default.GetBytes(Salt);
+            if(Salt == string.Empty || Salt == null)
+                throw new ArgumentNullException("Missing Salt");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, saltbytes, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
             }
 
-            //copy the hash and generated bytes into a byte array
+            //copy the hash and generated bytes into a byte array (so the HMAC also contains the Salt)
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC
+            //return HMAC
             return hash;
         }
 
@@ -1171,22 +1091,22 @@ namespace Secure_Password_Repository.Extensions
         /// The full HMAC generated with the Hash_PBK2DF function
         /// </param>
         /// <returns>
-        /// A base64ed string containing salt orginally used to generate the HMAC
+        /// A string containing salt orginally used to generate the HMAC
         /// </returns>
         /// <remarks>
         /// Grabs the first 32 bytes from the string (the Hash_PBKDF2 implementations above use a 32 byte salt)
         /// </remarks>
         public static string Get_PBKDF2Salt(string HashedPassword)
         {
-            //convert from base64 back to the original bytes
-            byte[] hash = Convert.FromBase64String(HashedPassword);
+            //convert the string to bytes
+            byte[] hash = Encoding.Default.GetBytes(HashedPassword);
             byte[] salt = new byte[32];
 
             //grab first 32 bytes
             Buffer.BlockCopy(hash, 0, salt, 0, 32);
 
             //return just the salt
-            return Convert.ToBase64String(salt);
+            return Encoding.Default.GetString(salt);
         }
 
         /// <summary>
@@ -1200,7 +1120,7 @@ namespace Secure_Password_Repository.Extensions
 
             using (SHA1 sha = new SHA1CryptoServiceProvider())
             {
-                sha1hash = Convert.ToBase64String(sha.ComputeHash(Encoding.Default.GetBytes(PlainText)));
+                sha1hash = Encoding.Default.GetString(sha.ComputeHash(Encoding.Default.GetBytes(PlainText)));
             }
 
             return sha1hash;
@@ -1237,7 +1157,7 @@ namespace Secure_Password_Repository.Extensions
             byte[] randombytes = new byte[NumberOfBytes];
             using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider())
             {
-                rngCsp.GetBytes(randombytes);
+                rngCsp.GetNonZeroBytes(randombytes);
             }
 
             return randombytes;
@@ -1257,14 +1177,14 @@ namespace Secure_Password_Repository.Extensions
             byte[] randombytes = new byte[NumberOfChars];
             using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider())
             {
-                rngCsp.GetBytes(randombytes);
+                rngCsp.GetNonZeroBytes(randombytes);
             }
 
-            return Convert.ToBase64String(randombytes);
+            return Encoding.Default.GetString(randombytes);
         }
 
         ///<summary>
-        ///Generates a number random string of readable chars (A-Z a-z 0-9) using the cryptographically secure RNG
+        ///Generates a number random string of readable chars using the cryptographically secure RNG
         ///</summary>
         ///<param name="NumberOfBytes">
         ///The number of chars to return
@@ -1291,7 +1211,6 @@ namespace Secure_Password_Repository.Extensions
                 }
 
             }
-
 
             return new string(buffer);
         }

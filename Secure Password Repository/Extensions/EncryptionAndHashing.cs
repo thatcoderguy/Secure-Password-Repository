@@ -88,10 +88,10 @@ namespace Secure_Password_Repository.Extensions
             //import the provided public key
             rsa.FromXmlString(PublicKey);
 
-            encryptedtext = Convert.ToBase64String(
-                                            rsa.Encrypt(
-                                                   Encoding.Default.GetBytes(PlainText)
-                                                   , true));
+            encryptedtext = Encoding.Default.GetString(
+                                                rsa.Encrypt(
+                                                     Encoding.Default.GetBytes(PlainText)
+                                                     , true));
 
             rsa.Clear();
 
@@ -101,7 +101,7 @@ namespace Secure_Password_Repository.Extensions
         ///<summary>
         ///Encrypts the supplied text using the RSA algorithm and the Public Key provided
         ///</summary>
-        ///<param name="EncryptedBytes">
+        ///<param name="PlainText">
         ///Bytes of data to be encrypted
         ///</param>
         ///<param name="PublicKey">
@@ -110,7 +110,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An string of encrypted data
         ///</returns>
-        public static string Encrypt_RSA(byte[] EncryptedBytes, string PublicKey)
+        public static string Encrypt_RSA(byte[] PlainText, string PublicKey)
         {
             string encryptedtext;
 
@@ -120,9 +120,9 @@ namespace Secure_Password_Repository.Extensions
             //import the provided public key
             rsa.FromXmlString(PublicKey);
 
-            encryptedtext = Convert.ToBase64String(
+            encryptedtext = Encoding.Default.GetString(
                                                 rsa.Encrypt(
-                                                        EncryptedBytes
+                                                        PlainText
                                                         , true));
 
             rsa.Clear();
@@ -130,6 +130,63 @@ namespace Secure_Password_Repository.Extensions
             return encryptedtext;
         }
 
+        ///<summary>
+        ///Encrypts the supplied text using the RSA algorithm and the Public Key provided
+        ///</summary>
+        ///<param name="PlainText">
+        ///The text to be encrypted
+        ///</param>
+        ///<param name="PublicKey">
+        ///The public key to encrypt the data with
+        ///</param>
+        ///<returns>
+        ///An byte array of encrypted data
+        ///</returns>
+        public static byte[] Encrypt_RSA_To_Byte(string PlainText, string PublicKey)
+        {
+            byte[] encryptedtext;
+
+            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+            rsa.PersistKeyInCsp = false;
+
+            //import the provided public key
+            rsa.FromXmlString(PublicKey);
+
+            encryptedtext = rsa.Encrypt(Encoding.Default.GetBytes(PlainText), true);
+
+            rsa.Clear();
+
+            return encryptedtext;
+        }
+
+        ///<summary>
+        ///Encrypts the supplied text using the RSA algorithm and the Public Key provided
+        ///</summary>
+        ///<param name="PlainText">
+        ///Bytes of data to be encrypted
+        ///</param>
+        ///<param name="PublicKey">
+        ///The public key to encrypt the data with
+        ///</param>
+        ///<returns>
+        ///An byte array of encrypted data
+        ///</returns>
+        public static byte[] Encrypt_RSA_To_Bytes(byte[] PlainText, string PublicKey)
+        {
+            byte[] encryptedtext;
+
+            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+            rsa.PersistKeyInCsp = false;
+
+            //import the provided public key
+            rsa.FromXmlString(PublicKey);
+
+            encryptedtext = rsa.Encrypt(PlainText, true);
+
+            rsa.Clear();
+
+            return encryptedtext;
+        }
 
         ///<summary>
         ///Decrypts the supplied text using the RSA algorithm and the Private Key provided
@@ -151,7 +208,10 @@ namespace Secure_Password_Repository.Extensions
             rsa.PersistKeyInCsp = false;
             rsa.FromXmlString(PrivateKey);
 
-            plaintext = System.Text.Encoding.Default.GetString(rsa.Encrypt(Encoding.Default.GetBytes(EncryptedText), true));
+            plaintext = System.Text.Encoding.Default.GetString(
+                                                    rsa.Encrypt(
+                                                            Encoding.Default.GetBytes(EncryptedText)
+                                                            , true));
 
             rsa.Clear();
 
@@ -187,7 +247,7 @@ namespace Secure_Password_Repository.Extensions
         }
 
         ///<summary>
-        ///Encrypts the supplied string using the AES 256 algoritm and returns a Base64ed version of the encrypted text
+        ///Encrypts the supplied string using the AES 256 algoritm and returns a string of encrypted text
         ///</summary>
         ///<param name="PlainText">
         ///The plain text to be encrypted
@@ -195,13 +255,10 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="EncryptionKey">
         ///The key used to encrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
-        ///An string of encrypted data converted to Base64
+        ///An string of encrypted data
         ///</returns>
-        public static string Encrypt_AES256_To_String(string PlainText, string EncryptionKey, bool KeyIsBase64)
+        public static string Encrypt_AES256(string PlainText, string EncryptionKey)
         {
 
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
@@ -213,19 +270,12 @@ namespace Secure_Password_Repository.Extensions
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
+                //we need the key to be 32 chars long (256 bits)
+                Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
-                //the key may not be a base64 string
-                if (KeyIsBase64)
-                    aesAlg.Key = Convert.FromBase64String(EncryptionKey);
-                else
-                {
-                    //we need the key to be 32 chars long (256 bits)
-                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
 
-                    aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-                }
-
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -249,11 +299,11 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Convert.ToBase64String(BytesToEncrypt);
+            return Encoding.Default.GetString(BytesToEncrypt);
         }
 
         ///<summary>
-        ///Encrypts the supplied string using the AES 256 algoritm and returns a Base64ed version of the encrypted text
+        ///Encrypts the supplied string using the AES 256 algoritm and returns a string of encrypted text
         ///</summary>
         ///<param name="PlainText">
         ///The plain text to be encrypted
@@ -262,15 +312,12 @@ namespace Secure_Password_Repository.Extensions
         ///Byte array of the key used to encrypt the text
         ///</param>
         ///<returns>
-        ///An string of encrypted data converted to Base64
+        ///An string of encrypted data
         ///</returns>
-        public static string Encrypt_AES256_To_String(string PlainText, byte[] EncryptionKey)
+        public static string Encrypt_AES256(string PlainText, byte[] EncryptionKey)
         {
 
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
-
-            //clear the original text (for security)
-            //PlainText = string.Empty;
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -282,7 +329,7 @@ namespace Secure_Password_Repository.Extensions
 
                 aesAlg.Key = EncryptionKey;
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -306,7 +353,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Convert.ToBase64String(BytesToEncrypt);
+            return Encoding.Default.GetString(BytesToEncrypt);
         }
 
         ///<summary>
@@ -318,34 +365,25 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="EncryptionKey">
         ///The key used to encrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
-        ///An string of encrypted data converted to Base64
+        ///An string of encrypted data
         ///</returns>
-        public static string Encrypt_AES256_To_String(byte[] BytesToEncrypt, string EncryptionKey, bool KeyIsBase64)
+        public static string Encrypt_AES256(byte[] BytesToEncrypt, string EncryptionKey)
         {
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
 
-                //the key may not be a base64 string
-                if (KeyIsBase64)
-                    aesAlg.Key = Convert.FromBase64String(EncryptionKey);
-                else
-                {
-                    //we need the key to be 32 chars long (256 bits)
-                    if (EncryptionKey.Length < 32)
-                        Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
-                    else if (EncryptionKey.Length > 32)
-                        EncryptionKey = EncryptionKey.Substring(0, 32);
+                //we need the key to be 32 chars long (256 bits)
+                if (EncryptionKey.Length < 32)
+                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                else if (EncryptionKey.Length > 32)
+                    EncryptionKey = EncryptionKey.Substring(0, 32);
 
-                    aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-                }
+                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -369,7 +407,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Convert.ToBase64String(BytesToEncrypt);
+            return Encoding.Default.GetString(BytesToEncrypt);
         }
 
 
@@ -382,13 +420,10 @@ namespace Secure_Password_Repository.Extensions
         ///<param name="EncryptionKey">
         ///The byte array of the key used to encrypt the text
         ///</param>
-        ///<param name="KeyIsBase64">
-        ///The encryption key is in base64 or not
-        ///</param>
         ///<returns>
-        ///An string of encrypted data converted to Base64
+        ///An string of encrypted data
         ///</returns>
-        public static string Encrypt_AES256_To_String(byte[] BytesToEncrypt, byte[] EncryptionKey)
+        public static string Encrypt_AES256(byte[] BytesToEncrypt, byte[] EncryptionKey)
         {
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -400,7 +435,7 @@ namespace Secure_Password_Repository.Extensions
 
                 aesAlg.Key = EncryptionKey;
 
-                aesAlg.IV = Convert.FromBase64String(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -424,7 +459,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.Default.GetBytes(BytesToEncrypt);
+            return Encoding.Default.GetString(BytesToEncrypt);
         }
 
         ///<summary>
@@ -439,7 +474,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_AES256_To_Bytes(string PlainText, string EncryptionKey, bool KeyIsBase64)
+        public static byte[] Encrypt_AES256_To_Bytes(string PlainText, string EncryptionKey)
         {
             byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
 
@@ -756,13 +791,13 @@ namespace Secure_Password_Repository.Extensions
         }
 
         ///<summary>
-        ///Generates and returns a base64ed hash of the provided string using the SCrypt hashing algorithm
+        ///Generates and returns a hash of the provided string using the SCrypt hashing algorithm
         ///</summary>
         ///<param name="Password">
         ///Password to be converted into a hash
         ///</param>
         ///<returns>
-        ///A string of hash data converted to Base64
+        ///A string of hash data
         ///</returns>
         public static string Hash_SCrypt(string Password)
         {
@@ -777,7 +812,7 @@ namespace Secure_Password_Repository.Extensions
         }
 
         ///<summary>
-        ///Generates and returns a base64ed HMAC of the provided string using the SCrypt algorithm
+        ///Generates and returns a HMAC of the provided string using the SCrypt algorithm
         ///</summary>
         ///<param name="Password">
         ///Password to be converted into a HMAC
@@ -971,12 +1006,11 @@ namespace Secure_Password_Repository.Extensions
             Buffer.BlockCopy(salt, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //convert to base64 and return HMAC 
             return hash;
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string and salt using the PBKDF2 algorithm
+        /// Generates and returns a salted HMAC of the provided string and salt using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Password to be converted into a HMAC
@@ -1011,7 +1045,7 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
-        /// Generates and returns a salted base64ed HMAC of the provided string using the PBKDF2 algorithm
+        /// Generates and returns a salted HMAC of the provided string using the PBKDF2 algorithm
         /// </summary>
         /// <param name="Password">
         /// Byte array of Password chars to be converted into a HMAC
@@ -1170,7 +1204,7 @@ namespace Secure_Password_Repository.Extensions
         ///The number of bytes to return
         ///</param>
         ///<returns>
-        ///An string of random bytes converted to Base64
+        ///An string of random bytes
         ///</returns>
         public static string Generate_RandomString(int NumberOfChars)
         {

@@ -155,35 +155,34 @@ namespace Secure_Password_Repository.Controllers
                 //this can be stored as plaintext - we want people to use this key!
                 user.userPublicKey = await EncryptionAndHashing.Retrieve_PublicKey();
 
-                /*
-                 * Now retrieve the generated Private Key and also encrypt it. 
-                 */
-                
+                #region retrieve_and_encrypt_private_key
+
                     //convert the private key to bytes, then clear the original string
-                    byte[] userPrivateKeyBytes = Encoding.Default.GetBytes(await EncryptionAndHashing.Retrieve_PrivateKey());
+                    byte[] userPrivateKeyBytes = (await EncryptionAndHashing.Retrieve_PrivateKey()).ToBytes();
 
                     //Encrypt private key with DPAPI
                     EncryptionAndHashing.Encrypt_DPAPI(ref userPrivateKeyBytes);
 
+                    //hash the user's password,and then use 
+                    byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(model.Password);
+                    hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
+
                     //Encrypt privateKey with the user's encryptionkey (based on their password)
-                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_To_String(userPrivateKeyBytes, SecurePasswordRepositorySpecificFunctions.Generate_UserEncryptionKey(model.Password), false);
+                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_To_Bytes(userPrivateKeyBytes, hashedPassword).ToBase64String();
 
                     //clear the PrivateKey data - for security
                     Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);
+                    Array.Clear(hashedPassword, 0, hashedPassword.Length);
 
                     //Keys has been encrypted, the plaintext ones can now be destroyed
                     EncryptionAndHashing.Destroy_RSAKeys();
 
-                /*
-                 * 
-                 */
+                #endregion
 
                 if (UserMgr.Users.ToList().Count == 0)
                 {
 
-                    /*
-                     * Generate a new symetric encryption key and then encrypt it
-                     */
+                    #region generate_new_database_symetric_encryption_key_and_encrypt
 
                         //generate 32 random bytes - this will be the encryption key
                         byte[] DatabaseEncryptionKeyBytes = EncryptionAndHashing.Generate_RandomBytes(32);
@@ -192,14 +191,12 @@ namespace Secure_Password_Repository.Controllers
                         EncryptionAndHashing.Encrypt_DPAPI(ref DatabaseEncryptionKeyBytes);
 
                         //second level of encryption - using RSA
-                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA(DatabaseEncryptionKeyBytes, user.userPublicKey);
+                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA_To_Bytes(DatabaseEncryptionKeyBytes, user.userPublicKey).ToBase64String();
 
                         //clear the original data
                         Array.Clear(DatabaseEncryptionKeyBytes, 0, DatabaseEncryptionKeyBytes.Length);
 
-                    /*
-                     * 
-                     */
+                    #endregion
 
                     user.isAuthorised = true;
                     FirstUserAccount = "Yes";

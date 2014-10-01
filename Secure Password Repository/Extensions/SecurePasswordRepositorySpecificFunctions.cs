@@ -22,7 +22,7 @@ namespace Secure_Password_Repository.Extensions
         {
             byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(plainTextPassword);
 
-            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt, false);
+            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
 
             return Convert.ToBase64String(hashedPassword);
         }
@@ -31,7 +31,7 @@ namespace Secure_Password_Repository.Extensions
         {
             byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(plainTextPassword);
 
-            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt, false);
+            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
 
             EncryptionAndHashing.Encrypt_DPAPI(ref hashedPassword);
 

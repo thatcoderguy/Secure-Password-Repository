@@ -10,18 +10,11 @@
                 <i class="glyphicon glyphicon-folder-close rightfolderpadding"></i><span class="categoryname">@Model.CategoryName</span>
             </span>
             <span class="btn-group">
-            @if (User.CanEditCategories())
-            {
                 <a href="#" class="btn btn-xs btn-primary editcategorybutton" onclick="displayForm('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-edit">&nbsp;</i>Edit</a>
-            }
-            @if (User.CanDeleteCategories())
-            {
                 <a href="#" class="btn btn-xs btn-danger deletecategorybutton" onclick="deleteCategory('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-remove">&nbsp;</i>Delete</a>
-            }
             </span>
         </div>
-        @if (User.CanEditCategories())
-        {
-            @Html.Partial("_EditCategory", (CategoryEdit)Model)
-        }
+        
+        @Html.Partial("_EditCategory", (CategoryEdit)Model)
+    
     </li>

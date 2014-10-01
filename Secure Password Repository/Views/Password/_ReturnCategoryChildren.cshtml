@@ -11,10 +11,8 @@
             @Html.Partial("_CategoryItem", categoryitem);
         }
         
-        if(User.CanAddCategories())
-        {
-            @Html.Partial("_CreateCategory", Model.categoryAddItem)
-        }
+        @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        
     }
     else if (Model.categoryListItem.Passwords.Count > 0)
     {
@@ -24,24 +22,14 @@
             @Html.Partial("_PasswordItem", passworditem);
         }
         
-        if(User.CanAddPasswords())
-        { 
-            @Html.Partial("_CreatePassword", Model.passwordAddItem)
-        }
-        
+        @Html.Partial("_CreatePassword", Model.passwordAddItem)
+
     }
     else
     {
         
-        if (User.CanAddCategories())
-        { 
-            @Html.Partial("_CreateCategory", Model.categoryAddItem)
-        }
-        
-        if (User.CanAddPasswords())
-        {
-            @Html.Partial("_CreatePassword", Model.passwordAddItem)    
-        }
+        @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        @Html.Partial("_CreatePassword", Model.passwordAddItem)    
 
     }
 

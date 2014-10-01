@@ -88,9 +88,9 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
         public static void sendAddedPasswordDetails(string addedPassword)
         {
-            //broadcast details to all clients except the one requesting the broadcast
+            //broadcast details to ALL clients
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendAddedPasswordDetail(addedPassword);
+            hubContext.Clients.All.sendAddedPasswordDetail(addedPassword);
         }
 
     }

@@ -12,6 +12,7 @@ using System.Web;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Database;
 using System;
+using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository.Models
 {

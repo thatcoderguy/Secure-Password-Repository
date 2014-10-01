@@ -216,7 +216,6 @@ namespace Secure_Password_Repository.Controllers
                         AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
                         CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
 
-
                         string categoryPartialView = RenderViewContent.RenderPartialToString(this, "_CategoryItem", returnCategoryViewItem);
 
                         PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);

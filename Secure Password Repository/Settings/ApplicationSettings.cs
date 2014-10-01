@@ -41,7 +41,10 @@ namespace Secure_Password_Repository.Settings
             }
 
             //make sure the changed values are copied back into cache
-            MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration = MemoryCache.NoSlidingExpiration, Priority = CacheItemPriority.Default });
+            MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { 
+                                                                                AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
+                                                                                SlidingExpiration = MemoryCache.NoSlidingExpiration, 
+                                                                                Priority = CacheItemPriority.Default });
         }
 
         //set default option valus
@@ -99,7 +102,10 @@ namespace Secure_Password_Repository.Settings
                         instance = new ApplicationSettings();
 
                         //insert the object into cache - with no expiration (we want this to be persistant in memory)
-                        MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration = MemoryCache.NoSlidingExpiration, Priority = CacheItemPriority.Default });
+                        MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { 
+                                                                                            AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
+                                                                                            SlidingExpiration = MemoryCache.NoSlidingExpiration, 
+                                                                                            Priority = CacheItemPriority.Default });
 
                         //save to disk
                         Save();
@@ -120,7 +126,10 @@ namespace Secure_Password_Repository.Settings
                         instance = (ApplicationSettings)serial.Deserialize(sr);
 
                         //insert the object into cache - with no expiration (we want this to be persistant in memory)
-                        MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, SlidingExpiration = MemoryCache.NoSlidingExpiration, Priority = CacheItemPriority.Default });
+                        MemoryCache.Default.Set(filename, instance, new CacheItemPolicy() { 
+                                                                                            AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
+                                                                                            SlidingExpiration = MemoryCache.NoSlidingExpiration, 
+                                                                                            Priority = CacheItemPriority.Default });
 
                         //return the newly created object
                         return (ApplicationSettings)MemoryCache.Default.Get(filename);

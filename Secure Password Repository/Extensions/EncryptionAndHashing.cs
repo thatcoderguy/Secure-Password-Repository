@@ -88,10 +88,7 @@ namespace Secure_Password_Repository.Extensions
             //import the provided public key
             rsa.FromXmlString(PublicKey);
 
-            encryptedtext = Encoding.Default.GetString(
-                                                rsa.Encrypt(
-                                                     Encoding.Default.GetBytes(PlainText)
-                                                     , true));
+            encryptedtext = rsa.Encrypt(PlainText.ToBytes(), true).ConvertToString();
 
             rsa.Clear();
 
@@ -120,10 +117,7 @@ namespace Secure_Password_Repository.Extensions
             //import the provided public key
             rsa.FromXmlString(PublicKey);
 
-            encryptedtext = Encoding.Default.GetString(
-                                                rsa.Encrypt(
-                                                        PlainText
-                                                        , true));
+            encryptedtext = rsa.Encrypt(PlainText, true).ConvertToString();
 
             rsa.Clear();
 
@@ -152,7 +146,7 @@ namespace Secure_Password_Repository.Extensions
             //import the provided public key
             rsa.FromXmlString(PublicKey);
 
-            encryptedtext = rsa.Encrypt(Encoding.Default.GetBytes(PlainText), true);
+            encryptedtext = rsa.Encrypt(PlainText.ToBytes(), true);
 
             rsa.Clear();
 
@@ -206,12 +200,11 @@ namespace Secure_Password_Repository.Extensions
 
             RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
             rsa.PersistKeyInCsp = false;
+
+            //load in the private key for decrypting
             rsa.FromXmlString(PrivateKey);
 
-            plaintext = System.Text.Encoding.Default.GetString(
-                                                    rsa.Encrypt(
-                                                            Encoding.Default.GetBytes(EncryptedText)
-                                                            , true));
+            plaintext = rsa.Encrypt(EncryptedText.ToBytes(), true).ConvertToString();
 
             rsa.Clear();
 
@@ -261,7 +254,7 @@ namespace Secure_Password_Repository.Extensions
         public static string Encrypt_AES256(string PlainText, string EncryptionKey)
         {
 
-            byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
+            byte[] BytesToEncrypt = PlainText.ToBytes();
 
             //clear the original text (for security)
             //PlainText = string.Empty;
@@ -273,9 +266,8 @@ namespace Secure_Password_Repository.Extensions
                 //we need the key to be 32 chars long (256 bits)
                 Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
-                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.Key = EncryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -299,7 +291,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.Default.GetString(BytesToEncrypt);
+            return BytesToEncrypt.ConvertToString();
         }
 
         ///<summary>
@@ -317,7 +309,7 @@ namespace Secure_Password_Repository.Extensions
         public static string Encrypt_AES256(string PlainText, byte[] EncryptionKey)
         {
 
-            byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
+            byte[] BytesToEncrypt = PlainText.ToBytes();
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -328,8 +320,7 @@ namespace Secure_Password_Repository.Extensions
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
                 aesAlg.Key = EncryptionKey;
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -353,7 +344,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.Default.GetString(BytesToEncrypt);
+            return BytesToEncrypt.ConvertToString();
         }
 
         ///<summary>
@@ -381,9 +372,8 @@ namespace Secure_Password_Repository.Extensions
                 else if (EncryptionKey.Length > 32)
                     EncryptionKey = EncryptionKey.Substring(0, 32);
 
-                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.Key = EncryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -407,9 +397,8 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.Default.GetString(BytesToEncrypt);
+            return BytesToEncrypt.ConvertToString();
         }
-
 
         ///<summary>
         ///Encrypts the supplied bytes using the AES 256 algoritm
@@ -434,8 +423,7 @@ namespace Secure_Password_Repository.Extensions
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
                 aesAlg.Key = EncryptionKey;
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -459,7 +447,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.Default.GetString(BytesToEncrypt);
+            return BytesToEncrypt.ConvertToString();
         }
 
         ///<summary>
@@ -476,7 +464,7 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static byte[] Encrypt_AES256_To_Bytes(string PlainText, string EncryptionKey)
         {
-            byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
+            byte[] BytesToEncrypt = PlainText.ToBytes();
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -489,9 +477,8 @@ namespace Secure_Password_Repository.Extensions
                 else if (EncryptionKey.Length > 32)
                     EncryptionKey = EncryptionKey.Substring(0, 32);
 
-                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.Key = EncryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -533,7 +520,7 @@ namespace Secure_Password_Repository.Extensions
         public static byte[] Encrypt_AES256_To_Bytes(string PlainText, byte[] EncryptionKey)
         {
 
-            byte[] BytesToEncrypt = Encoding.Default.GetBytes(PlainText);
+            byte[] BytesToEncrypt = PlainText.ToBytes();
 
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -544,8 +531,7 @@ namespace Secure_Password_Repository.Extensions
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
                 aesAlg.Key = EncryptionKey;
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -597,9 +583,8 @@ namespace Secure_Password_Repository.Extensions
                 else if (EncryptionKey.Length > 32)
                     EncryptionKey = EncryptionKey.Substring(0, 32);
 
-                aesAlg.Key = Encoding.Default.GetBytes(EncryptionKey);
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.Key = EncryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -650,8 +635,7 @@ namespace Secure_Password_Repository.Extensions
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
                 aesAlg.Key = EncryptionKey;
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -694,7 +678,7 @@ namespace Secure_Password_Repository.Extensions
         public static string Decrypt_AES256(string EncryptedText, string DecryptionKey)
         {
 
-            byte[] BytesToDecrypted = Encoding.Default.GetBytes(EncryptedText);
+            byte[] BytesToDecrypted = EncryptedText.ToBytes();
 
             int ByteCount = 0;
 
@@ -709,9 +693,8 @@ namespace Secure_Password_Repository.Extensions
                 else if (DecryptionKey.Length > 32)
                     DecryptionKey = DecryptionKey.Substring(0, 32);
 
-                aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.Key = DecryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -733,7 +716,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.Default.GetString(BytesToDecrypted, 0, ByteCount);
+            return BytesToDecrypted.ConvertToString();
         }
 
         ///<summary>
@@ -763,9 +746,8 @@ namespace Secure_Password_Repository.Extensions
                 else if (DecryptionKey.Length > 32)
                     DecryptionKey = DecryptionKey.Substring(0, 32);
 
-                aesAlg.Key = Encoding.Default.GetBytes(DecryptionKey);
-
-                aesAlg.IV = Encoding.Default.GetBytes(ApplicationSettings.Default.SystemInitilisationVector);
+                aesAlg.Key = DecryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
                 aesAlg.Mode = CipherMode.CBC;
@@ -787,7 +769,7 @@ namespace Secure_Password_Repository.Extensions
                 aesAlg.Clear();
             }
 
-            return Encoding.Default.GetString(BytesToDecrypted, 0, ByteCount);
+            return BytesToDecrypted.ConvertToString();
         }
 
         ///<summary>
@@ -801,14 +783,14 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static string Hash_SCrypt(string Password)
         {
-            byte[] saltbytes = System.Text.Encoding.Default.GetBytes(ApplicationSettings.Default.SystemSalt);
-            byte[] textbytes = System.Text.Encoding.Default.GetBytes(Password);
+            byte[] saltbytes = ApplicationSettings.Default.SystemSalt.ToBytes();
+            byte[] textbytes = Password.ToBytes();
 
             //generate the hash
-            byte[] SCryptHash = SCrypt.ComputeDerivedKey(textbytes, saltbytes, 32768, 8, 1, null, int.Parse(ApplicationSettings.Default.SCryptHashCost));
+            byte[] SCryptHash = SCrypt.ComputeDerivedKey(textbytes, saltbytes, 32768, 8, 1, null, ApplicationSettings.Default.SCryptHashCost.ToInt());
 
             //convert the text to an SCrypt hash, and then convert the hash to string
-            return Encoding.Default.GetString(SCryptHash);
+            return SCryptHash.ConvertToString();
         }
 
         ///<summary>
@@ -825,14 +807,14 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static string Hash_SCrypt(string Password, string Salt)
         {
-            byte[] saltbytes = Encoding.Default.GetBytes(Salt);
-            byte[] textbytes = Encoding.Default.GetBytes(Password);
+            byte[] saltbytes = Salt.ToBytes();
+            byte[] textbytes = Password.ToBytes();
 
             //generate the hash
-            byte[] SCryptHash = SCrypt.ComputeDerivedKey(textbytes, saltbytes, 32768, 8, 1, null, int.Parse(ApplicationSettings.Default.SCryptHashCost));
+            byte[] SCryptHash = SCrypt.ComputeDerivedKey(textbytes, saltbytes, 32768, 8, 1, null, ApplicationSettings.Default.SCryptHashCost.ToInt());
 
             //convert the text to an SCrypt hash, and then convert the hash to string
-            return Encoding.Default.GetString(SCryptHash);
+            return SCryptHash.ConvertToString();
         }
 
         /// <summary>
@@ -854,7 +836,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Password");
 
             //generate a salt and a number of random bytes
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, 32, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, 32, ApplicationSettings.Default.PBKDF2IterationCount.ToInt()))
             {
                 salt = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
@@ -864,7 +846,7 @@ namespace Secure_Password_Repository.Extensions
             Buffer.BlockCopy(salt, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            return Encoding.Default.GetString(hash);
+            return hash.ConvertToString();
         }
 
         /// <summary>
@@ -892,7 +874,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Salt");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Salt.ToBytes(), ApplicationSettings.Default.PBKDF2IterationCount.ToInt()))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
@@ -902,7 +884,7 @@ namespace Secure_Password_Repository.Extensions
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            return Encoding.Default.GetString(hash);
+            return hash.ConvertToString();
         }
 
         /// <summary>
@@ -926,7 +908,7 @@ namespace Secure_Password_Repository.Extensions
             saltbytes = Generate_RandomBytes(32);
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, saltbytes, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, saltbytes, ApplicationSettings.Default.PBKDF2IterationCount.ToInt()))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
@@ -936,7 +918,7 @@ namespace Secure_Password_Repository.Extensions
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            return Encoding.Default.GetString(hash);
+            return hash.ConvertToString();
         }
 
         /// <summary>
@@ -964,7 +946,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Salt");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Salt.ToBytes(), ApplicationSettings.Default.PBKDF2IterationCount.ToInt()))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
@@ -974,9 +956,9 @@ namespace Secure_Password_Repository.Extensions
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            return Encoding.Default.GetString(hash);
+            return hash.ConvertToString();
         }
-
+        
         /// <summary>
         /// Generates and returns a salted HMAC of the provided string using the PBKDF2 algorithm
         /// </summary>
@@ -996,7 +978,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Password");
 
             //generate a salt and a number of random bytes
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, 32, int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, 32, ApplicationSettings.Default.PBKDF2IterationCount.ToInt()))
             {
                 salt = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
@@ -1031,7 +1013,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Password");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password,  Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password,  Salt.ToBytes(), ApplicationSettings.Default.PBKDF2IterationCount.ToInt()))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
@@ -1104,7 +1086,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Salt");
 
             //user specified hash
-            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Encoding.Default.GetBytes(Salt), int.Parse(ApplicationSettings.Default.PBKDF2IterationCount)))
+            using (Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(Password, Salt.ToBytes(), ApplicationSettings.Default.PBKDF2IterationCount.ToInt()))
             {
                 saltbytes = bytes.Salt;
                 buffer = bytes.GetBytes(1024);
@@ -1114,7 +1096,6 @@ namespace Secure_Password_Repository.Extensions
             Buffer.BlockCopy(saltbytes, 0, hash, 0, 32);
             Buffer.BlockCopy(buffer, 0, hash, 32, 1024);
 
-            //return HMAC
             return hash;
         }
 
@@ -1133,14 +1114,14 @@ namespace Secure_Password_Repository.Extensions
         public static string Get_PBKDF2Salt(string HashedPassword)
         {
             //convert the string to bytes
-            byte[] hash = Encoding.Default.GetBytes(HashedPassword);
+            byte[] hash = HashedPassword.ToBytes();
             byte[] salt = new byte[32];
 
             //grab first 32 bytes
             Buffer.BlockCopy(hash, 0, salt, 0, 32);
 
             //return just the salt
-            return Encoding.Default.GetString(salt);
+            return salt.ConvertToString();
         }
 
         /// <summary>
@@ -1154,7 +1135,7 @@ namespace Secure_Password_Repository.Extensions
 
             using (SHA1 sha = new SHA1CryptoServiceProvider())
             {
-                sha1hash = Encoding.Default.GetString(sha.ComputeHash(Encoding.Default.GetBytes(PlainText)));
+                sha1hash = sha.ComputeHash(PlainText.ToBytes()).ConvertToString();
             }
 
             return sha1hash;
@@ -1171,7 +1152,7 @@ namespace Secure_Password_Repository.Extensions
 
             using (SHA1 sha = new SHA1CryptoServiceProvider())
             {
-                sha1hash = sha.ComputeHash(Encoding.Default.GetBytes(PlainText));
+                sha1hash = sha.ComputeHash(PlainText.ToBytes());
             }
 
             return sha1hash;
@@ -1214,7 +1195,7 @@ namespace Secure_Password_Repository.Extensions
                 rngCsp.GetNonZeroBytes(randombytes);
             }
 
-            return Encoding.Default.GetString(randombytes);
+            return randombytes.ConvertToString();
         }
 
         ///<summary>
@@ -1274,23 +1255,11 @@ namespace Secure_Password_Repository.Extensions
 
                 //any remaining chars
                 OriginalString += CopyOfString.Substring(0, NumberOfCharsToAdd);
-
-                //clear the string (for security)
-                //CopyOfString = string.Empty;
             }
             //number of chars to add was less than the length of the data, so just append what is needed.
             else
                 OriginalString += OriginalString.Substring(0, NumberOfCharsToAdd);
 
-        }
-
-        public static void Add_NullStringPadding(ref string OriginalString, int NumberOfCharsToAdd)
-        {
-            //"Hello World".PadRight(256, '\0');
-        }
-
-        public static void Add_NullBytePadding(ref byte[] OriginalBytes, int NumberOfBytesToAdd)
-        {
         }
 
         /// <summary>

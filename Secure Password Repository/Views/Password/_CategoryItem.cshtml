@@ -1,4 +1,5 @@
-﻿@using Secure_Password_Repository.Settings;
+﻿@using Secure_Password_Repository.Extensions;
+@using Secure_Password_Repository.Settings;
 @using Secure_Password_Repository.ViewModels;
 @model Secure_Password_Repository.ViewModels.CategoryItem
 
@@ -9,17 +10,17 @@
                 <i class="glyphicon glyphicon-folder-close rightfolderpadding"></i><span class="categoryname">@Model.CategoryName</span>
             </span>
             <span class="btn-group">
-                @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administrator")))
-                {
-                    <a href="#" class="btn btn-xs btn-primary" onclick="displayForm('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-edit">&nbsp;</i>Edit</a>
-                }
-                @if (ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || User.IsInRole("Administrator")))
-                {
-                    <a href="#" class="btn btn-xs btn-danger" onclick="deleteCategory('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-remove">&nbsp;</i>Delete</a>
-                }
+            @if (User.CanEditCategories())
+            {
+                <a href="#" class="btn btn-xs btn-primary editcategorybutton" onclick="displayForm('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-edit">&nbsp;</i>Edit</a>
+            }
+            @if (User.CanDeleteCategories())
+            {
+                <a href="#" class="btn btn-xs btn-danger deletecategorybutton" onclick="deleteCategory('@Model.CategoryId');return false;"><i class="glyphicon glyphicon-remove">&nbsp;</i>Delete</a>
+            }
             </span>
         </div>
-        @if (ApplicationSettings.Default.RoleAllowEditCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administrator")))
+        @if (User.CanEditCategories())
         {
             @Html.Partial("_EditCategory", (CategoryEdit)Model)
         }

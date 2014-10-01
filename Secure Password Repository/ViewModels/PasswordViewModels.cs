@@ -38,7 +38,7 @@ namespace Secure_Password_Repository.ViewModels
         public Int32 PasswordId { get; set; }
         public string Description { get; set; }
         public Int32 Parent_CategoryId { get; set; }
-        public Int32 Creator_Id { get; set; }
+        public ApplicationUser Creator { get; set; }
         public ICollection<PasswordUserPermission> Parent_UserPasswords { get; set; }
     }
 

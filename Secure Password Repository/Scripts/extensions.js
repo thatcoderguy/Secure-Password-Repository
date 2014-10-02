@@ -5,6 +5,13 @@ var AddAntiForgeryToken = function (data) {
     data.__RequestVerificationToken = $('#_CRSFform input[name=__RequestVerificationToken]').val(); return data;
 };
 
+//replace verification token with the one for this client
+var UpdateToClientVerificationToken = function (viewdata) {
+
+    return viewdata.replace(/<input name="__RequestVerificationToken" type="hidden" value="(.*?)" \/>/g, '<input name="__RequestVerificationToken" type="hidden" value="' + $('#_CRSFform input[name=__RequestVerificationToken]').val() + '" />')
+}
+
+//global ajax error handling
 $(document).ajaxError(function (event, jqxhr, settings, thrownError) {
 
     isPopulating = false;

@@ -144,10 +144,10 @@ var updatePosition = function(event, ui)
 var checkActionButtons = function () {
 
     if (!canEditCategory)
-        $('.categoryeditbutton').remove();
+        $('.editcategorybutton').remove();
 
     if (!canDeleteCategory)
-        $('.categoryeditbutton').remove();
+        $('.deletecategorybutton').remove();
 
     if(!canAddCategory)
         $('.addcategoryitem').remove();

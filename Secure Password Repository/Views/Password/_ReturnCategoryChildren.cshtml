@@ -2,7 +2,7 @@
 @using Secure_Password_Repository.Settings;
 @model Secure_Password_Repository.ViewModels.CategoryDisplayItem
 
-<ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
+<ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active" id="parent-@Model.categoryListItem.CategoryId">
     @if (Model.categoryListItem.SubCategories.Count > 0)
     {
         

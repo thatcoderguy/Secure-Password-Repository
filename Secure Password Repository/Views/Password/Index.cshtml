@@ -22,13 +22,13 @@
 <ul id="roottree" class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
     <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" data-id="0">
         <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Root</div>
-        <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
+        <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active" id="parent-0">
             @foreach (var categoryitem in Model.categoryListItem.SubCategories)
             {
                 @Html.Partial("_CategoryItem", categoryitem)
             }
             @if (User.CanAddPasswords())
-            { 
+            {
                 @Html.Partial("_CreateCategory", Model.categoryAddItem)
             }
         </ul>

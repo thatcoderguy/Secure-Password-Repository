@@ -49,13 +49,15 @@ $(function () {
         alert('f');
     });
 
-    pushnotifierProxy.on('sendUpdatedItemPosition', function (ItemID, NewPosition) {
+    pushnotifierProxy.on('sendUpdatedItemPosition', function (ItemID, NewPosition, OldPosition) {
+
         var html = $('#' + ItemID)[0].outerHTML;   //store html
-        var parent = $('#' + ItemID).parent().attr('id');
-        $('#' + ItemID).remove();
-        alert(parent);
-        alert('li:eq(' + NewPosition + ')');
-        $('#' + parent).find('li:eq(' + NewPosition + ')').insertBefore(html);     //reinsert item at new position
+
+        var parent = $('#' + ItemID).parent('ul').attr('id'); //grab the id of the parent
+
+        $('#' + ItemID).remove();   //remove the item from the list
+
+        $('#' + parent + ' li:nth-child(' + NewPosition + ')').before(html);     //reinsert item at new position
     });
 
     // Start the connection

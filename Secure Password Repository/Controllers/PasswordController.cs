@@ -454,7 +454,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition);
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 
@@ -493,7 +493,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition);
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 
@@ -538,7 +538,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition);
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 
@@ -577,7 +577,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition);
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 

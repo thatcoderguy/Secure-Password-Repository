@@ -99,11 +99,11 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="ItemID">The HTML id of the item moved</param>
         /// <param name="OldPosition">The item's old position</param>
         /// <param name="NewPosition">The item's new position</param>
-        public static void sendUpdatedItemPosition(string ItemID, Int16 NewPosition)
+        public static void sendUpdatedItemPosition(string ItemID, Int16 NewPosition, Int16 OldPosition)
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendUpdatedItemPosition(ItemID, NewPosition);
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendUpdatedItemPosition(ItemID, NewPosition, OldPosition);
         }
 
     }

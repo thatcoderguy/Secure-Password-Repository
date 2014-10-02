@@ -22,6 +22,9 @@ $(function () {
     });
 
     pushnotifierProxy.on('sendAddedCategoryDetails', function (addedCategoryView, parentId) {
+        
+        //update the verificationtoken to this client's
+        addedCategoryView = UpdateToClientVerificationToken(addedCategoryView);
 
         //append the new item to the list
         $('#addnew-' + parentId).parent().append(addedCategoryView);
@@ -32,8 +35,9 @@ $(function () {
         //remove the "add new password" button
         $('#addnew-password-' + parentId).remove();
 
+        //remove any buttons that should be displayed
         checkActionButtons();
-
+        
         //refresh treeview, so new item is part of sortable
         refreshTreeView('treeview');
 
@@ -43,6 +47,15 @@ $(function () {
 
     pushnotifierProxy.on('sendAddedPasswordDetails', function (addedPassword) {
         alert('f');
+    });
+
+    pushnotifierProxy.on('sendUpdatedItemPosition', function (ItemID, NewPosition) {
+        var html = $('#' + ItemID)[0].outerHTML;   //store html
+        var parent = $('#' + ItemID).parent().attr('id');
+        $('#' + ItemID).remove();
+        alert(parent);
+        alert('li:eq(' + NewPosition + ')');
+        $('#' + parent).find('li:eq(' + NewPosition + ')').insertBefore(html);     //reinsert item at new position
     });
 
     // Start the connection

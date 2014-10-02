@@ -8,6 +8,7 @@ $(function () {
 
     setupTreeView('treeview');
     bindClickEvent();
+    checkActionButtons();
     
 });
 

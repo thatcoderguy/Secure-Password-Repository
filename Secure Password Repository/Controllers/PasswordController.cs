@@ -262,6 +262,7 @@ namespace Secure_Password_Repository.Controllers
                         //save changes
                         await DatabaseContext.SaveChangesAsync();
 
+                        PushNotifications.sendUpdatedCategoryDetails(model);
 
                         //return the object, so that the UI can be updated
                         return Json(model);
@@ -453,6 +454,8 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition);
+
                             #endregion
 
                         }
@@ -489,6 +492,8 @@ namespace Secure_Password_Repository.Controllers
 
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
+
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition);
 
                             #endregion
 
@@ -533,6 +538,8 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition);
+
                             #endregion
 
                         }
@@ -569,6 +576,8 @@ namespace Secure_Password_Repository.Controllers
 
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
+
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition);
 
                             #endregion
 

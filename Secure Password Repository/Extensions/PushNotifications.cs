@@ -39,7 +39,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendCategoryDetails(updatedPassword);
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendUpdatedPasswordDetails(updatedPassword);
         }
 
         /// <summary>
@@ -91,6 +91,19 @@ namespace Secure_Password_Repository.Extensions
             //broadcast details to ALL clients
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
             hubContext.Clients.All.sendAddedPasswordDetail(addedPassword);
+        }
+
+        /// <summary>
+        /// Broadcasts the position details of an item that has been reordered
+        /// </summary>
+        /// <param name="ItemID">The HTML id of the item moved</param>
+        /// <param name="OldPosition">The item's old position</param>
+        /// <param name="NewPosition">The item's new position</param>
+        public static void sendUpdatedItemPosition(string ItemID, Int16 NewPosition)
+        {
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendUpdatedItemPosition(ItemID, NewPosition);
         }
 
     }

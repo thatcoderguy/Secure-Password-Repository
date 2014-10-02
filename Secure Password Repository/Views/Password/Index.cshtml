@@ -8,6 +8,7 @@
 
 <h2>Password List</h2>
 
+<!-- This is purely for UI purposes. Permissions are still handled as controller level. -->
 <script type="text/javascript">
     var canEditCategory = @Html.Raw(User.CanEditCategories().ToString().ToLower() + ";")
     var canDeleteCategory = @Html.Raw(User.CanDeleteCategories().ToString().ToLower() + ";")
@@ -15,6 +16,7 @@
     var canAddPassword = @Html.Raw(User.CanAddPasswords().ToString().ToLower() + ";")
 </script>
 
+<!--- token for editing/deleteing SignalR items  -->
 <form id="_CRSFform" action="#" method="post">@Html.AntiForgeryToken()</form>
 
 <ul id="roottree" class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">

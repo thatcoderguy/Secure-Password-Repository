@@ -1,4 +1,5 @@
-﻿@using Secure_Password_Repository.Settings;
+﻿@using Secure_Password_Repository.Extensions;
+@using Secure_Password_Repository.Settings;
 @using Secure_Password_Repository.ViewModels;
 @model Secure_Password_Repository.ViewModels.CategoryDisplayItem
 @{
@@ -6,6 +7,13 @@
 }
 
 <h2>Password List</h2>
+
+<script type="text/javascript">
+    var canEditCategory = @Html.Raw(User.CanEditCategories().ToString().ToLower() + ";")
+    var canDeleteCategory = @Html.Raw(User.CanDeleteCategories().ToString().ToLower() + ";")
+    var canAddCategory = @Html.Raw(User.CanAddCategories().ToString().ToLower() + ";")
+    var canAddPassword = @Html.Raw(User.CanAddPasswords().ToString().ToLower() + ";")
+</script>
 
 <form id="_CRSFform" action="#" method="post">@Html.AntiForgeryToken()</form>
 
@@ -17,7 +25,7 @@
             {
                 @Html.Partial("_CategoryItem", categoryitem)
             }
-            @if (ApplicationSettings.Default.RoleAllowAddCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || User.IsInRole("Administrator")))
+            @if (User.CanAddPasswords())
             { 
                 @Html.Partial("_CreateCategory", Model.categoryAddItem)
             }

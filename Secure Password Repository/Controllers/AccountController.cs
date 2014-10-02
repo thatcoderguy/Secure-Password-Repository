@@ -90,15 +90,24 @@ namespace Secure_Password_Repository.Controllers
                     //encrypted with the user's public key
                     if (user.isAuthorised)
                     {
+                        
+                        //hash and encrypt the user's password - so this can be used to decrypt the user's private key
+                        byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(model.Password);
+                        hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
+                        
+                        //in-memory encryption of the hash
+                        EncryptionAndHashing.Encrypt_DPAPI(ref hashedPassword);
 
-                        //generate the user encryption key (used to decrypt the user's private key) from the password and store in cache
-                        MemoryCache.Default.Set(model.Username, 
-                                                SecurePasswordRepositorySpecificFunctions.Generate_Encrypted_UserEncryptionKey(model.Password), 
+                        CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
+
+                        //store the encrypted memory in cache
+                        MemoryCache.Default.Set(model.Username,
+                                                hashedPassword.ConvertToString(), 
                                                 new CacheItemPolicy() { 
                                                                         AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
                                                                         SlidingExpiration=TimeSpan.FromHours(1), 
                                                                         Priority=CacheItemPriority.Default,
-                                                                        RemovedCallback = SecurePasswordRepositorySpecificFunctions.RemovedCallback });
+                                                                        RemovedCallback = onRemove });
 
                         await SignInAsync(user, false);
                         return RedirectToLocal(returnUrl);
@@ -555,6 +564,27 @@ namespace Secure_Password_Repository.Controllers
                 context.HttpContext.GetOwinContext().Authentication.Challenge(properties, LoginProvider);
             }
         }
+
+        /// <summary>
+        /// Item removed callback, so that the cached data can be reloaded into memory
+        /// </summary>
+        /// <param name="arguments"></param>
+        public void RemovedCallback(CacheEntryRemovedArguments arguments)
+        {
+
+            CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
+
+            //generate the user encryption key (used to decrypt the user's private key) from the password and store in cache
+            MemoryCache.Default.Set(arguments.CacheItem.Key,
+                                    arguments.CacheItem.Value, 
+                                    new CacheItemPolicy() { 
+                                                            AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
+                                                            SlidingExpiration=TimeSpan.FromHours(1), 
+                                                            Priority=CacheItemPriority.Default,
+                                                            RemovedCallback = onRemove });
+
+        }
+
         #endregion
     }
 }

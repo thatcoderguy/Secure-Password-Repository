@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNet.Identity;
+﻿@using Secure_Password_Repository.Extensions;
 @using Secure_Password_Repository.Settings;
 @model Secure_Password_Repository.ViewModels.CategoryDisplayItem
 
@@ -23,18 +23,13 @@
         }
         
         @Html.Partial("_CreatePassword", Model.passwordAddItem)
-        
+
     }
     else
     {
-        @if (ApplicationSettings.Default.RoleAllowAddCategories != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || User.IsInRole("Administrator")))
-        { 
-            @Html.Partial("_CreateCategory", Model.categoryAddItem)
-        }
-        @if (ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (User.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || User.IsInRole("Administrator")))
-        {
-            @Html.Partial("_CreatePassword", Model.passwordAddItem)    
-        }
+        
+        @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        @Html.Partial("_CreatePassword", Model.passwordAddItem)    
 
     }
 

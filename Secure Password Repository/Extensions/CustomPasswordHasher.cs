@@ -24,7 +24,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Password");
             else
                 //generate a HMAC using the PBKDF2 method
-                return EncryptionAndHashing.Hash_PBKDF2(Password).ConvertToBase64();
+                return EncryptionAndHashing.Hash_PBKDF2(Password).ToBase64();
         }
 
         public PasswordVerificationResult VerifyHashedPassword(string hashedPassword, string providedPassword)
@@ -36,7 +36,7 @@ namespace Secure_Password_Repository.Extensions
                 throw new ArgumentNullException("Missing Password");
 
             //convert the stored hash from base64
-            hashedPassword = hashedPassword.ConvertFromBase64();
+            hashedPassword = hashedPassword.FromBase64();
 
             //grab the original salt used to generate the HMAC
             string salt = EncryptionAndHashing.Get_PBKDF2Salt(hashedPassword);

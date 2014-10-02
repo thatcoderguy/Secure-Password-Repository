@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ApplicationSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <LogoImage>logo.png</LogoImage>
-  <DefaultAccountRole>User</DefaultAccountRole>
   <SMTPServerAddress>localhost</SMTPServerAddress>
   <SMTPServerUsername />
   <SMTPServerPassword />
-  <SystemSalt>nwtSuJJF08ti39q+qB+OWF6GPVm4DYhCeAMQHlU9ZWQ=</SystemSalt>
-  <SystemInitilisationVector>vdSVv+3xfyCFOfcpAm5j+w==</SystemInitilisationVector>
+  <SystemSalt>b3Tvd3rPhKRE4hyV8zg4f5ZNshzvt1U7</SystemSalt>
+  <SystemInitilisationVector>fGku8MKanUUUKC4s</SystemInitilisationVector>
   <SCryptHashCost>262144</SCryptHashCost>
   <PBKDF2IterationCount>1000</PBKDF2IterationCount>
   <RoleAllowEditCategories>Administrator</RoleAllowEditCategories>
   <RoleAllowDeleteCategories>Administrator</RoleAllowDeleteCategories>
-  <RoleAllowDeletePasswords>Administrator</RoleAllowDeletePasswords>
+  <RoleAllowAddCategories>User</RoleAllowAddCategories>
+  <RoleAllowAddPasswords>User</RoleAllowAddPasswords>
   <AdminsHaveAccessToAllPasswords>true</AdminsHaveAccessToAllPasswords>
 </ApplicationSettings>

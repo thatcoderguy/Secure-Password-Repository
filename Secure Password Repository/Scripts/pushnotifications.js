@@ -32,6 +32,8 @@ $(function () {
         //remove the "add new password" button
         $('#addnew-password-' + parentId).remove();
 
+        checkActionButtons();
+
         //refresh treeview, so new item is part of sortable
         refreshTreeView('treeview');
 

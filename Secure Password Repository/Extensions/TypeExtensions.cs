@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Text;
+using System.Security;
+using Secure_Password_Repository.Settings;
+using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Models;
+using System.Security.Principal;
 
 namespace Secure_Password_Repository.Extensions
 {
@@ -16,7 +21,7 @@ namespace Secure_Password_Repository.Extensions
         /// </summary>
         /// <param name="bytes">Byte array to convert to a string</param>
         /// <returns>A string</returns>
-        public static string CovertToString(this byte[] bytes)
+        public static string ConvertToString(this byte[] bytes)
         {
             return Encoding.Default.GetString(bytes);
         }
@@ -62,5 +67,49 @@ namespace Secure_Password_Repository.Extensions
         {
             return Encoding.Default.GetBytes(original);
         }
+
+        /// <summary>
+        /// Convert a string to an integer. Returns 0 if the value is not an integer
+        /// </summary>
+        /// <param name="original">String to convert to int</param>
+        /// <returns>An integer</returns>
+        public static int ToInt(this string original)
+        {
+            int returnValue;
+            if (!int.TryParse(original, out returnValue))
+                returnValue = 0;
+
+            return returnValue;
+        }
+
+        public static bool CanEditCategories(this IPrincipal user)
+        {
+            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            return ApplicationSettings.Default.RoleAllowEditCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowEditCategories) || usermodel.GetRoleName().Contains("Administrator"));
+        }
+
+        public static bool CanDeleteCategories(this IPrincipal user)
+        {
+            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            return ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowDeleteCategories) || usermodel.GetRoleName().Contains("Administrator"));
+        }
+
+        public static bool CanAddCategories(this IPrincipal user)
+        {
+            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            return ApplicationSettings.Default.RoleAllowAddCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowAddCategories) || usermodel.GetRoleName().Contains("Administrator"));
+        }
+
+        public static bool CanAddPasswords(this IPrincipal user)
+        {
+            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowAddPasswords) || usermodel.GetRoleName().Contains("Administrator"));
+        }
+
     }
+
 }

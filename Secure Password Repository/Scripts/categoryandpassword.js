@@ -45,8 +45,6 @@ var createCategorySuccess = function (data, parentid)
     //clear add new category form
     $('#addnew-' + parentid).find('.second input[name="CategoryName"]').val('');
 
-    checkActionButtons();
-
     //refresh treeview, so new item is part of sortable
     refreshTreeView('treeview');
 
@@ -103,8 +101,6 @@ var treeListItemClick = function (event, listItem)
                 //initialize new treeviews added from the newly generated HTML
                 setupTreeView('treeview');
 
-                checkActionButtons();
-
                 //bind click events
                 bindClickEvent();
                 bindPasswordClickEvent();
@@ -139,19 +135,4 @@ var updatePosition = function(event, ui)
 
         }
     });
-}
-
-var checkActionButtons = function () {
-
-    if (!canEditCategory)
-        $('.editcategorybutton').remove();
-
-    if (!canDeleteCategory)
-        $('.deletecategorybutton').remove();
-
-    if(!canAddCategory)
-        $('.addcategoryitem').remove();
-
-    if(!canAddPassword)
-        $('.addpassworditem').remove();
 }

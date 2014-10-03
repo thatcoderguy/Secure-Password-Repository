@@ -11,7 +11,10 @@
             @Html.Partial("_CategoryItem", categoryitem);
         }
         
-        @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        if(User.CanAddCategories())
+        { 
+            @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        }
         
     }
     else if (Model.categoryListItem.Passwords.Count > 0)
@@ -22,15 +25,24 @@
             @Html.Partial("_PasswordItem", passworditem);
         }
         
-        @Html.Partial("_CreatePassword", Model.passwordAddItem)
-
+        if(User.CanAddPasswords())
+        { 
+            @Html.Partial("_CreatePassword", Model.passwordAddItem)
+        }
+    
     }
     else
     {
         
-        @Html.Partial("_CreateCategory", Model.categoryAddItem)
-        @Html.Partial("_CreatePassword", Model.passwordAddItem)    
-
+        if(User.CanAddCategories())
+        {
+            @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        }
+        if(User.CanAddPasswords())
+        { 
+            @Html.Partial("_CreatePassword", Model.passwordAddItem)    
+        }
+    
     }
 
 </ul>

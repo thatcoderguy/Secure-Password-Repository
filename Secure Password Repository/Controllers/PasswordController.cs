@@ -216,9 +216,8 @@ namespace Secure_Password_Repository.Controllers
                         AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
                         CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
 
-                        string categoryPartialView = RenderViewContent.RenderPartialToString(this, "_CategoryItem", returnCategoryViewItem);
-
-                        PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);
+                        //notify clients that a new category has been added
+                        PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
 
                         return PartialView("_CategoryItem", returnCategoryViewItem);
 
@@ -262,6 +261,7 @@ namespace Secure_Password_Repository.Controllers
                         //save changes
                         await DatabaseContext.SaveChangesAsync();
 
+                        //notify clients that a category has been updated
                         PushNotifications.sendUpdatedCategoryDetails(model);
 
                         //return the object, so that the UI can be updated
@@ -332,6 +332,7 @@ namespace Secure_Password_Repository.Controllers
 
                     deletedCategory.Parent_Category = null;
 
+                    //notify clients that a category has been deleted
                     PushNotifications.sendDeletedCategoryDetails(deletedCategory);
 
                     //return the item, so that it can be removed from the UI
@@ -394,6 +395,9 @@ namespace Secure_Password_Repository.Controllers
                 DatabaseContext.UserPasswords.Add(newUserPassword);
                 await DatabaseContext.SaveChangesAsync();
 
+                //notify clients that a new password has been added
+                PushNotifications.newPasswordAdded(newPasswordItem.PasswordId);
+
                 return View("thanks");
             }
 
@@ -454,6 +458,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
+                            //notify clients that a category or password has changed position
                             PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
@@ -493,6 +498,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
+                            //notify clients that a category or password has changed position
                             PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
@@ -538,6 +544,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
+                            //notify clients that a category or password has changed position
                             PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
@@ -577,6 +584,7 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
+                            //notify clients that a category or password has changed position
                             PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion

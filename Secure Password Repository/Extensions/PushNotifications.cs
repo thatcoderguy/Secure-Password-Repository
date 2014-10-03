@@ -73,12 +73,9 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
         public static void sendAddedCategoryDetails(string addedCategory, int? categoryParentId)
         {
-            if (categoryParentId == null)
-                categoryParentId = 0;
-
-            //broadcast details to all clients except the one requesting the broadcast
+            //broadcast details to only this client - the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendAddedCategoryDetails(addedCategory, categoryParentId);
+            hubContext.Clients.Client((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendAddedCategoryDetails(addedCategory, categoryParentId);
         }
 
         /// <summary>
@@ -86,7 +83,7 @@ namespace Secure_Password_Repository.Extensions
         /// </summary>
         /// <param name="addedPassword">View rendered to a string of the new password</param>
         /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
-        public static void sendAddedPasswordDetails(string addedPassword)
+        public static void sendAddedPasswordDetails(string addedPassword, int? passwordParentId)
         {
             //broadcast details to ALL clients
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
@@ -106,5 +103,19 @@ namespace Secure_Password_Repository.Extensions
             hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).sendUpdatedItemPosition(ItemID, NewPosition, OldPosition);
         }
 
+        public static void newCategoryAdded(Int32 newCategoryId)
+        {
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).newCategoryAdded(newCategoryId);
+        }
+
+        public static void newPasswordAdded(Int32 newPasswordId)
+        {
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.AllExcept((string)MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId")).newPasswordAdded(newPasswordId);
+        }
+
     }
-}
+} 

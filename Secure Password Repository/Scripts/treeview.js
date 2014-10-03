@@ -6,7 +6,6 @@ var isPopulating = false;
 //category treeview - called upon script load
 $(function () {
 
-    checkActionButtons();
     setupTreeView('treeview');
     bindClickEvent();
     
@@ -15,8 +14,8 @@ $(function () {
 var setupTreeView = function(className) {
 
     //if users can edit categories, then they can re-order categories
-    if (!canEditCategory)
-        return false;
+    //if (!canEditCategory)
+    //    return false;
 
     //make the treeview sortable
     $("." + className)

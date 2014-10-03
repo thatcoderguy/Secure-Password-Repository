@@ -8,27 +8,19 @@
 
 <h2>Password List</h2>
 
-<!-- This is purely for UI purposes. Permissions are still handled as controller level. -->
-<script type="text/javascript">
-    var canEditCategory = @Html.Raw(User.CanEditCategories().ToString().ToLower() + ";")
-    var canDeleteCategory = @Html.Raw(User.CanDeleteCategories().ToString().ToLower() + ";")
-    var canAddCategory = @Html.Raw(User.CanAddCategories().ToString().ToLower() + ";")
-    var canAddPassword = @Html.Raw(User.CanAddPasswords().ToString().ToLower() + ";")
-</script>
-
 <!--- token for editing/deleteing SignalR items  -->
 <form id="_CRSFform" action="#" method="post">@Html.AntiForgeryToken()</form>
 
 <ul id="roottree" class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
     <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" data-id="0">
         <div><i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>Root</div>
-        <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
+        <ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active" id="parent-0">
             @foreach (var categoryitem in Model.categoryListItem.SubCategories)
             {
                 @Html.Partial("_CategoryItem", categoryitem)
             }
             @if (User.CanAddPasswords())
-            { 
+            {
                 @Html.Partial("_CreateCategory", Model.categoryAddItem)
             }
         </ul>

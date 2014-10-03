@@ -2,7 +2,7 @@
 @using Secure_Password_Repository.Settings;
 @model Secure_Password_Repository.ViewModels.CategoryDisplayItem
 
-<ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
+<ul class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active" id="parent-@Model.categoryListItem.CategoryId">
     @if (Model.categoryListItem.SubCategories.Count > 0)
     {
         
@@ -11,7 +11,10 @@
             @Html.Partial("_CategoryItem", categoryitem);
         }
         
-        @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        if(User.CanAddCategories())
+        { 
+            @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        }
         
     }
     else if (Model.categoryListItem.Passwords.Count > 0)
@@ -22,15 +25,24 @@
             @Html.Partial("_PasswordItem", passworditem);
         }
         
-        @Html.Partial("_CreatePassword", Model.passwordAddItem)
-
+        if(User.CanAddPasswords())
+        { 
+            @Html.Partial("_CreatePassword", Model.passwordAddItem)
+        }
+    
     }
     else
     {
         
-        @Html.Partial("_CreateCategory", Model.categoryAddItem)
-        @Html.Partial("_CreatePassword", Model.passwordAddItem)    
-
+        if(User.CanAddCategories())
+        {
+            @Html.Partial("_CreateCategory", Model.categoryAddItem)
+        }
+        if(User.CanAddPasswords())
+        { 
+            @Html.Partial("_CreatePassword", Model.passwordAddItem)    
+        }
+    
     }
 
 </ul>

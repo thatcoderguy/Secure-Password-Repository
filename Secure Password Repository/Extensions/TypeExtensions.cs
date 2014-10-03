@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Text;
 using System.Security;
+using Microsoft.AspNet.Identity;
 using Secure_Password_Repository.Settings;
 using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
@@ -84,6 +85,9 @@ namespace Secure_Password_Repository.Extensions
 
         public static bool CanEditCategories(this IPrincipal user)
         {
+            if (user == null)
+                user = HttpContext.Current.User;
+
             ApplicationDbContext DatabaseContext = new ApplicationDbContext();
             ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
             return ApplicationSettings.Default.RoleAllowEditCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowEditCategories) || usermodel.GetRoleName().Contains("Administrator"));
@@ -91,6 +95,9 @@ namespace Secure_Password_Repository.Extensions
 
         public static bool CanDeleteCategories(this IPrincipal user)
         {
+            if (user == null)
+                user = HttpContext.Current.User;
+
             ApplicationDbContext DatabaseContext = new ApplicationDbContext();
             ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
             return ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowDeleteCategories) || usermodel.GetRoleName().Contains("Administrator"));
@@ -98,6 +105,9 @@ namespace Secure_Password_Repository.Extensions
 
         public static bool CanAddCategories(this IPrincipal user)
         {
+            if (user == null)
+                user = HttpContext.Current.User;
+
             ApplicationDbContext DatabaseContext = new ApplicationDbContext();
             ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
             return ApplicationSettings.Default.RoleAllowAddCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowAddCategories) || usermodel.GetRoleName().Contains("Administrator"));
@@ -105,9 +115,24 @@ namespace Secure_Password_Repository.Extensions
 
         public static bool CanAddPasswords(this IPrincipal user)
         {
+            if (user == null)
+                user = HttpContext.Current.User;
+
             ApplicationDbContext DatabaseContext = new ApplicationDbContext();
             ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
             return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowAddPasswords) || usermodel.GetRoleName().Contains("Administrator"));
+        }
+
+        public static int GetUserId(this IPrincipal user)
+        {
+            if (user == null)
+                user = HttpContext.Current.User;
+
+            int userId;
+            if (!int.TryParse(user.Identity.GetUserId(), out userId))
+                userId = 0;
+
+            return userId;
         }
 
     }

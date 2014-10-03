@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Helpers;
 using System.Web.Mvc;
+using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository.Hubs
 {
@@ -72,11 +73,39 @@ namespace Secure_Password_Repository.Hubs
 
         public void getNewPasswordDetails(Int32 newPasswordId)
         {
+            int UserId = HttpContext.Current.User.Identity.GetUserId().ToInt();
+            bool canAccessAllPassword = HttpContext.Current.User.IsInRole("Administrator")
+                                                && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords;
+
             //retreive the new password that was just created
             Password newPassword = DatabaseContext
                                         .Passwords
-                                        .Include("Parent_UserPasswords")
-                                        .Single(p => p.PasswordId == newPasswordId);
+                                        .Where(pass => !pass.Deleted
+                                        && (DatabaseContext.UserPasswords
+                                                    .Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                        || (
+                                                canAccessAllPassword
+                                           ))
+                                        .Select(p => new Password()
+                                        {
+                                            PasswordId = p.PasswordId,
+                                            Creator = p.Creator,
+                                            Creator_Id = p.Creator_Id,
+                                            Description = p.Description,
+                                            Parent_UserPasswords = p.Parent_UserPasswords.Where(up => up.Id == UserId).ToList(),
+                                            CreatedDate = p.CreatedDate,
+                                             Parent_CategoryId = p.Parent_CategoryId,
+                                              Parent_Category = p.Parent_Category,
+                                               Deleted = p.Deleted,
+                                                EncryptedPassword = p.EncryptedPassword,
+                                                 EncryptedSecondCredential = p.EncryptedSecondCredential,
+                                                  EncryptedUserName =p.EncryptedUserName,
+                                                   ModifiedDate= p.ModifiedDate,
+                                                    Location = p.Location,
+                                                     Notes = p.Notes,
+                                                      PasswordOrder = p.PasswordOrder
+                                        })
+                                        .SingleOrDefault(p => p.PasswordId == newPasswordId);                                        
 
             //map new password to display view model
             AutoMapper.Mapper.CreateMap<Password, PasswordItem>();

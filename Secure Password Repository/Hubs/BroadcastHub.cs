@@ -85,7 +85,7 @@ namespace Secure_Password_Repository.Hubs
                                                     .Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
                                         || (
                                                 canAccessAllPassword
-                                           ))
+                                           )).ToList()
                                         .Select(p => new Password()
                                         {
                                             PasswordId = p.PasswordId,
@@ -93,29 +93,32 @@ namespace Secure_Password_Repository.Hubs
                                             Creator_Id = p.Creator_Id,
                                             Description = p.Description,
                                             Parent_UserPasswords = p.Parent_UserPasswords.Where(up => up.Id == UserId).ToList(),
+                                            Parent_CategoryId = p.Parent_CategoryId,
+                                            Parent_Category = p.Parent_Category,
                                             CreatedDate = p.CreatedDate,
-                                             Parent_CategoryId = p.Parent_CategoryId,
-                                              Parent_Category = p.Parent_Category,
-                                               Deleted = p.Deleted,
-                                                EncryptedPassword = p.EncryptedPassword,
-                                                 EncryptedSecondCredential = p.EncryptedSecondCredential,
-                                                  EncryptedUserName =p.EncryptedUserName,
-                                                   ModifiedDate= p.ModifiedDate,
-                                                    Location = p.Location,
-                                                     Notes = p.Notes,
-                                                      PasswordOrder = p.PasswordOrder
+                                            Deleted = p.Deleted,
+                                            EncryptedPassword = p.EncryptedPassword,
+                                            EncryptedSecondCredential = p.EncryptedSecondCredential,
+                                            EncryptedUserName =p.EncryptedUserName,
+                                            ModifiedDate= p.ModifiedDate,
+                                            Location = p.Location,
+                                            Notes = p.Notes,
+                                            PasswordOrder = p.PasswordOrder
                                         })
-                                        .SingleOrDefault(p => p.PasswordId == newPasswordId);                                        
+                                        .SingleOrDefault(p => p.PasswordId == newPasswordId);
 
-            //map new password to display view model
-            AutoMapper.Mapper.CreateMap<Password, PasswordItem>();
-            PasswordItem returnPasswordViewItem = AutoMapper.Mapper.Map<PasswordItem>(newPassword);
+            if (newPassword != null)
+            {
+                //map new password to display view model
+                AutoMapper.Mapper.CreateMap<Password, PasswordItem>();
+                PasswordItem returnPasswordViewItem = AutoMapper.Mapper.Map<PasswordItem>(newPassword);
 
-            //generate a string based view of the new category
-            string passwordPartialView = RenderViewContent.RenderPartialToString("Password", "_PasswordItem", returnPasswordViewItem);
+                //generate a string based view of the new category
+                string passwordPartialView = RenderViewContent.RenderPartialToString("Password", "_PasswordItem", returnPasswordViewItem);
 
-            //broadcast the new password details
-            PushNotifications.sendAddedPasswordDetails(passwordPartialView, returnPasswordViewItem.Parent_CategoryId);
+                //broadcast the new password details
+                PushNotifications.sendAddedPasswordDetails(passwordPartialView, returnPasswordViewItem.Parent_CategoryId);
+            }
 
         }
 

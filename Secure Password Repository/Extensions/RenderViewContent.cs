@@ -52,6 +52,42 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
+        /// Generates the HtmlString contents for a selected script bundle that needs to be rendered on the view
+        /// </summary>
+        /// <param name="BundleName">
+        /// Name of the bundle to render in the view
+        /// </param>
+        /// <returns>
+        /// HtmlString formatted data of the script bundles to be rendered
+        /// </returns>
+        public static IHtmlString RenderScripts(string BundleName)
+        {
+
+            //a string list to store all of the bundle paths to be rendered
+            List<string> bundlePaths = new List<string>();
+
+            string bundlename = "~/bundles/" + BundleName;
+
+            HttpContext currentHttpContext = HttpContext.Current;
+            var httpContext = new HttpContextWrapper(currentHttpContext);
+
+            BundleContext bundlecontext = new BundleContext(httpContext, BundleTable.Bundles, "~/bundles/");
+            bundlecontext.EnableInstrumentation = false;
+
+            //return a list of bundle items that start with the name of the current controller
+            var bundleList = bundlecontext.BundleCollection.Where(b => b.Path.StartsWith(bundlename)).ToList();
+
+            //store the path of each bundle item in the returned list
+            foreach (Bundle bundleItem in bundleList)
+            {
+                bundlePaths.Add(bundleItem.Path);
+            }
+
+            //render the scripts contrained in the bundle list
+            return Scripts.Render(bundlePaths.ToArray());
+        }
+
+        /// <summary>
         /// Populates a Partial View with data from a supplied model and then returns the view as a string
         /// </summary>
         /// <param name="controllerName">Name of the controller that the view belongs to</param>

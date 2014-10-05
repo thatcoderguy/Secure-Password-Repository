@@ -34,7 +34,7 @@ $(function () {
 
     });
 
-
+    //received the new category details - so now add it into the list
     pushnotifierProxy.on('sendAddedCategoryDetails', function (addedCategoryView, parentId) {
 
         //append the new item to the list
@@ -63,17 +63,17 @@ $(function () {
     });
 
 
-    //
-    pushnotifierProxy.on('sendAddedPasswordDetails', function (addedPasswordView, parentId) {
+    //received the new password details - so now add it into the list
+    pushnotifierProxy.on('sendAddedPasswordDetails', function (addedPasswordView, passwordParentId) {
 
         //append the new item to the list
-        $('#addnew-password-' + parentId).parent().append(addedCategoryView);
+        $('#addnew-password-' + passwordParentId).parent().append(addedPasswordView);
 
         //move the new item to the bottom of the list
-        $('#addnew-password-' + parentId).appendTo($('#addnew-password-' + parentId).parent());
+        $('#addnew-password-' + passwordParentId).appendTo($('#addnew-password-' + passwordParentId).parent());
 
         //remove the "add new category" button
-        $('#addnew-' + parentId).remove();
+        $('#addnew-' + passwordParentId).remove();
 
         //refresh treeview, so new item is part of sortable
         refreshTreeView('treeview');

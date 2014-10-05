@@ -46,6 +46,7 @@ namespace Secure_Password_Repository.ViewModels
     {
         [Required]
         public Int32 PasswordId { get; set; }
+        public ApplicationUser Creator { get; set; }
     }
 
     public class PasswordEdit : PasswordBase
@@ -68,7 +69,7 @@ namespace Secure_Password_Repository.ViewModels
         public Int32 PasswordId { get; set; }
         public bool CanEditPassword { get; set; }
         public bool CanDeletePassword { get; set; }
-        //public bool CanViewPassword { get; set; }
+        public bool CanViewPassword { get; set; }
     }
 
     public class PasswordDetails

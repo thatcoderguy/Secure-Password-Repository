@@ -1,7 +1,7 @@
 ﻿"use strict";
 
-//semaphor - do stop double population
-var isPopulating = false;
+//used to stop double population
+var populatingItemDictionary = {};
 
 //category treeview - called upon script load
 $(function () {
@@ -71,13 +71,13 @@ var bindClickEvent = function() {
 
         //make sure item isnt already open and hasnt already has its children loaded
         if (!$(this).parent().hasClass('ui-state-active') && !$(this).parent().parent().has('ul').length) {
-
+           
             //only call the click even if we arent already populating
-            if (!isPopulating) {
-                isPopulating = true;
+            if (!populatingItemDictionary.hasOwnProperty($(this).find('.categoryname').text()) || !populatingItemDictionary[$(this).find('.categoryname').text()]) {
+                populatingItemDictionary[$(this).find('.categoryname').text()] = true;
                 treeListItemClick(event, $(this));
             }
-
+        
         //category is not open
         } else if (!$(this).parent().hasClass('ui-state-active')) {
 
@@ -96,4 +96,63 @@ var bindClickEvent = function() {
 
     });
 
+}
+
+//load children of the category clicked on
+var treeListItemClick = function (event, listItem) {
+
+    listItem.parent().find('.loaderplaceholder').show();
+
+    var result = $.ajax({
+        type: "POST",
+        url: "/Password/GetCategoryChildren",
+        data: AddAntiForgeryToken({ ParentCategoryId: listItem.parent().parent().attr('id') }),
+        contentType: "application/x-www-form-urlencoded; charset=utf-8",
+        dataType: "html",
+        success: function (data) {
+
+            listItem.parent().find('.loaderplaceholder').hide();
+
+            listItem.parent().addClass('ui-state-active');
+            listItem.find('span').removeClass('treeviewplus').addClass('treeviewminus').parent().find('i').removeClass('glyphicon-folder-close').addClass('glyphicon-folder-open');
+
+            //append the generated HTML to the category item
+            listItem.parent().parent().append(data);
+
+            //initialize new treeviews added from the newly generated HTML
+            setupTreeView('treeview');
+
+            //bind click events
+            bindClickEvent();
+            bindPasswordClickEvent();
+
+            //open the parent item
+            listItem.slideDown();
+
+            populatingItemDictionary[listItem.find('.categoryname').text()] = false;
+
+        }
+    });
+}
+
+//update the ordering position of the category
+var updatePosition = function (event, ui) {
+    var itemid = ui.item.attr('id');
+    var newposition = ui.item.index() + 1;
+    var oldposition = ui.item.data('previndex');
+    ui.item.removeAttr('data-previndex');
+
+    var result = $.ajax({
+        type: "POST",
+        url: "/Password/UpdatePosition",
+        data: AddAntiForgeryToken({ ItemID: itemid, NewPosition: newposition, OldPosition: oldposition, isCategoryItem: (ui.item.data('type').toString().toLowerCase() == 'category') }),
+        contentType: "application/x-www-form-urlencoded; charset=utf-8",
+        dataType: "html",
+        success: function (data) {
+
+            if (data.Status == 'Failed')
+                alert('Sorry it looks like something went wrong, please press F5 - if you keep getting this error, please contact support');
+
+        }
+    });
 }

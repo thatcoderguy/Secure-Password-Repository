@@ -55,3 +55,16 @@ label.longlabel {
     padding-top: 0px !important;
 }
 
+.viewlabel {
+    width: 30% !important;
+}
+.viewtext {
+    width: 70% !important;
+}
+.col-text {
+    width: 59%;
+}
+.viewbutton, .viewbutton a, .col-text {
+    margin: 4px 0 0 0 !important;
+    float: left;
+}

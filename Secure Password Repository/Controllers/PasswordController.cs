@@ -118,7 +118,7 @@ namespace Secure_Password_Repository.Controllers
             try
             {
 
-                var userId = int.Parse(User.Identity.GetUserId());
+                int userId = User.Identity.GetUserId().ToInt();
 
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
@@ -137,43 +137,22 @@ namespace Secure_Password_Repository.Controllers
                                 CategoryOrder = s.CategoryOrder
                             })
                             .ToList(),                          //make sure only undeleted subcategories are returned
-
                             CategoryId = c.CategoryId,
                             CategoryName = c.CategoryName,
                             Category_ParentID = c.Category_ParentID,
                             CategoryOrder = c.CategoryOrder,
                             Parent_Category = c.Parent_Category,
                             Deleted = c.Deleted,
-
                             Passwords = c.Passwords
-                            .Where(pass => !pass.Deleted
-                                        && (DatabaseContext.UserPasswords
-                                                    .Any(up => up.PasswordId == pass.PasswordId && up.Id == userId))
-                                        || (
-                                                User.IsInRole("Administrator")
-                                                && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords
-                                           ))
+                                                .Where(pass => !pass.Deleted
+                                                            && (DatabaseContext.UserPasswords
+                                                                        .Any(up => up.PasswordId == pass.PasswordId && up.Id == userId))
+                                                            || (
+                                                                    User.IsInRole("Administrator")
+                                                                    && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords
+                                                               ))   //make sure only undeleted passwords - that the current user has acccess to - are returned
                             .OrderBy(pass => pass.PasswordOrder)
-                            .Select(pass => new Password()
-                            {
-                                CreatedDate = pass.CreatedDate,
-                                Creator_Id = pass.Creator_Id,
-                                Creator = pass.Creator,
-                                Deleted = pass.Deleted,
-                                Description = pass.Description,
-                                EncryptedPassword = pass.EncryptedPassword,
-                                EncryptedSecondCredential = pass.EncryptedSecondCredential,
-                                EncryptedUserName = pass.EncryptedUserName,
-                                Location = pass.Location,
-                                Notes = pass.Notes,
-                                ModifiedDate = pass.ModifiedDate,
-                                PasswordId = pass.PasswordId,
-                                PasswordOrder = pass.PasswordOrder,
-                                Parent_Category  = pass.Parent_Category,
-                                Parent_CategoryId =pass.Parent_CategoryId,
-                                Parent_UserPasswords = pass.Parent_UserPasswords.Where(p => p.Id == userId).ToList()
-                            })
-                            .ToList()                           //make sure only undeleted passwords - that the current user has acccess to - are returned
+                            .ToList()                           
                         })
                         .Single(c => c.CategoryId == ParentCategoryId);
 
@@ -362,15 +341,40 @@ namespace Secure_Password_Repository.Controllers
 
         public ActionResult ViewPassword(int PasswordId)
         {
+            PasswordDetails passwordDisplayDetails;
+            int UserId = User.Identity.GetUserId().ToInt();
+            bool userIsAdmin = User.IsInRole("Administrator");
 
-            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Single(p => p.PasswordId == PasswordId);
+            //Retrive the password -if the user has access
+            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted
+                                                            && (DatabaseContext.UserPasswords
+                                                                        .Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                            || (
+                                                                    userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords
+                                                               )).SingleOrDefault(p => p.PasswordId == PasswordId);
 
-            PasswordDetails passwordDisplayDetails = new PasswordDetails
+            //user has access
+            if (selectedPassword != null)
             {
-                UserPermissions = AutoMapper.Mapper.Map<ICollection<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.ToList()),
-                ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
-                EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
-            };
+                passwordDisplayDetails = new PasswordDetails
+                {
+                    UserPermissions = AutoMapper.Mapper.Map<ICollection<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.ToList()),
+                    ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
+                    EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
+                };
+            }
+            //user does not have access
+            else
+            {
+                passwordDisplayDetails = new PasswordDetails
+                {
+                    UserPermissions = new System.Collections.ObjectModel.Collection<PasswordUserPermission>(),
+                    ViewPassword = new PasswordDisplay(),
+                    EditPassword = new PasswordEdit()
+                };
+
+                ModelState.AddModelError("", "You do not have permission to view this password");
+            }
 
             return View(passwordDisplayDetails);
         }

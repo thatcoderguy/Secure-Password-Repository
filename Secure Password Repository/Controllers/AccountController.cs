@@ -90,10 +90,6 @@ namespace Secure_Password_Repository.Controllers
                     //encrypted with the user's public key
                     if (user.isAuthorised)
                     {
-
-                        MemoryCache.Default.Remove(model.Username);
-                        MemoryCache.Default.Remove(model.Username + "-connectionId");
-
                         //hash and encrypt the user's password - so this can be used to decrypt the user's private key
                         byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(model.Password);
                         hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
@@ -104,7 +100,7 @@ namespace Secure_Password_Repository.Controllers
                         CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
 
                         //store the encrypted memory in cache
-                        MemoryCache.Default.Set(model.Username,
+                        MemoryCache.Default.Set(model.Username + Session.SessionID,
                                                 hashedPassword.ConvertToString(), 
                                                 new CacheItemPolicy() { 
                                                                         AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 

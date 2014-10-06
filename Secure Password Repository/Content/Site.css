@@ -20,6 +20,13 @@ textarea {
     max-width: 280px;
 }
 
+/* override bootstrap styles */
+
+.form-horizontal .control-label {
+    text-align: left !important;
+    vertical-align: top !important;
+}
+
 /* override bootstrap media query, so that forms in iframes format better */
 @media (min-width: 720px) {
 
@@ -47,3 +54,4 @@ textarea {
 label.longlabel {
     padding-top: 0px !important;
 }
+

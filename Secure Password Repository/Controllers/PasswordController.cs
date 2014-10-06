@@ -406,6 +406,7 @@ namespace Secure_Password_Repository.Controllers
                     newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
                     newPasswordItem.CreatedDate = DateTime.Now;
                     newPasswordItem.Creator_Id = user.Id;
+                    newPasswordItem.Location = model.Location.Replace("http://", "");
 
                     //add the new password item
                     DatabaseContext.Passwords.Add(newPasswordItem);
@@ -437,6 +438,13 @@ namespace Secure_Password_Repository.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult GetEncryptedPassword(int PasswordId)
+        {
+            return null;
         }
 
         #endregion

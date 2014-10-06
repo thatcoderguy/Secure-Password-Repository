@@ -27,3 +27,7 @@
     </li>
 </ul>
 
+<!-- Used to determine if sortable should be enabled or not -->
+<script type="text/javascript">
+    var canEditCategory = @Html.Raw(@User.CanEditCategories().ToString().ToLower() + ';')
+</script>

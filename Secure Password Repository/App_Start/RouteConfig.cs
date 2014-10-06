@@ -38,6 +38,9 @@ namespace Secure_Password_Repository
 
             //passwords
             routes.MapRoute("AddPassword", "Password/AddPassword/{parentcategoryid}", new { controller = "Password", action = "AddPassword", ParentCategoryId = UrlParameter.Optional });
+            routes.MapRoute("DeletePassword", "Password/DeletePassword/{passwordid}", new { controller = "Password", action = "DeletePassword", PasswordId = UrlParameter.Optional });
+            routes.MapRoute("EditPassword", "Password/EditPassword/{passwordid}", new { controller = "Password", action = "EditPassword", PasswordId = UrlParameter.Optional });
+            routes.MapRoute("ViewPassword", "Password/ViewPassword/{passwordid}", new { controller = "Password", action = "ViewPassword", PasswordId = UrlParameter.Optional });
             
 
             //account handling

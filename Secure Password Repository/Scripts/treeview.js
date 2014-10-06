@@ -14,8 +14,8 @@ $(function () {
 var setupTreeView = function(className) {
 
     //if users can edit categories, then they can re-order categories
-    //if (!canEditCategory)
-    //    return false;
+    if (!canEditCategory)
+        return false;
 
     //make the treeview sortable
     $("." + className)
@@ -53,19 +53,10 @@ var refreshTreeView = function(className) {
     $("." + className).sortable('refresh');
 }
 
-//load the fancy box when "add new password" is clicked
+//load the popup when "add new password" is clicked
 var bindPasswordClickEvent = function() {
 
-    //unbind all of the click events - so that we dont get multiple events per item
-    $('a.fancyboxbutton').unbind('click');
-
-    $('a.fancyboxbutton').on('click', function (event) {
-        $.fancybox({
-            padding: 0,
-            'href': this.href,
-            'type': 'iframe'
-        });
-    });
+    $('a.magnificbutton').magnificPopup({ type: 'iframe' });
 
 }
 

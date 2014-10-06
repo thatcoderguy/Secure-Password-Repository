@@ -9,6 +9,7 @@
                 <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
                 <i class="glyphicon glyphicon-folder-close rightfolderpadding"></i><span class="categoryname">@Model.CategoryName</span>
             </span>
+            <span class="loaderplaceholder" style="display: none;"><img src="~/Images/ajax-loader.gif" /></span>
             <span class="btn-group">
                 @if(User.CanEditCategories())
                 { 

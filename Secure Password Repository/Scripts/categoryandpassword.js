@@ -84,6 +84,9 @@ var deleteCategory = function (categoryid)
 //load children of the category clicked on
 var treeListItemClick = function (event, listItem)
 {
+
+        listItem.parent().find('.loaderplaceholder').show();
+
         var result = $.ajax({
             type: "POST",
             url: "/Password/GetCategoryChildren",
@@ -91,6 +94,8 @@ var treeListItemClick = function (event, listItem)
             contentType: "application/x-www-form-urlencoded; charset=utf-8",
             dataType: "html",
             success: function (data) {
+
+                listItem.parent().find('.loaderplaceholder').hide();
 
                 listItem.parent().addClass('ui-state-active');
                 listItem.find('span').removeClass('treeviewplus').addClass('treeviewminus').parent().find('i').removeClass('glyphicon-folder-close').addClass('glyphicon-folder-open');

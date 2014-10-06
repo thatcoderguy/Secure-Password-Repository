@@ -26,12 +26,12 @@ namespace Secure_Password_Repository
                       "~/Scripts/bootstrap.js",
                       "~/Scripts/respond.js"));
 
-            bundles.Add(new ScriptBundle("~/bundles/fancybox").Include(
-                      "~/Scripts/jquery.fancybox.pack.js",
-                      "~/Scripts/jquery.fancybox-buttons.js",
-                      "~/Scripts/jquery.fancybox-media.js",
-                      "~/Scripts/jquery.fancybox-thumbs.js",
-                      "~/Scripts/jquery.mousewheel-*"));
+            bundles.Add(new ScriptBundle("~/bundles/magnific").Include(
+                      "~/Scripts/jquery.magnific-popup.min.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/passworddetails").Include(
+                     "~/Scripts/passworddetails.js",
+                     "~/Scripts/jquery.tabbedPanels-1.0.1.min.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/password_controller_scripts").Include(
                        "~/Scripts/treeview.js",
@@ -50,9 +50,8 @@ namespace Secure_Password_Repository
                       "~/Content/treeview.css",
                       "~/Content/jquery-ui.min.css",
                       "~/Content/jquery-ui.min.css",
-                      "~/Content/jquery.fancybox.css",
-                      "~/Content/jquery.fancybox-thumbs.css",
-                      "~/Content/jquery.fancybox-buttons.css"));
+                      "~/Content/magnific-popup.css",
+                      "~/Content/tabbedPanels.css"));
 
             // Set EnableOptimizations to false for debugging. For more information,
             // visit http://go.microsoft.com/fwlink/?LinkId=301862

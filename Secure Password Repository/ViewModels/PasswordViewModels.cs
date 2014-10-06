@@ -21,13 +21,13 @@ namespace Secure_Password_Repository.ViewModels
         [Display(Name = "Optional Secondary Credential")]
         public string EncryptedSecondCredential { get; set; }
 
-        [Display(Name = "Password")]
-        [Required]
-        public string EncryptedPassword { get; set; }
-
         [Display(Name = "Location - Ideally a URL")]
         [Required]
         public string Location { get; set; }
+
+        [Display(Name = "Password")]
+        [Required]
+        public string EncryptedPassword { get; set; }
 
         [Display(Name = "Additional Notes")]
         public string Notes { get; set; }
@@ -42,16 +42,25 @@ namespace Secure_Password_Repository.ViewModels
         public ICollection<PasswordUserPermission> Parent_UserPasswords { get; set; }
     }
 
+    public class PasswordDisplay : PasswordBase
+    {
+        [Required]
+        public Int32 PasswordId { get; set; }
+        public ApplicationUser Creator { get; set; }
+    }
+
     public class PasswordEdit : PasswordBase
     {
         [Required]
         public Int32 PasswordId { get; set; }
+
     }
 
     public class PasswordAdd : PasswordBase
     {
         [Required]
         public Int32 Parent_CategoryId { get; set; }
+
     }
 
     public class PasswordUserPermission
@@ -61,5 +70,12 @@ namespace Secure_Password_Repository.ViewModels
         public bool CanEditPassword { get; set; }
         public bool CanDeletePassword { get; set; }
         public bool CanViewPassword { get; set; }
+    }
+
+    public class PasswordDetails
+    {
+        public PasswordDisplay ViewPassword { get; set; } 
+        public PasswordEdit EditPassword { get; set; }
+        public ICollection<PasswordUserPermission> UserPermissions { get; set; }
     }
 }

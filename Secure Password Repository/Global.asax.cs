@@ -19,5 +19,11 @@ namespace Secure_Password_Repository
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
+
+        //make sure the session ID persists between user requests
+        protected void Session_Start()
+        {
+            Session["persistSessionId"] = true;
+        }
     }
 }

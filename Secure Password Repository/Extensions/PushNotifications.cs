@@ -27,7 +27,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendUpdatedCategoryDetails(updatedCategory);
+            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).sendUpdatedCategoryDetails(updatedCategory);
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendUpdatedPasswordDetails(updatedPassword);
+            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).sendUpdatedPasswordDetails(updatedPassword);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendDeletedCategoryDetails(deletedCategory);
+            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).sendDeletedCategoryDetails(deletedCategory);
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendDeletedPasswordDetails(deletedPassword);
+            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).sendDeletedPasswordDetails(deletedPassword);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to only this client - the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.Client(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendAddedCategoryDetails(addedCategory, categoryParentId);
+            hubContext.Clients.Client(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).sendAddedCategoryDetails(addedCategory, categoryParentId);
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to ALL clients
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.Client(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendAddedPasswordDetails(addedPassword, passwordParentId);
+            hubContext.Clients.Client(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).sendAddedPasswordDetails(addedPassword, passwordParentId);
         }
 
         /// <summary>
@@ -100,14 +100,14 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendUpdatedItemPosition(ItemID, NewPosition, OldPosition);
+            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).sendUpdatedItemPosition(ItemID, NewPosition, OldPosition);
         }
 
         public static void newCategoryAdded(Int32 newCategoryId)
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).newCategoryAdded(newCategoryId);
+            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + HttpContext.Current.Session.SessionID + "-connectionId").ToString()).newCategoryAdded(newCategoryId);
         }
 
         public static void newPasswordAdded(Int32 newPasswordId)

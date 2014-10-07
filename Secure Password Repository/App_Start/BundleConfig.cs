@@ -31,7 +31,8 @@ namespace Secure_Password_Repository
 
             bundles.Add(new ScriptBundle("~/bundles/passworddetails").Include(
                      "~/Scripts/passworddetails.js",
-                     "~/Scripts/jquery.tabbedPanels-1.0.1.min.js"));
+                     "~/Scripts/jquery.tabbedPanels-1.0.1.min.js",
+                     "~/Scripts/jquery.zclip.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/password_controller_scripts").Include(
                        "~/Scripts/treeview.js",

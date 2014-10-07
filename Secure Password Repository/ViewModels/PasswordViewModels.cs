@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
+using Microsoft.AspNet.Identity;
+using Secure_Password_Repository.Extensions;
 
 namespace Secure_Password_Repository.ViewModels
 {
@@ -40,6 +42,13 @@ namespace Secure_Password_Repository.ViewModels
         public Int32 Parent_CategoryId { get; set; }
         public ApplicationUser Creator { get; set; }
         public ICollection<PasswordUserPermission> Parent_UserPasswords { get; set; }
+        public bool CanDeletePassword
+        {
+            get
+            {
+                return Parent_UserPasswords.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission { CanDeletePassword = false }).Single().CanDeletePassword || Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt();
+            }
+        }
     }
 
     public class PasswordDisplay : PasswordBase
@@ -77,5 +86,12 @@ namespace Secure_Password_Repository.ViewModels
         public PasswordDisplay ViewPassword { get; set; } 
         public PasswordEdit EditPassword { get; set; }
         public ICollection<PasswordUserPermission> UserPermissions { get; set; }
+        public bool CanEditPassword 
+        { 
+            get 
+            {
+                return UserPermissions.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission { CanEditPassword = false }).Single().CanEditPassword || ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt();
+            } 
+        }
     }
 }

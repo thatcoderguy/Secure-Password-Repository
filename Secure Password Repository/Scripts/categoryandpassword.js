@@ -45,8 +45,11 @@ var createCategorySuccess = function (data, parentid)
     //clear add new category form
     $('#addnew-' + parentid).find('.second input[name="CategoryName"]').val('');
 
+
+    setupTreeView('treeview');
+
     //refresh treeview, so new item is part of sortable
-    refreshTreeView('treeview');
+    //refreshTreeView('treeview');
 
     //bind click events
     bindClickEvent();

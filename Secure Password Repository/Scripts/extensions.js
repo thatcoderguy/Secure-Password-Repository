@@ -8,7 +8,6 @@ var AddAntiForgeryToken = function (data) {
 //global ajax error handling
 $(document).ajaxError(function (event, jqxhr, settings, thrownError) {
 
-    isPopulating = false;
 
     if (thrownError == 'Unauthorized') {
         window.location = '/Login?ReturnUrl=/Password';

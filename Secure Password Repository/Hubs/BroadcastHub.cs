@@ -33,7 +33,7 @@ namespace Secure_Password_Repository.Hubs
         {
             System.Runtime.Caching.MemoryCache.Default.Set(
                                                             HttpContext.Current.User.Identity.Name + "-connectionId", 
-                                                            Context.ConnectionId, 
+                                                            Context.ConnectionId,
                                                             new CacheItemPolicy() { 
                                                                                     Priority = CacheItemPriority.Default, 
                                                                                     SlidingExpiration = TimeSpan.FromHours(1), 

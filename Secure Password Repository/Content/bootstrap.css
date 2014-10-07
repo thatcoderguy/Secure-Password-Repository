@@ -1744,7 +1744,6 @@ input[type="number"]::-webkit-inner-spin-button {
 .form-control[disabled],
 .form-control[readonly],
 fieldset[disabled] .form-control {
-  cursor: not-allowed;
   background-color: #eeeeee;
 }
 

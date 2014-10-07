@@ -32,7 +32,7 @@ namespace Secure_Password_Repository.Filters
             if (user.Identity.IsAuthenticated)
 
                 //if the encryption key doesnt exist in cache - should only happen if the app was restarted
-                if (MemoryCache.Default.Get(user.Identity.Name + HttpContext.Current.Session.SessionID) == null)
+                if (MemoryCache.Default.Get(user.Identity.Name) == null)
                 {
 
                     //log out the user

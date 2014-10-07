@@ -46,6 +46,9 @@ namespace Secure_Password_Repository.Controllers
             }
         }
 
+        /// <summary>
+        /// Setup all of the automapper maps that will be used throughout this controller - this is called by WebActivatorEx
+        /// </summary>
         public static void AutoMapperStart()
         {
             AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
@@ -111,7 +114,7 @@ namespace Secure_Password_Repository.Controllers
 
         #region CategoryActions
 
-        [HttpGet]
+        // POST: Password/GetCategoryChildren/23
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult GetCategoryChildren(Int32 ParentCategoryId)
@@ -181,7 +184,7 @@ namespace Secure_Password_Repository.Controllers
 
         }
 
-        [HttpGet]
+        // POST: Password/AddCategory
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddCategory(CategoryAdd model)
@@ -232,7 +235,6 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // POST: Password/EditCategory/5
-        [HttpGet]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> EditCategory(CategoryEdit model)
@@ -270,7 +272,6 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // POST: Password/DeleteCategory/5
-        [HttpGet]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int CategoryId)
@@ -343,8 +344,7 @@ namespace Secure_Password_Repository.Controllers
 
         #region PasswordActions
 
-        [HttpGet]
-        [HttpPost]
+        // GET:  ViewPassword/23
         public ActionResult ViewPassword(int PasswordId)
         {
             PasswordDetails passwordDisplayDetails;
@@ -385,14 +385,14 @@ namespace Secure_Password_Repository.Controllers
             return View(passwordDisplayDetails);
         }
 
-        [HttpGet]
+        // POST: Password/AddPassword/24
         [HttpPost]
         public ActionResult AddPassword(int ParentCategoryId)
         {
             return View("AddPassword", new PasswordAdd { Parent_CategoryId = ParentCategoryId });
         }
 
-        [HttpGet]
+        // POST: Password/AddPassword
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddPassword(PasswordAdd model)
@@ -453,7 +453,6 @@ namespace Secure_Password_Repository.Controllers
             return View(model);
         }
 
-        [HttpGet]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult GetEncryptedPassword(int PasswordId)
@@ -475,7 +474,7 @@ namespace Secure_Password_Repository.Controllers
                 return Json(new Dictionary<string, string>() { { "Password", selectedPassword.EncryptedPassword } });
 
             //password does not exist... or user does not have access
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
         }
 

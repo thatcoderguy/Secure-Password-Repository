@@ -47,7 +47,7 @@ $(function () {
         $('#addnew-password-' + parentId).remove();
 
         //refresh treeview, so new item is part of sortable
-        refreshTreeView('treeview');
+        setupTreeView('treeview');
 
         //bind click events
         bindClickEvent();
@@ -76,7 +76,7 @@ $(function () {
         $('#addnew-' + passwordParentId).remove();
 
         //refresh treeview, so new item is part of sortable
-        refreshTreeView('treeview');
+        setupTreeView('treeview');
 
         //bind click events
         bindClickEvent();

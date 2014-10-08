@@ -1,70 +1,51 @@
-﻿var password = 'WAIT';
-
-$(function () {
+﻿$(function () {
    
     if (window.location.toString().indexOf('localhost') > 0) {
-
-        $('a.autobutton').zclip({
-            path: 'http://www.steamdev.com/zclip/js/ZeroClipboard.swf',
-            copy: function () {
-                return $(this).parent().parent().find('input').val();
-            }
-        });
-
-        $('a.passwordautobutton').zclip({
-            path: 'http://www.steamdev.com/zclip/js/ZeroClipboard.swf',
-            beforeCopy: function() {
-            },
-            copy: function () {
-                return password;
-            }
-        });
-
+        ZeroClipboard.config({ swfPath: "http://www.fauxbank.co.uk/ZeroClipboard.swf" });
     } else {
-
-        $('a.autobutton').zclip({
-            path: '/Flash/ZeroClipboard.swf',
-            copy: function () {
-                return $(this).parent().parent().find('input').val();
-            }
-        });
-
-        $('a.passwordautobutton').zclip({
-            path: '/Flash/ZeroClipboard.swf',
-            copy: function () {
-                var result = $.ajax({
-                    type: "POST",
-                    url: "/Password/GetEncryptedPassword",
-                    data: AddAntiForgeryToken({ PasswordId: $(this).data('passwordid') }),
-                    contentType: "application/x-www-form-urlencoded; charset=utf-8",
-                    dataType: "json",
-                    success: function (data) {
-
-                        return data.Password;
-
-                    }
-                });
-            }
-        });
-
+        ZeroClipboard.config({ swfPath: "Flash/ZeroClipboard.swf" });
     }
 
+    var client = new ZeroClipboard($('a.autobutton'));
+
+    client.on('ready', function (event) {
+        client.on('copy', function (event) {
+            event.clipboardData.setData('text/plain', $(event.target).parent().parent().find('input').val());
+            alert('Copied');
+        });
+    });
+
+    var passwdclient = new ZeroClipboard($('a.passwordautobutton'));
+
+    passwdclient.on('ready', function (event) {
+
+        passwdclient.on('beforecopy', function (event) {
+            var result = $.ajax({
+                type: "POST",
+                url: "/Password/GetEncryptedPassword",
+                data: AddAntiForgeryToken({ PasswordId: $(event.target).data('passwordid') }),
+                contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    $(event.target).parent().parent().parent().find('input').val(data.Password);
+                }
+            })
+        });
+
+        passwdclient.on('copy', function (event) {
+            event.clipboardData.setData('text/plain', $(event.target).parent().parent().parent().find('input').val());
+            $(event.target).parent().parent().parent().find('input').val('');
+        });
+
+        passwdclient.on('aftercopy', function (event) {
+            $(event.target).parent().parent().parent().find('input').val('');
+            alert('Copied');
+        });
+
+    });
+    
 });
 
 var tabClick = function (tabName) {
 
-}
-
-var getPassword = function (buttonobj) {
-    var result = $.ajax({
-        type: "POST",
-        url: "/Password/GetEncryptedPassword",
-        data: AddAntiForgeryToken({ PasswordId: buttonobj.data('passwordid') }),
-        contentType: "application/x-www-form-urlencoded; charset=utf-8",
-        dataType: "json",
-        async: false
-    }).done(function (data) {
-        password = data.Password;
-        $('#ZeroClipboardMovie_3').click();
-    });
 }

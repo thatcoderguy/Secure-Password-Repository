@@ -385,8 +385,7 @@ namespace Secure_Password_Repository.Controllers
             return View(passwordDisplayDetails);
         }
 
-        // POST: Password/AddPassword/24
-        [HttpPost]
+        // GET: Password/AddPassword/24
         public ActionResult AddPassword(int ParentCategoryId)
         {
             return View("AddPassword", new PasswordAdd { Parent_CategoryId = ParentCategoryId });

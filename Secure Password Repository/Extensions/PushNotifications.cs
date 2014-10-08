@@ -47,7 +47,7 @@ namespace Secure_Password_Repository.Extensions
         /// </summary>
         /// <param name="deletedCategory">Instance of the deleted category model</param>
         /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
-        public static void sendDeletedCategoryDetails(Category deletedCategory)
+        public static void sendDeletedCategoryDetails(CategoryDelete deletedCategory)
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
@@ -59,7 +59,7 @@ namespace Secure_Password_Repository.Extensions
         /// </summary>
         /// <param name="deletedPassword">Instance of the deleted password model</param>
         /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
-        public static void sendDeletedPasswordDetails(Password deletedPassword)
+        public static void sendDeletedPasswordDetails(PasswordDelete deletedPassword)
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();

@@ -10,14 +10,19 @@ namespace Secure_Password_Repository.ViewModels
     public class CategoryEdit
     {
         public Int32? CategoryId { get; set; }
+        
         [Required]
         public string CategoryName { get; set; }
-
     }
 
     public class CategoryAdd : CategoryEdit
     {
         public Int32? Category_ParentID { get; set; }
+    }
+
+    public class CategoryDelete
+    {
+        public Int32? CategoryId { get; set; }
     }
 
     public class CategoryItem : CategoryEdit

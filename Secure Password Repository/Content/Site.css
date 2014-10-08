@@ -68,3 +68,11 @@ label.longlabel {
     margin: 4px 0 0 0 !important;
     float: left;
 }
+
+.accessdenied {
+    text-align: center;
+    font-size: 140%;
+}
+.accessdenied ul {
+    list-style: none;
+}

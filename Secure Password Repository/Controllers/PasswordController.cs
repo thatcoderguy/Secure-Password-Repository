@@ -54,6 +54,7 @@ namespace Secure_Password_Repository.Controllers
             AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
             AutoMapper.Mapper.CreateMap<CategoryAdd, Category>();
             AutoMapper.Mapper.CreateMap<CategoryEdit, Category>();
+            AutoMapper.Mapper.CreateMap<Category, CategoryDelete>();
 
             AutoMapper.Mapper.CreateMap<Category[], ICollection<CategoryItem>>();
             AutoMapper.Mapper.CreateMap<Password[], ICollection<PasswordItem>>();
@@ -62,6 +63,7 @@ namespace Secure_Password_Repository.Controllers
             AutoMapper.Mapper.CreateMap<Password, PasswordItem>();
             AutoMapper.Mapper.CreateMap<Password, PasswordEdit>();
             AutoMapper.Mapper.CreateMap<Password, PasswordDisplay>();
+            AutoMapper.Mapper.CreateMap<Password, PasswordDelete>();
             AutoMapper.Mapper.CreateMap<PasswordAdd, Password>();
 
             AutoMapper.Mapper.CreateMap<UserPassword, PasswordUserPermission>();
@@ -114,6 +116,7 @@ namespace Secure_Password_Repository.Controllers
 
         #region CategoryActions
 
+
         // POST: Password/GetCategoryChildren/23
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -121,8 +124,8 @@ namespace Secure_Password_Repository.Controllers
         {
             try
             {
-
-                int userId = User.Identity.GetUserId().ToInt();
+                int UserId = User.Identity.GetUserId().ToInt();
+                bool userIsAdmin = User.IsInRole("Administrator");
 
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
@@ -148,15 +151,15 @@ namespace Secure_Password_Repository.Controllers
                             Parent_Category = c.Parent_Category,
                             Deleted = c.Deleted,
                             Passwords = c.Passwords
-                                                .Where(pass => !pass.Deleted
-                                                            && (DatabaseContext.UserPasswords
-                                                                        .Any(up => up.PasswordId == pass.PasswordId && up.Id == userId))
-                                                            || (
-                                                                    User.IsInRole("Administrator")
-                                                                    && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords
-                                                               ))   //make sure only undeleted passwords - that the current user has acccess to - are returned
+                                                .Where(pass => !pass.Deleted 
+                                                && (
+                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId)) 
+                                                 || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords) 
+                                                 ||  pass.Creator_Id == UserId
+                                                    )
+                                                    )   //make sure only undeleted passwords - that the current user has acccess to - are returned
                             .OrderBy(pass => pass.PasswordOrder)
-                            .ToList()                           
+                            .ToList()
                         })
                         .Single(c => c.CategoryId == ParentCategoryId);
 
@@ -181,14 +184,15 @@ namespace Secure_Password_Repository.Controllers
             catch { }
 
             return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-
         }
+
 
         // POST: Password/AddCategory
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddCategory(CategoryAdd model)
         {
+            //check user can add categories
             if (User.CanAddCategories() || User.IsInRole("Administrator"))
             {
                 try
@@ -202,7 +206,7 @@ namespace Secure_Password_Repository.Controllers
                         var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == model.Category_ParentID);
 
                         //set the order of the category by getting the number of subcategories
-                        if (categoryList.SubCategories.Count > 0)
+                        if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
                             newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
                         else
                             newCategory.CategoryOrder = 1;
@@ -226,12 +230,13 @@ namespace Secure_Password_Repository.Controllers
                     }
 
                 }
-                catch { }
+                catch {
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+                }
             }
 
-
-            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-
+            //user does not have access to add passwords
+            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
         }
 
         // POST: Password/EditCategory/5
@@ -239,7 +244,8 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> EditCategory(CategoryEdit model)
         {
-            if (User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administrator"))
+            //check user has access to edit categories
+            if (User.CanEditCategories() || User.IsInRole("Administrator"))
             {
                 try
                 {
@@ -264,69 +270,61 @@ namespace Secure_Password_Repository.Controllers
                         return Json(model);
                     }
                 }
-                catch { }
+                catch {
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+                }
             }
 
-            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-
+            //user does not have access to edit category
+            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
         }
+
 
         // POST: Password/DeleteCategory/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int CategoryId)
         {
-            if (User.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || User.IsInRole("Administrator"))
+            //check the user is allowed to delete categories
+            if (User.CanDeleteCategories() || User.IsInRole("Administrator"))
             {
                 try
                 {
 
                     //get the category item to delete
-                    var deletedCategory = DatabaseContext.Categories
+                    var selectedCategory = DatabaseContext.Categories
                                                             .Include("Parent_Category")
                                                             .Single(c => c.CategoryId == CategoryId);
 
                     //load in the parent's subcategories
-                    DatabaseContext.Entry(deletedCategory.Parent_Category)
+                    DatabaseContext.Entry(selectedCategory.Parent_Category)
                                             .Collection(c => c.SubCategories)
                                             .Query()
                                             .Where(c => !c.Deleted)
                                             .Load();
 
                     //loop through and adjust category order
-                    foreach (Category siblingCategory in deletedCategory.Parent_Category.SubCategories
-                                                                                            .Where(c => c.CategoryOrder > deletedCategory.CategoryOrder)
-                                                                                            .Where(c => !c.Deleted))
+                    foreach (Category siblingCategory in selectedCategory.Parent_Category.SubCategories
+                                                                                            .Where(c => !c.Deleted && c.CategoryOrder > selectedCategory.CategoryOrder))
                     {
                         siblingCategory.CategoryOrder--;
                         DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
                     }
 
                     //set the item to deleted
-                    deletedCategory.Deleted = true;
+                    selectedCategory.Deleted = true;
 
                     //move it to the very end
-                    deletedCategory.CategoryOrder = 9999;
+                    selectedCategory.CategoryOrder = 9999;
 
                     //set the item to be deleted
-                    DatabaseContext.Entry(deletedCategory).State = EntityState.Modified;
+                    DatabaseContext.Entry(selectedCategory).State = EntityState.Modified;
 
                     //save changes
                     await DatabaseContext.SaveChangesAsync();
 
-                    //proxies are no longer needed, so remove to avoid the "cicular reference" issue
-                    if (deletedCategory.SubCategories != null)
-                    {
-                        deletedCategory.SubCategories.Clear();
-                        deletedCategory.SubCategories = null;
-                    }
-                    if (deletedCategory.Passwords != null)
-                    {
-                        deletedCategory.Passwords.Clear();
-                        deletedCategory.Passwords = null;
-                    }
-
-                    deletedCategory.Parent_Category = null;
+                    //create the view model to return relevant details
+                    CategoryDelete deletedCategory = AutoMapper.Mapper.Map<CategoryDelete>(selectedCategory);
 
                     //notify clients that a category has been deleted
                     PushNotifications.sendDeletedCategoryDetails(deletedCategory);
@@ -334,15 +332,20 @@ namespace Secure_Password_Repository.Controllers
                     //return the item, so that it can be removed from the UI
                     return Json(deletedCategory);
                 }
-                catch { }
+                catch {
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+                }
             }
 
-            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+            //user does not have access to delete categories
+            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
         }
 
         #endregion
 
+        
         #region PasswordActions
+
 
         // GET:  ViewPassword/23
         public ActionResult ViewPassword(int PasswordId)
@@ -352,12 +355,12 @@ namespace Secure_Password_Repository.Controllers
             bool userIsAdmin = User.IsInRole("Administrator");
 
             //Retrive the password -if the user has access
-            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted
-                                                            && (DatabaseContext.UserPasswords
-                                                                        .Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
-                                                            || (
-                                                                    userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords
-                                                               )).SingleOrDefault(p => p.PasswordId == PasswordId);
+            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted 
+                                                && (
+                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId)) 
+                                                 || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords) 
+                                                 ||  pass.Creator_Id == UserId)
+                                                    ).SingleOrDefault(p => p.PasswordId == PasswordId);
 
             //user has access
             if (selectedPassword != null)
@@ -385,17 +388,20 @@ namespace Secure_Password_Repository.Controllers
             return View(passwordDisplayDetails);
         }
 
+        
         // GET: Password/AddPassword/24
         public ActionResult AddPassword(int ParentCategoryId)
         {
             return View("AddPassword", new PasswordAdd { Parent_CategoryId = ParentCategoryId });
         }
 
+
         // POST: Password/AddPassword
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddPassword(PasswordAdd model)
         {
+            //check if usercan add passwords
             if (User.CanAddPasswords() || User.IsInRole("Administrator"))
             {
 
@@ -410,7 +416,7 @@ namespace Secure_Password_Repository.Controllers
                     var passwordList = DatabaseContext.Categories.Include("Passwords").Single(c => c.CategoryId == model.Parent_CategoryId);
 
                     //set the order of the category by getting the number of subcategories
-                    if (passwordList.Passwords.Count > 0)
+                    if (passwordList.Passwords.Where(p => !p.Deleted).ToList().Count > 0)
                         newPasswordItem.PasswordOrder = (Int16)(passwordList.Passwords.Where(p => !p.Deleted).Max(p => p.PasswordOrder) + 1);
                     else
                         newPasswordItem.PasswordOrder = 1;
@@ -452,6 +458,44 @@ namespace Secure_Password_Repository.Controllers
             return View(model);
         }
 
+
+        // POST: Password/DeletePassword/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeletePassword(int PasswordId)
+        {
+            int UserId = User.Identity.GetUserId().ToInt();
+
+            //Retrive the password - if the user has access to delete the password
+            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
+                                        .Where(pass => !pass.Deleted
+                                                && (
+                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId && up.CanDeletePassword))
+                                                 || pass.Creator_Id == UserId
+                                                    )
+                                               ).SingleOrDefault(p => p.PasswordId == PasswordId);
+
+
+            if (selectedPassword!=null)
+            {
+                //set the password as deleted and save to database
+                selectedPassword.Deleted = true;
+                DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
+                await DatabaseContext.SaveChangesAsync();
+
+                PasswordDelete deletedPassword = AutoMapper.Mapper.Map<PasswordDelete>(selectedPassword);
+
+                PushNotifications.sendDeletedPasswordDetails(deletedPassword);
+
+                //return item so it can be removed from the UI
+                return Json(deletedPassword);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+        }
+
+
+        //POST: /Password/GetEncryptedPassword/24
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult GetEncryptedPassword(int PasswordId)
@@ -470,22 +514,26 @@ namespace Secure_Password_Repository.Controllers
 
             //return the password if it exists
             if (selectedPassword != null)
-                return Json(new Dictionary<string, string>() { { "Password", selectedPassword.EncryptedPassword } });
+            {
+                PasswordPassword passwordText = new PasswordPassword {PlainTextPassword = selectedPassword.EncryptedPassword };
+                return Json(passwordText);
+            }
 
             //password does not exist... or user does not have access
-            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-
+            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
         }
 
         #endregion
 
         #region CategoryAndPasswordActions
 
+        //POST: /Password/UpdatePosition/123?NewPosition=2&OldPosition=4&isCategory=true
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
         {
-            if ((User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) && isCategoryItem) || !isCategoryItem || User.IsInRole("Administrator"))
+            //check if user can edit categories
+            if (User.CanEditCategories() || User.IsInRole("Administrator"))
             {
                 try
                 {

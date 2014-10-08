@@ -12,7 +12,7 @@ $(function () {
 
 
     pushnotifierProxy.on('sendDeletedPasswordDetails', function (deletedPassword) {
-        $('#password-' + deletedCategory.CategoryId).remove();
+        $('#Password-' + deletedPassword.PasswordId).remove();
     });
 
 
@@ -29,9 +29,7 @@ $(function () {
 
     //a new category has been added to the system - request the details from the server
     pushnotifierProxy.on('newCategoryAdded', function (newCategoryId) {
-
         pushnotifierProxy.invoke('getNewCategoryDetails', newCategoryId);
-
     });
 
     //received the new category details - so now add it into the list
@@ -57,9 +55,7 @@ $(function () {
 
     //a new password has been added to the system - request the details from the server
     pushnotifierProxy.on('newPasswordAdded', function (newPasswordId) {
-
         pushnotifierProxy.invoke('getNewPasswordDetails', newPasswordId);
-
     });
 
 
@@ -80,6 +76,7 @@ $(function () {
 
         //bind click events
         bindClickEvent();
+        bindPasswordClickEvent();
 
     });
 

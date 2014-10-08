@@ -37,4 +37,5 @@ ul.tabbed-content-nav a.selected {
 }
 .ib {
     display: inline-block;
+    margin-right: -2px;
 }

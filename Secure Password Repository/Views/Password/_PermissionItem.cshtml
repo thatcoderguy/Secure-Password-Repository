@@ -1,0 +1,16 @@
+﻿@model Secure_Password_Repository.ViewModels.PasswordUserPermission
+
+<div class="form-group permissionrow">
+    @Html.HiddenFor(model => model.Id)
+    @Html.HiddenFor(model => model.PasswordId)
+    @Html.LabelFor(model => model.UserPasswordUser.UserName, Model.UserPasswordUser.UserName, htmlAttributes: new { @class = "control-label col-md-28 longlabel" })
+    <div class="col-md-2 text-center">
+        @Html.CheckBoxFor(model => model.CanViewPassword)
+    </div>
+    <div class="col-md-2 text-center">
+        @Html.CheckBoxFor(model => model.CanEditPassword)
+    </div>
+    <div class="col-md-2 text-center">
+        @Html.CheckBoxFor(model => model.CanDeletePassword)
+    </div>
+</div>

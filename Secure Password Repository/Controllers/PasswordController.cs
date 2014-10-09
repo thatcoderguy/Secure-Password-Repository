@@ -56,15 +56,16 @@ namespace Secure_Password_Repository.Controllers
             AutoMapper.Mapper.CreateMap<CategoryEdit, Category>();
             AutoMapper.Mapper.CreateMap<Category, CategoryDelete>();
 
-            AutoMapper.Mapper.CreateMap<Category[], ICollection<CategoryItem>>();
-            AutoMapper.Mapper.CreateMap<Password[], ICollection<PasswordItem>>();
-            AutoMapper.Mapper.CreateMap<UserPassword[], ICollection<PasswordUserPermission>>();
+            AutoMapper.Mapper.CreateMap<Category[], IList<CategoryItem>>();
+            AutoMapper.Mapper.CreateMap<Password[], IList<PasswordItem>>();
+            AutoMapper.Mapper.CreateMap<UserPassword[], IList<PasswordUserPermission>>();
 
             AutoMapper.Mapper.CreateMap<Password, PasswordItem>();
             AutoMapper.Mapper.CreateMap<Password, PasswordEdit>();
             AutoMapper.Mapper.CreateMap<Password, PasswordDisplay>();
             AutoMapper.Mapper.CreateMap<Password, PasswordDelete>();
             AutoMapper.Mapper.CreateMap<PasswordAdd, Password>();
+            AutoMapper.Mapper.CreateMap<PasswordEdit, PasswordDisplay>();
 
             AutoMapper.Mapper.CreateMap<UserPassword, PasswordUserPermission>();
         }
@@ -80,16 +81,16 @@ namespace Secure_Password_Repository.Controllers
                 .Select(c => new Category()
                 {
                     SubCategories = c.SubCategories
-                    .Where(sub => !sub.Deleted)
-                    .OrderBy(sub => sub.CategoryOrder)
-                    .Select(s => new Category()                 //remove subcategories and passwords - as these cant be mapped
-                    {
-                        Category_ParentID = s.Category_ParentID,
-                        CategoryId = s.CategoryId,
-                        CategoryName = s.CategoryName,
-                        CategoryOrder = s.CategoryOrder
-                    })
-                    .ToList(),                                  //make sure only undeleted subcategories are returned
+                                        .Where(sub => !sub.Deleted)
+                                        .OrderBy(sub => sub.CategoryOrder)
+                                        .Select(s => new Category()                 //remove subcategories and passwords - as these cant be mapped
+                                        {
+                                            Category_ParentID = s.Category_ParentID,
+                                            CategoryId = s.CategoryId,
+                                            CategoryName = s.CategoryName,
+                                            CategoryOrder = s.CategoryOrder
+                                        })
+                                        .ToList(),                                  //make sure only undeleted subcategories are returned
 
                     CategoryId = c.CategoryId,
                     CategoryName = c.CategoryName,
@@ -367,7 +368,7 @@ namespace Secure_Password_Repository.Controllers
             {
                 passwordDisplayDetails = new PasswordDetails
                 {
-                    UserPermissions = AutoMapper.Mapper.Map<ICollection<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.ToList()),
+                    UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.ToList()),
                     ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
                     EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
                 };
@@ -459,6 +460,82 @@ namespace Secure_Password_Repository.Controllers
         }
 
 
+        // POST: Password/EditPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> EditPassword(PasswordDetails model)
+        {
+
+            if (ModelState.IsValid)
+            {
+                int UserId = User.Identity.GetUserId().ToInt();
+
+                //Retrive the password - if the user has access to delete the password
+                Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
+                                            .Where(pass => !pass.Deleted
+                                                    && (
+                                                        (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                     || pass.Creator_Id == UserId
+                                                        )
+                                                   ).SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
+
+                //user has access to alleast view the password
+                if (selectedPassword != null)
+                {
+                    
+                    //does the user have access to edit the password?
+                    if(selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword))
+                    {
+                        //map updated fields to the domain model - manually as using AutoMapper might be a bad idea
+                        selectedPassword.Description = model.EditPassword.Description;
+                        selectedPassword.EncryptedSecondCredential = model.EditPassword.EncryptedSecondCredential;
+                        selectedPassword.EncryptedUserName = model.EditPassword.EncryptedUserName;
+                        selectedPassword.Location = model.EditPassword.Location.Replace("http://", "");
+                        selectedPassword.Notes = model.EditPassword.Notes;
+
+                        //do additional checking and re-encryption
+                        selectedPassword.EncryptedPassword = model.EditPassword.EncryptedPassword;
+
+                        //save changes to database
+                        DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
+                        await DatabaseContext.SaveChangesAsync();
+
+                        //supply the missing data, so the model can be returned
+                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
+                    }
+                    //user does not have access to edit
+                    else
+                    {
+                        //return just a readonly model
+                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
+
+                        ModelState.AddModelError("", "You do not have permission to edit this password");
+                    }
+                }
+                //user does not have access to view
+                else
+                {
+                    //return empty model
+                    model.ViewPassword = new PasswordDisplay();
+                    model.EditPassword = new PasswordEdit();
+                    model.UserPermissions = null;
+                    
+                    ModelState.AddModelError("", "You do not have permission to view this password");
+                }
+            }
+            //model is invalid
+            else
+            {
+                //supply the missing data, so the model can be returned
+                model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(model.EditPassword);
+            }
+
+            return View("ViewPassword", model);
+        }
+
+
         // POST: Password/DeletePassword/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -491,7 +568,17 @@ namespace Secure_Password_Repository.Controllers
                 return Json(deletedPassword);
             }
 
+            //password does not exist... or user does not have access
             return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+        }
+
+
+        //POST: /Password/EditUserPermissions
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult EditUserPermissions(PasswordDetails model)
+        {
+            return View(model);
         }
 
 
@@ -731,6 +818,18 @@ namespace Secure_Password_Repository.Controllers
                 Status = "Failed"
             });
 
+        }
+
+        #endregion
+
+        #region helpers
+
+        private void AddErrors(IdentityResult result)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("", error);
+            }
         }
 
         #endregion

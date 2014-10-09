@@ -81,3 +81,25 @@ var deleteCategory = function (categoryid)
     }
 }
 
+var deletePassword = function(passwordid) 
+{
+    //double confirm
+    if (confirm('Are you sure you wish to delete this password\n\nAdministrators can undelete Passwords\n\n')) {
+        if (confirm('ARE YOU REALLY SURE YOU WISH TO DELETE THIS PASSWORD?\n\n')) {
+
+            var result = $.ajax({
+                type: "POST",
+                url: "/Password/DeletePassword",
+                data: AddAntiForgeryToken({ PasswordId: passwordid }),
+                contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+
+                    $('#Password-' + data.PasswordId).remove();
+
+                }
+            });
+
+        }
+    }
+}

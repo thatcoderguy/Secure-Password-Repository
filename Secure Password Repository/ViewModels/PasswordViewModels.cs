@@ -46,7 +46,7 @@ namespace Secure_Password_Repository.ViewModels
         {
             get
             {
-                return Parent_UserPasswords.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission { CanDeletePassword = false }).Single().CanDeletePassword || Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt();
+                return Parent_UserPasswords.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission()).Single().CanDeletePassword || (Creator != null && Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
             }
         }
     }
@@ -72,6 +72,16 @@ namespace Secure_Password_Repository.ViewModels
 
     }
 
+    public class PasswordDelete
+    {
+        public Int32 PasswordId { get; set; }
+    }
+
+    public class PasswordPassword
+    {
+        public string PlainTextPassword { get; set; }
+    }
+
     public class PasswordUserPermission
     {
         public Int32 Id { get; set; }
@@ -90,7 +100,7 @@ namespace Secure_Password_Repository.ViewModels
         { 
             get 
             {
-                return UserPermissions.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission { CanEditPassword = false }).Single().CanEditPassword || ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt();
+                return UserPermissions.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission()).Single().CanEditPassword || (ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
             } 
         }
     }

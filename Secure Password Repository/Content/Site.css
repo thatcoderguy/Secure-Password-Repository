@@ -45,6 +45,16 @@ textarea {
     .col-md-offset-2 {
         margin-left: 40%;
     }
+
+
+}
+
+.col-md-offset-3 {
+    margin-left: 30%;
+}
+
+.form-group .btn-group .glyphicon {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
 .toppaddding {

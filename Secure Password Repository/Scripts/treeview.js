@@ -101,6 +101,8 @@ var bindClickEvent = function() {
 //load children of the category clicked on
 var treeListItemClick = function (event, listItem) {
 
+    event.preventDefault();
+
     listItem.parent().find('.loaderplaceholder').show();
 
     var result = $.ajax({

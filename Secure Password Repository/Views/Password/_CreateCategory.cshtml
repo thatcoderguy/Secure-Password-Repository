@@ -3,7 +3,7 @@
 <li id="addnew-@Model.Category_ParentID" class="treeignore addcategoryitem">
     <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons first" role="tab" id="ui-id-@Model.Category_ParentID" aria-selected="false" aria-expanded="false" tabindex="-1">
         <span class="ui-accordion-header-icon ui-icon"></span><span class="btn-group">
-            <a class="btn btn-xs btn-primary" onclick="displayForm('addnew-@Model.Category_ParentID'); return false;" href="#">
+            <a class="btn btn-xs btn-primary" onclick="displayForm(event,'addnew-@Model.Category_ParentID');" href="#">
                 <i class="glyphicon glyphicon-plus-sign">&nbsp;</i>Create New Category
             </a>
         </span>
@@ -11,14 +11,14 @@
     <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none;">
         <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
         <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-        @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createCategorySuccess(data,'" + @Model.Category_ParentID + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.Category_ParentID }))
+        @using (Ajax.BeginForm("AddCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "createCategorySuccess(event, data,'" + @Model.Category_ParentID + "')" }, new { @class = "newcategoryform", role = "form", id = "addform-" + @Model.Category_ParentID }))
         {
             @Html.AntiForgeryToken()
             @Html.HiddenFor(m => m.Category_ParentID)
             @Html.TextBoxFor(m => m.CategoryName)
             <span class="btn-group groupalign">
-                <a href="#" onclick="submitAjaxForm('addform-@Model.Category_ParentID'); return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a>
-                <a href="#" onclick="cancelAction('addnew-@Model.Category_ParentID');return false;" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-chevron-left">&nbsp;</i>Cancel</a>
+                <a href="#" onclick="submitAjaxForm(event,'addform-@Model.Category_ParentID');" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a>
+                <a href="#" onclick="cancelAction(event,'addnew-@Model.Category_ParentID');" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-chevron-left">&nbsp;</i>Cancel</a>
             </span>
         }
     </div>

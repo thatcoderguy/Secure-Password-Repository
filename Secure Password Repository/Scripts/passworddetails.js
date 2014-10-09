@@ -54,6 +54,11 @@
     
 });
 
+var closeWindow = function(event) {
+    event.preventDefault;
+    window.parent.$.magnificPopup.close();
+}
+
 var tabClick = function (tabName) {
 
 }

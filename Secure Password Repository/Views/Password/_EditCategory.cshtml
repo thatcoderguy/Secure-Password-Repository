@@ -3,14 +3,14 @@
 <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none">
     <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
     <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-    @using (Ajax.BeginForm("EditCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "updateCategorySuccess(data)" }, new { @class = "editcategoryform", role = "form", id = "edit-" + @Model.CategoryId }))
+    @using (Ajax.BeginForm("EditCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "updateCategorySuccess(event, data)" }, new { @class = "editcategoryform", role = "form", id = "edit-" + @Model.CategoryId }))
     {
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.CategoryId)
         @Html.TextBoxFor(m => m.CategoryName)
         <span class="btn-group groupalign">
-            <a href="#" onclick="submitAjaxForm('edit-@Model.CategoryId');return false;" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a>
-            <a href="#" onclick="cancelAction('@Model.CategoryId');return false;" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-chevron-left">&nbsp;</i>Cancel</a>
+            <a href="#" onclick="submitAjaxForm(event,'edit-@Model.CategoryId');" class="btn btn-xs btn-primary"><i class="glyphicon glyphicon-save">&nbsp;</i>Save</a>
+            <a href="#" onclick="cancelAction(event,'@Model.CategoryId');" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-chevron-left">&nbsp;</i>Cancel</a>
         </span>
     }
 </div>

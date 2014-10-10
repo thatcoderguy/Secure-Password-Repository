@@ -1,16 +1,19 @@
 ﻿@model Secure_Password_Repository.ViewModels.PasswordUserPermission
+@{
+    int index = Convert.ToInt32(ViewData["counter"]);
+}
 
 <div class="form-group permissionrow">
-    @Html.HiddenFor(model => model.Id)
-    @Html.HiddenFor(model => model.PasswordId)
-    @Html.LabelFor(model => model.UserPasswordUser.UserName, Model.UserPasswordUser.UserName, htmlAttributes: new { @class = "control-label col-md-28 longlabel" })
+    @Html.HiddenFor(String.Format("PasswordUserPermission[{0}].Id", index), Model.Id)
+    @Html.HiddenFor(String.Format("PasswordUserPermission[{0}].PasswordId", index), Model.PasswordId)
+    @Html.LabelFor(String.Format("PasswordUserPermission[{0}].UserPasswordUser.UserName", index), Model.UserPasswordUser.UserName, htmlAttributes: new { @class = "control-label col-md-28 longlabel" })
     <div class="col-md-2 text-center">
-        @Html.CheckBoxFor(model => model.CanViewPassword)
+        @Html.CheckBoxFor(String.Format("PasswordUserPermission[{0}].CanViewPassword", index), Model.CanViewPassword)
     </div>
     <div class="col-md-2 text-center">
-        @Html.CheckBoxFor(model => model.CanEditPassword)
+        @Html.CheckBoxFor(String.Format("PasswordUserPermission[{0}].CanEditPassword", index), Model.CanEditPassword)
     </div>
     <div class="col-md-2 text-center">
-        @Html.CheckBoxFor(model => model.CanDeletePassword)
+        @Html.CheckBoxFor(String.Format("PasswordUserPermission[{0}].CanDeletePassword", index), Model.CanDeletePassword)
     </div>
 </div>

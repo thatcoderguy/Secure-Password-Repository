@@ -10,8 +10,55 @@ using Secure_Password_Repository.Extensions;
 namespace Secure_Password_Repository.ViewModels
 {
 
-    public class PasswordBase
+    public class PasswordItem
     {
+        public Int32 PasswordId { get; set; }
+        public string Description { get; set; }
+        public Int32 Parent_CategoryId { get; set; }
+        public ApplicationUser Creator { get; set; }
+        public IList<PasswordUserPermission> Parent_UserPasswords { get; set; }
+        public bool CanDeletePassword
+        {
+            get
+            {
+                return Parent_UserPasswords.Any(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt() && up.CanDeletePassword) || (Creator != null && Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
+            }
+        }
+    }
+
+    public class PasswordDisplay
+    {
+        [Required]
+        public Int32 PasswordId { get; set; }
+        public ApplicationUser Creator { get; set; }
+
+        [Required]
+        public string Description { get; set; }
+
+        [Display(Name = "Username")]
+        [Required]
+        public string EncryptedUserName { get; set; }
+
+        [Display(Name = "Secondary Credential")]
+        public string EncryptedSecondCredential { get; set; }
+
+        [Display(Name = "Location")]
+        [Required]
+        public string Location { get; set; }
+
+        [Display(Name = "Password")]
+        [Required]
+        public string EncryptedPassword { get; set; }
+
+        [Display(Name = "Additional Notes")]
+        public string Notes { get; set; }
+    }
+
+    public class PasswordEdit
+    {
+        [Required]
+        public Int32 PasswordId { get; set; }
+
         [Display(Name = "Description - Displayed in the list (so make this meaningful e.g. Company PayPal Login)")]
         [Required]
         public string Description { get; set; }
@@ -35,40 +82,32 @@ namespace Secure_Password_Repository.ViewModels
         public string Notes { get; set; }
     }
 
-    public class PasswordItem
+    public class PasswordAdd
     {
-        public Int32 PasswordId { get; set; }
+        [Required]
+        public Int32 Parent_CategoryId { get; set; }
+
+        [Display(Name = "Description - Displayed in the list (so make this meaningful e.g. Company PayPal Login)")]
+        [Required]
         public string Description { get; set; }
-        public Int32 Parent_CategoryId { get; set; }
-        public ApplicationUser Creator { get; set; }
-        public ICollection<PasswordUserPermission> Parent_UserPasswords { get; set; }
-        public bool CanDeletePassword
-        {
-            get
-            {
-                return Parent_UserPasswords.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission()).Single().CanDeletePassword || (Creator != null && Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
-            }
-        }
-    }
 
-    public class PasswordDisplay : PasswordBase
-    {
+        [Display(Name = "Username")]
         [Required]
-        public Int32 PasswordId { get; set; }
-        public ApplicationUser Creator { get; set; }
-    }
+        public string EncryptedUserName { get; set; }
 
-    public class PasswordEdit : PasswordBase
-    {
+        [Display(Name = "Optional Secondary Credential")]
+        public string EncryptedSecondCredential { get; set; }
+
+        [Display(Name = "Location - Ideally a URL")]
         [Required]
-        public Int32 PasswordId { get; set; }
+        public string Location { get; set; }
 
-    }
-
-    public class PasswordAdd : PasswordBase
-    {
+        [Display(Name = "Password")]
         [Required]
-        public Int32 Parent_CategoryId { get; set; }
+        public string EncryptedPassword { get; set; }
+
+        [Display(Name = "Additional Notes")]
+        public string Notes { get; set; }
 
     }
 
@@ -84,24 +123,49 @@ namespace Secure_Password_Repository.ViewModels
 
     public class PasswordUserPermission
     {
+        [Required]
         public Int32 Id { get; set; }
+
+        [Required]
         public Int32 PasswordId { get; set; }
+
+        [Required]
         public bool CanEditPassword { get; set; }
+
+        [Required]
         public bool CanDeletePassword { get; set; }
+
+        [Required]
         public bool CanViewPassword { get; set; }
+
+        public ApplicationUser UserPasswordUser { get; set; }
     }
 
     public class PasswordDetails
     {
         public PasswordDisplay ViewPassword { get; set; } 
         public PasswordEdit EditPassword { get; set; }
-        public ICollection<PasswordUserPermission> UserPermissions { get; set; }
+        public IList<PasswordUserPermission> UserPermissions { get; set; }
         public bool CanEditPassword 
         { 
             get 
             {
-                return UserPermissions.Where(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt()).DefaultIfEmpty(new PasswordUserPermission()).Single().CanEditPassword || (ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
+                if (UserPermissions == null || ViewPassword == null)
+                    return false;
+                else
+                    return UserPermissions.Any(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt() && up.CanEditPassword) || (ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
             } 
+        }
+
+        public bool CanChangePermissions
+        {
+            get
+            {
+                if (UserPermissions == null || ViewPassword == null)
+                    return false;
+                else
+                    return ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt();
+            }
         }
     }
 }

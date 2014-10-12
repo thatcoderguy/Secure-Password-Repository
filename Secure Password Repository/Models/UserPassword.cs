@@ -28,6 +28,10 @@ namespace Secure_Password_Repository.Models
 
         public bool CanDeletePassword { get; set; }
 
+        public bool CanViewPassword { get; set; }
+
+        public bool CanChangePermissions { get; set; }
+
     }
 
 }

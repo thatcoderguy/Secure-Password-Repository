@@ -316,6 +316,9 @@ namespace Secure_Password_Repository.Extensions
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
 
+                if (EncryptionKey.Length > 32)
+                    Array.Resize(ref EncryptionKey, 32);
+
                 //we need the key to be 32 chars long (256 bits)
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
@@ -418,6 +421,9 @@ namespace Secure_Password_Repository.Extensions
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
+
+                if (EncryptionKey.Length > 32)
+                    Array.Resize(ref EncryptionKey, 32);
 
                 //we need the key to be 32 chars long (256 bits)
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
@@ -527,6 +533,9 @@ namespace Secure_Password_Repository.Extensions
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
 
+                if (EncryptionKey.Length > 32)
+                    Array.Resize(ref EncryptionKey, 32);
+
                 //we need the key to be 32 chars long (256 bits)
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
 
@@ -630,6 +639,9 @@ namespace Secure_Password_Repository.Extensions
             // with the specified key and IV. 
             using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
             {
+
+                if (EncryptionKey.Length > 32)
+                    Array.Resize(ref EncryptionKey, 32);
 
                 //we need the key to be 32 chars long (256 bits)
                 Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);

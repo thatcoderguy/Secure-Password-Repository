@@ -116,7 +116,9 @@ namespace Secure_Password_Repository.Migrations
                         Id = c.Int(nullable: false),
                         PasswordId = c.Int(nullable: false),
                         CanEditPassword = c.Boolean(nullable: false),
-                        CanDeletePassword = c.Boolean(nullable: false)
+                        CanDeletePassword = c.Boolean(nullable: false),
+                        CanViewPassword = c.Boolean(nullable: false),
+                        CanChangePermissions = c.Boolean(nullable: false)
                     })
                 .PrimaryKey(t => new { t.Id, t.PasswordId })
                 .ForeignKey("dbo.AspNetUsers", t => t.Id, cascadeDelete: true)

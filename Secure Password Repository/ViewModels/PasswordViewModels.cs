@@ -21,7 +21,7 @@ namespace Secure_Password_Repository.ViewModels
         {
             get
             {
-                return Parent_UserPasswords.Any(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt() && up.CanDeletePassword) || (Creator != null && Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
+                return (Parent_UserPasswords != null && Parent_UserPasswords.Any(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt() && up.CanDeletePassword)) || (Creator != null && Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
             }
         }
     }
@@ -138,6 +138,9 @@ namespace Secure_Password_Repository.ViewModels
         [Required]
         public bool CanViewPassword { get; set; }
 
+        [Required]
+        public bool CanChangePermissions { get; set; }
+
         public ApplicationUser UserPasswordUser { get; set; }
     }
 
@@ -153,7 +156,7 @@ namespace Secure_Password_Repository.ViewModels
                 if (UserPermissions == null || ViewPassword == null)
                     return false;
                 else
-                    return UserPermissions.Any(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt() && up.CanEditPassword) || (ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
+                    return (UserPermissions != null && UserPermissions.Any(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt() && up.CanEditPassword)) || (ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
             } 
         }
 
@@ -164,7 +167,7 @@ namespace Secure_Password_Repository.ViewModels
                 if (UserPermissions == null || ViewPassword == null)
                     return false;
                 else
-                    return ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt();
+                    return (UserPermissions != null && UserPermissions.Any(up => up.Id == HttpContext.Current.User.Identity.GetUserId().ToInt() && up.CanChangePermissions)) || (ViewPassword.Creator != null && ViewPassword.Creator.Id == HttpContext.Current.User.Identity.GetUserId().ToInt());
             }
         }
     }

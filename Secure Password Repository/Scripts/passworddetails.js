@@ -1,5 +1,21 @@
 ﻿$(function () {
 
+    bindClipBoard();
+    bindCheckboxActions();
+    
+});
+
+var closeWindow = function(event) {
+    event.preventDefault;
+    window.parent.$.magnificPopup.close();
+}
+
+var tabClick = function (tabName) {
+
+}
+
+var bindClipBoard = function () {
+
     //ZeroClipboard cannot run flash locally, so we need to run it form and external source
     if (window.location.toString().indexOf('localhost') > 0) {
         ZeroClipboard.config({ swfPath: "http://www.fauxbank.co.uk/ZeroClipboard.swf" });
@@ -51,14 +67,63 @@
         });
 
     });
-    
-});
 
-var closeWindow = function(event) {
-    event.preventDefault;
-    window.parent.$.magnificPopup.close();
 }
 
-var tabClick = function (tabName) {
+var bindCheckboxActions = function () {
+
+    //loop through all of the checkboxes, as some of them require actions when clicked.
+    $('#tabbedpanelcontainer_3_panel input[type=checkbox]').each(function () {
+
+        var matches = $(this).attr('id').match(/UserPermissions\_([0-9]+)\_\_([A-Za-z]+)/);
+
+        switch(matches[2]) {
+
+            case 'CanViewPassword':
+
+                //if the 'allow view' check is unticked, then the other permissions must be removed
+                $('#UserPermissions_' + matches[1] + '__CanViewPassword').on('click', function () {
+                    if (!$(this).prop('checked')) {
+                        $('#UserPermissions_' + matches[1] + '__CanEditPassword').prop('checked', false);
+                        $('#UserPermissions_' + matches[1] + '__CanDeletePassword').prop('checked', false);
+                        $('#UserPermissions_' + matches[1] + '__CanChangePermissions').prop('checked', false);
+                    }
+                });
+                break;
+
+            case 'CanEditPassword':
+
+                //if the 'allow edit' check is ticked, then the view check must be ticked
+                $('#UserPermissions_' + matches[1] + '__CanEditPassword').on('click', function () {
+                    if ($(this).prop('checked')) {
+                        $('#UserPermissions_' + matches[1] + '__CanViewPassword').prop('checked', true);
+                    }
+                });
+                break;
+
+            case 'CanDeletePassword':
+
+                //if the 'allow delete' check is ticked, then the view check must be ticked
+                $('#UserPermissions_' + matches[1] + '__CanDeletePassword').on('click', function () {
+                    if ($(this).prop('checked')) {
+                        $('#UserPermissions_' + matches[1] + '__CanViewPassword').prop('checked', true);
+                    }
+                });
+                break;
+
+            case 'CanChangePermissions':
+
+                //if the 'allow permission edit' check is ticked, then the view check must be ticked
+                $('#UserPermissions_' + matches[1] + '__CanChangePermissions').on('click', function () {
+                    if ($(this).prop('checked')) {
+                        $('#UserPermissions_' + matches[1] + '__CanViewPassword').prop('checked', true);
+                    }
+                });
+                break;
+
+        }
+
+    });
+
 
 }

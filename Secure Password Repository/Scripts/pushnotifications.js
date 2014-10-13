@@ -23,7 +23,7 @@ $(function () {
 
 
     pushnotifierProxy.on('sendUpdatedPasswordDetails', function (updatedPassword) {
-        alert('f');
+        $('#Password-' + updatedPassword.PasswordId).find('.passwordname').text(updatedPassword.Description);           //update the display
     });
 
 

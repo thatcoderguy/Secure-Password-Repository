@@ -18,6 +18,7 @@ using Microsoft.Owin.Security;
 using Secure_Password_Repository.Settings;
 using Secure_Password_Repository.Hubs;
 using Secure_Password_Repository.Controllers;
+using System.Data.Entity.Infrastructure;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
@@ -52,13 +53,15 @@ namespace Secure_Password_Repository.Controllers
         public static void AutoMapperStart()
         {
             AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
+            AutoMapper.Mapper.CreateMap<Category, CategoryDelete>();
             AutoMapper.Mapper.CreateMap<CategoryAdd, Category>();
             AutoMapper.Mapper.CreateMap<CategoryEdit, Category>();
-            AutoMapper.Mapper.CreateMap<Category, CategoryDelete>();
 
             AutoMapper.Mapper.CreateMap<Category[], IList<CategoryItem>>();
             AutoMapper.Mapper.CreateMap<Password[], IList<PasswordItem>>();
-            AutoMapper.Mapper.CreateMap<UserPassword[], IList<PasswordUserPermission>>();
+            AutoMapper.Mapper.CreateMap<UserPassword[], IList<PasswordUserPermission>>().ReverseMap();
+
+            AutoMapper.Mapper.CreateMap<UserPassword, PasswordUserPermission>().ReverseMap();
 
             AutoMapper.Mapper.CreateMap<Password, PasswordItem>();
             AutoMapper.Mapper.CreateMap<Password, PasswordEdit>();
@@ -66,8 +69,6 @@ namespace Secure_Password_Repository.Controllers
             AutoMapper.Mapper.CreateMap<Password, PasswordDelete>();
             AutoMapper.Mapper.CreateMap<PasswordAdd, Password>();
             AutoMapper.Mapper.CreateMap<PasswordEdit, PasswordDisplay>();
-
-            AutoMapper.Mapper.CreateMap<UserPassword, PasswordUserPermission>();
         }
 
         // GET: Password
@@ -356,19 +357,38 @@ namespace Secure_Password_Repository.Controllers
             bool userIsAdmin = User.IsInRole("Administrator");
 
             //Retrive the password -if the user has access
-            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted 
+            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted
                                                 && (
-                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId)) 
-                                                 || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords) 
-                                                 ||  pass.Creator_Id == UserId)
+                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                 || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
+                                                 || pass.Creator_Id == UserId)
                                                     ).SingleOrDefault(p => p.PasswordId == PasswordId);
+
+            //obtain a list of users that cont have a record in the UserPassword table
+            var UserList = DatabaseContext.Users.Where(u => !DatabaseContext.UserPasswords.Any(up => up.Id == u.Id && up.PasswordId == selectedPassword.PasswordId));
+
+            //add a new UserPassword record in to the list, so they every user is displayed on the "permissions" page.
+            foreach(var userItem in UserList)
+            {
+                selectedPassword.Parent_UserPasswords.Add(new UserPassword()
+                {
+                    Id = userItem.Id,
+                    PasswordId = selectedPassword.PasswordId,
+                    CanChangePermissions = false,
+                    CanViewPassword = false,
+                    CanEditPassword = false,
+                    CanDeletePassword = false,
+                    UserPasswordUser = userItem,
+                    UsersPassword = selectedPassword
+                });
+            }
 
             //user has access
             if (selectedPassword != null)
             {
                 passwordDisplayDetails = new PasswordDetails
                 {
-                    UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.ToList()),
+                    UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.OrderBy(up => up.UserPasswordUser.userFullName).ToList()),
                     ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
                     EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
                 };
@@ -435,6 +455,8 @@ namespace Secure_Password_Repository.Controllers
                     {
                         CanDeletePassword = true,
                         CanEditPassword = true,
+                        CanViewPassword = true,
+                        CanChangePermissions = true,
                         PasswordId = newPasswordItem.PasswordId,
                         Id = user.Id
                     };
@@ -466,11 +488,11 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> EditPassword(PasswordDetails model)
         {
 
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && model.EditPassword != null)
             {
                 int UserId = User.Identity.GetUserId().ToInt();
 
-                //Retrive the password - if the user has access to delete the password
+                //Retrive the password - if the user has access to view the password
                 Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
                                             .Where(pass => !pass.Deleted
                                                     && (
@@ -479,40 +501,72 @@ namespace Secure_Password_Repository.Controllers
                                                         )
                                                    ).SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
 
-                //user has access to alleast view the password
+
+
+                //user has access to aleast view the password
                 if (selectedPassword != null)
                 {
+
                     
+                    
+                    //if user can change permission, then load up the additional users
+                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+                    {
+                        //obtain a list of users that cont have a record in the UserPassword table
+                        var UserList = DatabaseContext.Users.Where(u => !DatabaseContext.UserPasswords.Any(up => up.Id == u.Id && up.PasswordId == selectedPassword.PasswordId));
+
+                        //add a new UserPassword record in to the list, so they every user is displayed on the "permissions" page.
+                        foreach (var userItem in UserList)
+                        {
+                            selectedPassword.Parent_UserPasswords.Add(new UserPassword()
+                            {
+                                Id = userItem.Id,
+                                PasswordId = selectedPassword.PasswordId,
+                                CanChangePermissions = false,
+                                CanViewPassword = false,
+                                CanEditPassword = false,
+                                CanDeletePassword = false,
+                                UserPasswordUser = userItem,
+                                UsersPassword = selectedPassword
+                            });
+                        }
+                    }
+                    else
+                    {
+                        //if user doesnt have access to change permissions, then clear the list
+                        selectedPassword.Parent_UserPasswords.Clear();
+                    }
+
+
+
                     //does the user have access to edit the password?
                     if(selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword))
                     {
-                        //map updated fields to the domain model - manually as using AutoMapper might be a bad idea
-                        selectedPassword.Description = model.EditPassword.Description;
-                        selectedPassword.EncryptedSecondCredential = model.EditPassword.EncryptedSecondCredential;
-                        selectedPassword.EncryptedUserName = model.EditPassword.EncryptedUserName;
-                        selectedPassword.Location = model.EditPassword.Location.Replace("http://", "");
-                        selectedPassword.Notes = model.EditPassword.Notes;
-
                         //do additional checking and re-encryption
-                        selectedPassword.EncryptedPassword = model.EditPassword.EncryptedPassword;
+                        model.EditPassword.EncryptedPassword = model.EditPassword.EncryptedPassword;
 
                         //save changes to database
-                        DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
+                        DatabaseContext.Entry(selectedPassword).CurrentValues.SetValues(model.EditPassword);
                         await DatabaseContext.SaveChangesAsync();
 
                         //supply the missing data, so the model can be returned
                         model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
                         model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
+
+                        PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
                     }
                     //user does not have access to edit
                     else
                     {
                         //return just a readonly model
+                        model.EditPassword = new PasswordEdit();
                         model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
                         model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
 
                         ModelState.AddModelError("", "You do not have permission to edit this password");
                     }
+
+
                 }
                 //user does not have access to view
                 else
@@ -543,11 +597,11 @@ namespace Secure_Password_Repository.Controllers
         {
             int UserId = User.Identity.GetUserId().ToInt();
 
-            //Retrive the password - if the user has access to delete the password
+            //Retrive the password - if the user has access to view the password
             Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
                                         .Where(pass => !pass.Deleted
                                                 && (
-                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId && up.CanDeletePassword))
+                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
                                                  || pass.Creator_Id == UserId
                                                     )
                                                ).SingleOrDefault(p => p.PasswordId == PasswordId);
@@ -555,20 +609,26 @@ namespace Secure_Password_Repository.Controllers
 
             if (selectedPassword!=null)
             {
-                //set the password as deleted and save to database
-                selectedPassword.Deleted = true;
-                DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
-                await DatabaseContext.SaveChangesAsync();
+                //user has access to delete the password
+                if(selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanDeletePassword))
+                {
 
-                PasswordDelete deletedPassword = AutoMapper.Mapper.Map<PasswordDelete>(selectedPassword);
+                    //set the password as deleted and save to database
+                    selectedPassword.Deleted = true;
+                    DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
+                    await DatabaseContext.SaveChangesAsync();
 
-                PushNotifications.sendDeletedPasswordDetails(deletedPassword);
+                    PasswordDelete deletedPassword = AutoMapper.Mapper.Map<PasswordDelete>(selectedPassword);
 
-                //return item so it can be removed from the UI
-                return Json(deletedPassword);
+                    PushNotifications.sendDeletedPasswordDetails(deletedPassword);
+
+                    //return item so it can be removed from the UI
+                    return Json(deletedPassword);
+
+                }
             }
 
-            //password does not exist... or user does not have access
+            //user does not have access to delete the password
             return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
         }
 
@@ -576,9 +636,118 @@ namespace Secure_Password_Repository.Controllers
         //POST: /Password/EditUserPermissions
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult EditUserPermissions(PasswordDetails model)
+        public async Task<ActionResult> EditUserPermissions(PasswordDetails model)
         {
-            return View(model);
+
+            if (ModelState.IsValid && model.UserPermissions != null && model.UserPermissions.Count>0)
+            {
+
+                int UserId = User.Identity.GetUserId().ToInt();
+
+                //important we store the password id - this is so that an attacker cannot change the passwordId field
+                //in one of the userpermission items to a password Id he doesnt have access to.
+                //e.g. if   model.UserPermissions[0].PasswordId  is "1", which the attacker has access to
+                //he can quite easily change model.UserPermissions[1].PasswordId to "2" which he doesnt have access to
+                //so this variable will be used for validation later.
+                int PasswordId = model.UserPermissions[0].PasswordId;
+
+
+                //Retrive the password - if the user has access to view the password
+                Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").AsNoTracking()
+                                            .Where(pass => !pass.Deleted
+                                                    && (
+                                                        (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                        || pass.Creator_Id == UserId
+                                                        )
+                                                    ).SingleOrDefault(p => p.PasswordId == PasswordId);
+
+
+
+                //user has access to aleast view the password
+                if (selectedPassword != null)
+                {
+
+                    //does the user have access to edit the password permissions?
+                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+                    {
+
+                        var PermissionList = AutoMapper.Mapper.Map<List<UserPassword>>(model.UserPermissions);
+
+                        //loop through each permission item submitted
+                        foreach (var permissionItem in model.UserPermissions)
+                        {
+                            //pssword id does not match the one submitted
+                            if(permissionItem.PasswordId != PasswordId)
+                            {
+                                ModelState.AddModelError("", "An illegal change has been made to the permission form");
+                                break;
+                            }
+                            else
+                            {
+
+                                UserPassword userPermissionItem = AutoMapper.Mapper.Map<UserPassword>(permissionItem);
+                                bool RecordExists = DatabaseContext.UserPasswords.AsNoTracking().Any(up => up.Id == userPermissionItem.Id && up.PasswordId == userPermissionItem.PasswordId);
+
+                                if (!RecordExists && (permissionItem.CanViewPassword || permissionItem.CanEditPassword || permissionItem.CanChangePermissions || permissionItem.CanDeletePassword))
+                                {
+                                    permissionItem.CanViewPassword = true;
+                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Added;
+                                }
+                                else if (permissionItem.CanViewPassword || permissionItem.CanEditPassword || permissionItem.CanChangePermissions || permissionItem.CanDeletePassword)
+                                {
+                                    userPermissionItem.CanViewPassword = true;
+                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Modified;
+                                }
+                                else if (RecordExists)
+                                {
+                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Deleted; 
+                                }
+
+                            }
+                        }
+
+                        //if there were no errors
+                        if (ModelState.IsValid)
+                        {
+                            //supply the missing data, so the model can be returned
+                            model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                            model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
+
+                            await DatabaseContext.SaveChangesAsync();
+
+                            PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
+                        }
+
+                    }
+                    //user does not have access to edit user permissions
+                    else
+                    {
+                        //return just a readonly model
+                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                        model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
+
+                        ModelState.AddModelError("", "You do not have permission to edit permissions for this password");
+                    }
+                }
+                //user does not have access to view
+                else
+                {
+                    //return empty model
+                    model.ViewPassword = new PasswordDisplay();
+                    model.EditPassword = new PasswordEdit();
+                    model.UserPermissions = null;
+
+                    ModelState.AddModelError("", "You do not have permission to view this password");
+                }
+            }
+            //model is invalid
+            else
+            {
+                //supply the missing data, so the model can be returned
+                
+            }
+
+            return View("ViewPassword", model);
         }
 
 

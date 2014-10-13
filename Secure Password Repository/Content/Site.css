@@ -30,7 +30,7 @@ textarea {
 /* override bootstrap media query, so that forms in iframes format better */
 @media (min-width: 720px) {
 
-    .col-md-1, .col-md-2, .col-md-3, .col-md-28, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11 {
+    .col-md-1, .col-md-15, .col-md-2, .col-md-3, .col-md-28, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11 {
         float: left;
     }
 
@@ -40,6 +40,14 @@ textarea {
 
     .col-md-28 {
         width: 28%;
+        min-height: 1px;
+        padding-left: 15px;
+        padding-right: 15px;
+        position: relative;
+    }
+
+    .col-md-15 {
+        width: 15%;
         min-height: 1px;
         padding-left: 15px;
         padding-right: 15px;
@@ -68,10 +76,16 @@ textarea {
 
 }
 
+#tabbedpanelcontainer_3_panel .form-group {
+    margin-top: 10px;
+}
+
 .permissionrow {
     border-bottom: 1px solid black;
     border-top: 1px solid black;
     padding: 10px 0;
+    margin-bottom: 0px !important;
+    margin-top: 0px !important;
 }
 
 span.text {

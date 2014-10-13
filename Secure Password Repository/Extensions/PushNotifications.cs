@@ -39,7 +39,7 @@ namespace Secure_Password_Repository.Extensions
         {
             //broadcast details to all clients except the one requesting the broadcast
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.AllExcept(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendUpdatedPasswordDetails(updatedPassword);
+            hubContext.Clients.All.sendUpdatedPasswordDetails(updatedPassword);
         }
 
         /// <summary>

@@ -364,7 +364,7 @@ namespace Secure_Password_Repository.Controllers
                                                  || pass.Creator_Id == UserId)
                                                     ).SingleOrDefault(p => p.PasswordId == PasswordId);
 
-            //obtain a list of users that cont have a record in the UserPassword table
+            //obtain a list of users that dont have a record in the UserPassword table
             var UserList = DatabaseContext.Users.Where(u => !DatabaseContext.UserPasswords.Any(up => up.Id == u.Id && up.PasswordId == selectedPassword.PasswordId));
 
             //add a new UserPassword record in to the list, so they every user is displayed on the "permissions" page.
@@ -670,38 +670,58 @@ namespace Secure_Password_Repository.Controllers
                     //does the user have access to edit the password permissions?
                     if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
                     {
-
-                        var PermissionList = AutoMapper.Mapper.Map<List<UserPassword>>(model.UserPermissions);
+                        //obtain a list of users that DO have a record in the UserPassword table
+                        var MissingPermissionUsers = DatabaseContext.Users.Where(u => DatabaseContext.UserPasswords.Any(up => up.Id == u.Id && up.PasswordId == PasswordId)).ToList();
 
                         //loop through each permission item submitted
-                        foreach (var permissionItem in model.UserPermissions)
+                        for (int intPermissionIndex = 0; intPermissionIndex < model.UserPermissions.Count; intPermissionIndex++)
                         {
-                            //pssword id does not match the one submitted
-                            if(permissionItem.PasswordId != PasswordId)
+                            //pssword id does not match the one submitted - basically the user has been naughty and modifed the form (tut! tut!)
+                            if (model.UserPermissions[intPermissionIndex].PasswordId != PasswordId)
                             {
                                 ModelState.AddModelError("", "An illegal change has been made to the permission form");
                                 break;
                             }
                             else
                             {
+                                //convert the current permission item into a UserPassword entity
+                                UserPassword userPermissionItem = AutoMapper.Mapper.Map<UserPassword>(model.UserPermissions[intPermissionIndex]);
 
-                                UserPassword userPermissionItem = AutoMapper.Mapper.Map<UserPassword>(permissionItem);
-                                bool RecordExists = DatabaseContext.UserPasswords.AsNoTracking().Any(up => up.Id == userPermissionItem.Id && up.PasswordId == userPermissionItem.PasswordId);
+                                //does the user have a record in the UserPasswords table
+                                ApplicationUser UserPasswordRecord = MissingPermissionUsers.SingleOrDefault(u => u.Id == userPermissionItem.Id);
 
-                                if (!RecordExists && (permissionItem.CanViewPassword || permissionItem.CanEditPassword || permissionItem.CanChangePermissions || permissionItem.CanDeletePassword))
+                                //has one of the 4 permissions been selected
+                                bool PermissionsSelected = userPermissionItem.CanViewPassword || userPermissionItem.CanEditPassword || userPermissionItem.CanChangePermissions || userPermissionItem.CanDeletePassword;
+
+                                //the user doesnt have a record, but a permission has been selected
+                                if (UserPasswordRecord == null && PermissionsSelected)
                                 {
-                                    permissionItem.CanViewPassword = true;
-                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Added;
+                                    var MissingUser = DatabaseContext.Users.Where(u => u.Id == userPermissionItem.Id).Single();
+                                    userPermissionItem.CanViewPassword = true;                                                          //default
+                                    model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
+                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = MissingUser;                                      //for the UI
+                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Added;                                //add new record
                                 }
-                                else if (permissionItem.CanViewPassword || permissionItem.CanEditPassword || permissionItem.CanChangePermissions || permissionItem.CanDeletePassword)
+                                //the user DOES have a record, and has a selected permission
+                                else if (UserPasswordRecord != null && PermissionsSelected)
                                 {
-                                    userPermissionItem.CanViewPassword = true;
-                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Modified;
+                                    userPermissionItem.CanViewPassword = true;                                                          //default
+                                    model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
+                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = UserPasswordRecord;                    //for the UI
+                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Modified;                             //update record
                                 }
-                                else if (RecordExists)
+                                //user DOES have a record, and no permissions have been selected
+                                //the view permission here gets a double check - because if that is unticked, everything else has to be
+                                else if (UserPasswordRecord != null && (!PermissionsSelected || !userPermissionItem.CanViewPassword))
                                 {
-                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Deleted; 
+                                    model.UserPermissions[intPermissionIndex].CanEditPassword = false;
+                                    model.UserPermissions[intPermissionIndex].CanDeletePassword = false;
+                                    model.UserPermissions[intPermissionIndex].CanChangePermissions = false;
+                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = UserPasswordRecord;                    //for the UI
+                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Deleted;                              //delete record
                                 }
+
+
 
                             }
                         }
@@ -713,8 +733,10 @@ namespace Secure_Password_Repository.Controllers
                             model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
                             model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
 
+                            //save changes to DB
                             await DatabaseContext.SaveChangesAsync();
 
+                            //send push notification (to update the UI)
                             PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
                         }
 

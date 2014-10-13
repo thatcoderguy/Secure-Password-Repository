@@ -1,7 +1,4 @@
 ﻿@model Secure_Password_Repository.ViewModels.PasswordUserPermission
-@{
-    int index = Convert.ToInt32(ViewData["counter"]);
-}
 
 <div class="form-group permissionrow">
     @Html.HiddenFor(model => model.Id)
@@ -20,3 +17,4 @@
         @Html.CheckBoxFor(model => model.CanChangePermissions)
     </div>
 </div>
+

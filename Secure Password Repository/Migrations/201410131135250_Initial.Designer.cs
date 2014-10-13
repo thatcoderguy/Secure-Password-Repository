@@ -7,13 +7,13 @@ namespace Secure_Password_Repository.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.1.0-30225")]
-    public sealed partial class unknown : IMigrationMetadata
+    public sealed partial class Initial : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(unknown));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(Initial));
         
         string IMigrationMetadata.Id
         {
-            get { return "201410111740044_unknown"; }
+            get { return "201410131135250_Initial"; }
         }
         
         string IMigrationMetadata.Source

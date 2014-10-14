@@ -147,8 +147,13 @@ namespace Secure_Password_Repository.ViewModels
     public class PasswordDetails
     {
         public PasswordDisplay ViewPassword { get; set; } 
+        
         public PasswordEdit EditPassword { get; set; }
+
         public IList<PasswordUserPermission> UserPermissions { get; set; }
+
+        public DefaultTab OpenTab;
+
         public bool CanEditPassword 
         { 
             get 
@@ -171,4 +176,6 @@ namespace Secure_Password_Repository.ViewModels
             }
         }
     }
+
+    public enum DefaultTab { ViewPassword, EditPassword, EditPermissions };
 }

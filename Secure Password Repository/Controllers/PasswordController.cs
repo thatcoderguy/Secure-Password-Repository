@@ -78,6 +78,7 @@ namespace Secure_Password_Repository.Controllers
 
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
+                .Where(c => c.CategoryId == 1)
                 .Include("SubCategories")
                 .ToList()
                 .Select(c => new Category()
@@ -134,9 +135,9 @@ namespace Secure_Password_Repository.Controllers
 
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
+                                                            .Where(c => c.CategoryId == ParentCategoryId)
                                                             .Include("SubCategories")
                                                             .Include("Passwords")
-                                                            .Where(c => c.CategoryId == ParentCategoryId)
                                                             .ToList()
                                                             .Select(c => new Category()
                                                             {
@@ -210,7 +211,10 @@ namespace Secure_Password_Repository.Controllers
                         Category newCategory = AutoMapper.Mapper.Map<Category>(model);
 
                         //get the parent node, and include it's subcategories
-                        var categoryList = DatabaseContext.Categories.Include("SubCategories").Single(c => c.CategoryId == model.Category_ParentID);
+                        var categoryList = DatabaseContext.Categories
+                                                                .Where(c => c.CategoryId == model.Category_ParentID)
+                                                                .Include("SubCategories")
+                                                                .Single(c => c.CategoryId == model.Category_ParentID);
 
                         //set the order of the category by getting the number of subcategories
                         if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
@@ -300,6 +304,7 @@ namespace Secure_Password_Repository.Controllers
 
                     //get the category item to delete
                     var selectedCategory = DatabaseContext.Categories
+                                                            .Where(c => c.CategoryId == CategoryId)
                                                             .Include("Parent_Category")
                                                             .Single(c => c.CategoryId == CategoryId);
 
@@ -365,12 +370,14 @@ namespace Secure_Password_Repository.Controllers
             var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
 
             //Retrive the password -if the user has access
-            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted
+            Password selectedPassword = DatabaseContext.Passwords.Where(pass => !pass.Deleted
                                                 && (
                                                     (UserIDList.Contains(UserId))
                                                  || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
                                                  || pass.Creator_Id == UserId)
-                                                    ).SingleOrDefault(p => p.PasswordId == PasswordId);
+                                                    )
+                                                    .Include("Parent_UserPasswords")
+                                                    .SingleOrDefault(p => p.PasswordId == PasswordId);
 
             //obtain a list of users that dont have a record in the UserPassword table
             var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
@@ -442,7 +449,10 @@ namespace Secure_Password_Repository.Controllers
                     var user = await UserMgr.FindByIdAsync(userId);
 
                     //get the parent category node, and include it's passwords
-                    var passwordList = DatabaseContext.Categories.Include("Passwords").Single(c => c.CategoryId == model.Parent_CategoryId);
+                    var passwordList = DatabaseContext.Categories
+                                                            .Where(c => c.CategoryId == model.Parent_CategoryId)
+                                                            .Include("Passwords")
+                                                            .Single(c => c.CategoryId == model.Parent_CategoryId);
 
                     //set the order of the category by getting the number of subcategories
                     if (passwordList.Passwords.Where(p => !p.Deleted).ToList().Count > 0)
@@ -504,13 +514,15 @@ namespace Secure_Password_Repository.Controllers
                 var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == model.EditPassword.PasswordId).Select(up => up.Id).ToList();
 
                 //Retrive the password - if the user has access to view the password
-                Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
+                Password selectedPassword = DatabaseContext.Passwords
                                             .Where(pass => !pass.Deleted
                                                     && (
                                                         (UserPasswordList.Contains(UserId))
                                                      || pass.Creator_Id == UserId
                                                         )
-                                                   ).SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
+                                                   )
+                                                   .Include("Parent_UserPasswords")
+                                                   .SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
 
 
 

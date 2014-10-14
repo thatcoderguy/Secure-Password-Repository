@@ -16,6 +16,7 @@ namespace Secure_Password_Repository.Database
         public ApplicationDbContext()
             : base("DefaultConnection")
         {
+            this.Configuration.LazyLoadingEnabled = false;
         }
 
         public static ApplicationDbContext Create()

@@ -58,30 +58,21 @@ namespace Secure_Password_Repository.Models
 
         public string GetRoleName()
         {
-
-            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-            string MyRoles = string.Empty;
             
-            DatabaseContext.Users.Load();
+            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
 
-            //grab this user account from the database
-            var thisUserAccount = DatabaseContext.Users.FirstOrDefaultAsync(u => u.Id == Id).Result;
-            if (thisUserAccount != null)
-                foreach (var role in thisUserAccount.Roles)
-                {
-                    //grab first role that the user has (there should be only 1)
-                    var myRole = DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
+            string MyRoles = string.Empty;
 
-                    if (myRole != null)
-                        MyRoles += myRole.Name;
-                    else
-                        //throw new PasswordRepositoryException("User does not have any roles");
-                        MyRoles = string.Empty;
-                }
-                //user does not exist... some how
-            else
-                //throw new PasswordRepositoryException("User does not exist");
-                MyRoles = string.Empty;
+            foreach (var role in this.Roles)
+            {
+                //grab first role that the user has (there should be only 1)
+                var myRole = DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
+
+                if (myRole != null)
+                    MyRoles += myRole.Name;
+                else
+                    MyRoles = string.Empty;
+            }
 
             return MyRoles;
         }

@@ -26,6 +26,8 @@ namespace Secure_Password_Repository.Controllers
         private ApplicationUserManager _userManager;
         private ApplicationRoleManager _roleManager;
 
+        private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+
         public AccountController()
         {
         }
@@ -82,7 +84,9 @@ namespace Secure_Password_Repository.Controllers
         {
             if (ModelState.IsValid)
             {
+                
                 var user = await UserMgr.FindAsync(model.Username, model.Password);
+
                 if (user != null)
                 {
                     //only allow the user to sign in if their account is authorised
@@ -114,6 +118,7 @@ namespace Secure_Password_Repository.Controllers
                                                                         SlidingExpiration=TimeSpan.FromHours(1), 
                                                                         Priority=CacheItemPriority.Default,
                                                                         RemovedCallback = onRemove });
+
 
                         await SignInAsync(user, false);
                         return RedirectToLocal(returnUrl);

@@ -19,6 +19,7 @@ using Secure_Password_Repository.Settings;
 using Secure_Password_Repository.Hubs;
 using Secure_Password_Repository.Controllers;
 using System.Data.Entity.Infrastructure;
+using Microsoft.AspNet.Identity.EntityFramework;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
@@ -92,7 +93,6 @@ namespace Secure_Password_Repository.Controllers
                                             CategoryOrder = s.CategoryOrder
                                         })
                                         .ToList(),                                  //make sure only undeleted subcategories are returned
-
                     CategoryId = c.CategoryId,
                     CategoryName = c.CategoryName,
                     Category_ParentID = c.Category_ParentID,
@@ -129,41 +129,46 @@ namespace Secure_Password_Repository.Controllers
                 int UserId = User.Identity.GetUserId().ToInt();
                 bool userIsAdmin = User.IsInRole("Administrator");
 
+                //load all of the userpassword item that are related to the passwords being return - this stops multiple hits on the DB when calling Any below
+                var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.Id == UserId && DatabaseContext.Passwords.Where(p => p.Parent_CategoryId == ParentCategoryId).Select(p => p.PasswordId).Contains(up.PasswordId)).ToList();
+
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
-                        .Include("SubCategories")
-                        .Include("Passwords")
-                        .ToList().Select(c => new Category()
-                        {
-                            SubCategories = c.SubCategories
-                            .Where(sub => !sub.Deleted)
-                            .OrderBy(sub => sub.CategoryOrder)
-                            .Select(s => new Category()         //remove subcategories and passwords - as these cant be mapped
-                            {
-                                Category_ParentID = s.Category_ParentID,
-                                CategoryId = s.CategoryId,
-                                CategoryName = s.CategoryName,
-                                CategoryOrder = s.CategoryOrder
-                            })
-                            .ToList(),                          //make sure only undeleted subcategories are returned
-                            CategoryId = c.CategoryId,
-                            CategoryName = c.CategoryName,
-                            Category_ParentID = c.Category_ParentID,
-                            CategoryOrder = c.CategoryOrder,
-                            Parent_Category = c.Parent_Category,
-                            Deleted = c.Deleted,
-                            Passwords = c.Passwords
-                                                .Where(pass => !pass.Deleted 
-                                                && (
-                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId)) 
-                                                 || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords) 
-                                                 ||  pass.Creator_Id == UserId
-                                                    )
-                                                    )   //make sure only undeleted passwords - that the current user has acccess to - are returned
-                            .OrderBy(pass => pass.PasswordOrder)
-                            .ToList()
-                        })
-                        .Single(c => c.CategoryId == ParentCategoryId);
+                                                            .Include("SubCategories")
+                                                            .Include("Passwords")
+                                                            .Where(c => c.CategoryId == ParentCategoryId)
+                                                            .ToList()
+                                                            .Select(c => new Category()
+                                                            {
+                                                                SubCategories = c.SubCategories
+                                                                                    .Where(sub => !sub.Deleted)
+                                                                                    .OrderBy(sub => sub.CategoryOrder)
+                                                                                    .Select(s => new Category()         //remove subcategories and passwords - as these cant be mapped
+                                                                                    {
+                                                                                        Category_ParentID = s.Category_ParentID,
+                                                                                        CategoryId = s.CategoryId,
+                                                                                        CategoryName = s.CategoryName,
+                                                                                        CategoryOrder = s.CategoryOrder
+                                                                                    })
+                                                                                    .ToList(),                          //make sure only undeleted subcategories are returned
+                                                                CategoryId = c.CategoryId,
+                                                                CategoryName = c.CategoryName,
+                                                                Category_ParentID = c.Category_ParentID,
+                                                                CategoryOrder = c.CategoryOrder,
+                                                                Parent_Category = c.Parent_Category,
+                                                                Deleted = c.Deleted,
+                                                                Passwords = c.Passwords
+                                                                                    .Where(pass => !pass.Deleted
+                                                                                    && (
+                                                                                        (UserPasswordList.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                                                        || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
+                                                                                        || pass.Creator_Id == UserId
+                                                                                        )
+                                                                                        )   //make sure only undeleted passwords - that the current user has acccess to - are returned
+                                                                .OrderBy(pass => pass.PasswordOrder)
+                                                                .ToList()
+                                                            })
+                                                            .Single(c => c.CategoryId == ParentCategoryId);
 
                 //create view model from model
                 CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
@@ -356,16 +361,19 @@ namespace Secure_Password_Repository.Controllers
             int UserId = User.Identity.GetUserId().ToInt();
             bool userIsAdmin = User.IsInRole("Administrator");
 
+            //get a list of userIds that have UserPassword records for this password
+            var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
+
             //Retrive the password -if the user has access
             Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted
                                                 && (
-                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                    (UserIDList.Contains(UserId))
                                                  || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
                                                  || pass.Creator_Id == UserId)
                                                     ).SingleOrDefault(p => p.PasswordId == PasswordId);
 
             //obtain a list of users that dont have a record in the UserPassword table
-            var UserList = DatabaseContext.Users.Where(u => !DatabaseContext.UserPasswords.Any(up => up.Id == u.Id && up.PasswordId == selectedPassword.PasswordId));
+            var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
 
             //add a new UserPassword record in to the list, so they every user is displayed on the "permissions" page.
             foreach(var userItem in UserList)
@@ -492,11 +500,14 @@ namespace Secure_Password_Repository.Controllers
             {
                 int UserId = User.Identity.GetUserId().ToInt();
 
+                //get the UserPassword records for the selected password - so we dont have multiple hits on the DB later
+                var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == model.EditPassword.PasswordId).Select(up => up.Id).ToList();
+
                 //Retrive the password - if the user has access to view the password
                 Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
                                             .Where(pass => !pass.Deleted
                                                     && (
-                                                        (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                        (UserPasswordList.Contains(UserId))
                                                      || pass.Creator_Id == UserId
                                                         )
                                                    ).SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
@@ -513,7 +524,7 @@ namespace Secure_Password_Repository.Controllers
                     if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
                     {
                         //obtain a list of users that cont have a record in the UserPassword table
-                        var UserList = DatabaseContext.Users.Where(u => !DatabaseContext.UserPasswords.Any(up => up.Id == u.Id && up.PasswordId == selectedPassword.PasswordId));
+                        var UserList = DatabaseContext.Users.Where(u => !UserPasswordList.Contains(u.Id)).ToList();
 
                         //add a new UserPassword record in to the list, so they every user is displayed on the "permissions" page.
                         foreach (var userItem in UserList)
@@ -597,11 +608,14 @@ namespace Secure_Password_Repository.Controllers
         {
             int UserId = User.Identity.GetUserId().ToInt();
 
+            //get the UserPassword records for the selected password - so we dont have multiple hits on the DB later
+            var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).ToList();
+
             //Retrive the password - if the user has access to view the password
             Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
                                         .Where(pass => !pass.Deleted
                                                 && (
-                                                    (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                    (UserPasswordList.Any(up => up.Id == UserId))
                                                  || pass.Creator_Id == UserId
                                                     )
                                                ).SingleOrDefault(p => p.PasswordId == PasswordId);
@@ -651,12 +665,14 @@ namespace Secure_Password_Repository.Controllers
                 //so this variable will be used for validation later.
                 int PasswordId = model.UserPermissions[0].PasswordId;
 
+                //get a list of userIds that have UserPassword records for this password
+                var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
 
                 //Retrive the password - if the user has access to view the password
                 Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").AsNoTracking()
                                             .Where(pass => !pass.Deleted
                                                     && (
-                                                        (DatabaseContext.UserPasswords.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
+                                                        (UserIDList.Contains(UserId))
                                                         || pass.Creator_Id == UserId
                                                         )
                                                     ).SingleOrDefault(p => p.PasswordId == PasswordId);
@@ -670,8 +686,29 @@ namespace Secure_Password_Repository.Controllers
                     //does the user have access to edit the password permissions?
                     if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
                     {
-                        //obtain a list of users that DO have a record in the UserPassword table
-                        var MissingPermissionUsers = DatabaseContext.Users.Where(u => DatabaseContext.UserPasswords.Any(up => up.Id == u.Id && up.PasswordId == PasswordId)).ToList();
+
+                        //disable lazy loading - otherwise the whole of the UserPassword table will be loaded
+                        DatabaseContext.Configuration.LazyLoadingEnabled = false;
+
+                        //get all of the users
+                        var UserList = DatabaseContext.Users.AsNoTracking().ToList();
+                        //get all of the UserPassword records for the selected password
+                        var UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking().Where(up => up.PasswordId == PasswordId).ToList();
+
+                        DatabaseContext.Configuration.LazyLoadingEnabled = true;
+
+
+
+                        //load in the UserPassword records into the related User records (normally EF does this view Lazy Loading, but we can't filter on Include())
+                        UserList = UserList.Select(u => new ApplicationUser()
+                        {
+                            Id = u.Id,
+                            UserName = u.UserName,
+                            userFullName = u.userFullName,
+                            UserPasswords = UserPasswordList.Where(up => up.Id == u.Id).ToList()
+                        }).ToList();
+
+
 
                         //loop through each permission item submitted
                         for (int intPermissionIndex = 0; intPermissionIndex < model.UserPermissions.Count; intPermissionIndex++)
@@ -684,41 +721,51 @@ namespace Secure_Password_Repository.Controllers
                             }
                             else
                             {
+
+
                                 //convert the current permission item into a UserPassword entity
                                 UserPassword userPermissionItem = AutoMapper.Mapper.Map<UserPassword>(model.UserPermissions[intPermissionIndex]);
-
-                                //does the user have a record in the UserPasswords table
-                                ApplicationUser UserPasswordRecord = MissingPermissionUsers.SingleOrDefault(u => u.Id == userPermissionItem.Id);
 
                                 //has one of the 4 permissions been selected
                                 bool PermissionsSelected = userPermissionItem.CanViewPassword || userPermissionItem.CanEditPassword || userPermissionItem.CanChangePermissions || userPermissionItem.CanDeletePassword;
 
+                                ApplicationUser CurrentPermissionRecordUser = UserList.Single(u => u.Id == userPermissionItem.Id);
+
                                 //the user doesnt have a record, but a permission has been selected
-                                if (UserPasswordRecord == null && PermissionsSelected)
+                                if (!CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && PermissionsSelected)
                                 {
                                     var MissingUser = DatabaseContext.Users.Where(u => u.Id == userPermissionItem.Id).Single();
                                     userPermissionItem.CanViewPassword = true;                                                          //default
                                     model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
-                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = MissingUser;                                      //for the UI
+                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
                                     DatabaseContext.Entry(userPermissionItem).State = EntityState.Added;                                //add new record
                                 }
                                 //the user DOES have a record, and has a selected permission
-                                else if (UserPasswordRecord != null && PermissionsSelected)
+                                else if (CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && PermissionsSelected)
                                 {
                                     userPermissionItem.CanViewPassword = true;                                                          //default
                                     model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
-                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = UserPasswordRecord;                    //for the UI
+                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
                                     DatabaseContext.Entry(userPermissionItem).State = EntityState.Modified;                             //update record
                                 }
                                 //user DOES have a record, and no permissions have been selected
                                 //the view permission here gets a double check - because if that is unticked, everything else has to be
-                                else if (UserPasswordRecord != null && (!PermissionsSelected || !userPermissionItem.CanViewPassword))
+                                else if (CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && 
+                                                                                                                    (!PermissionsSelected || !userPermissionItem.CanViewPassword))
                                 {
                                     model.UserPermissions[intPermissionIndex].CanEditPassword = false;
                                     model.UserPermissions[intPermissionIndex].CanDeletePassword = false;
                                     model.UserPermissions[intPermissionIndex].CanChangePermissions = false;
-                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = UserPasswordRecord;                    //for the UI
+                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
                                     DatabaseContext.Entry(userPermissionItem).State = EntityState.Deleted;                              //delete record
+                                }
+                                //user doesnt have a record, and nothing has been selected
+                                else
+                                {
+                                    model.UserPermissions[intPermissionIndex].CanEditPassword = false;
+                                    model.UserPermissions[intPermissionIndex].CanDeletePassword = false;
+                                    model.UserPermissions[intPermissionIndex].CanChangePermissions = false;
+                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
                                 }
 
 

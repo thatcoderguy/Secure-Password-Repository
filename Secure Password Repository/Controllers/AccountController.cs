@@ -102,8 +102,8 @@ namespace Secure_Password_Repository.Controllers
                         }
 
                         //hash and encrypt the user's password - so this can be used to decrypt the user's private key
-                        byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(model.Password);
-                        hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
+                        byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.Password);
+                        hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
                         
                         //in-memory encryption of the hash
                         EncryptionAndHashing.Encrypt_DPAPI(ref hashedPassword);
@@ -115,9 +115,9 @@ namespace Secure_Password_Repository.Controllers
                                                 hashedPassword.ConvertToString(), 
                                                 new CacheItemPolicy() { 
                                                                         AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
-                                                                        SlidingExpiration=TimeSpan.FromHours(1), 
-                                                                        Priority=CacheItemPriority.Default,
-                                                                        RemovedCallback = onRemove });
+                                                                        SlidingExpiration=TimeSpan.FromHours(1),    //1 hour - incase user logs out
+                                                                        Priority=CacheItemPriority.Default, 
+                                                                        RemovedCallback = onRemove });              //add item back into cache, if user logged in
 
 
                         await SignInAsync(user, false);
@@ -184,11 +184,11 @@ namespace Secure_Password_Repository.Controllers
                     EncryptionAndHashing.Encrypt_DPAPI(ref userPrivateKeyBytes);
 
                     //hash the user's password,and then use 
-                    byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_To_Bytes(model.Password);
-                    hashedPassword = EncryptionAndHashing.Hash_PBKDF2_To_Bytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
+                    byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.Password);
+                    hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
 
                     //Encrypt privateKey with the user's encryptionkey (based on their password)
-                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_To_Bytes(userPrivateKeyBytes, hashedPassword).ToBase64String();
+                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_ToBytes(userPrivateKeyBytes, hashedPassword).ToBase64String();
 
                     //clear the PrivateKey data - for security
                     Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);
@@ -211,7 +211,7 @@ namespace Secure_Password_Repository.Controllers
                         EncryptionAndHashing.Encrypt_DPAPI(ref DatabaseEncryptionKeyBytes);
 
                         //second level of encryption - using RSA
-                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA_To_Bytes(DatabaseEncryptionKeyBytes, user.userPublicKey).ToBase64String();
+                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA_ToBytes(DatabaseEncryptionKeyBytes, user.userPublicKey).ToBase64String();
 
                         //clear the original data
                         Array.Clear(DatabaseEncryptionKeyBytes, 0, DatabaseEncryptionKeyBytes.Length);

@@ -136,7 +136,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_RSA_To_Byte(string PlainText, string PublicKey)
+        public static byte[] Encrypt_RSA_ToBytes(string PlainText, string PublicKey)
         {
             byte[] encryptedtext;
 
@@ -165,7 +165,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_RSA_To_Bytes(byte[] PlainText, string PublicKey)
+        public static byte[] Encrypt_RSA_ToBytes(byte[] PlainText, string PublicKey)
         {
             byte[] encryptedtext;
 
@@ -468,7 +468,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_AES256_To_Bytes(string PlainText, string EncryptionKey)
+        public static byte[] Encrypt_AES256_ToBytes(string PlainText, string EncryptionKey)
         {
             byte[] BytesToEncrypt = PlainText.ToBytes();
 
@@ -523,7 +523,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_AES256_To_Bytes(string PlainText, byte[] EncryptionKey)
+        public static byte[] Encrypt_AES256_ToBytes(string PlainText, byte[] EncryptionKey)
         {
 
             byte[] BytesToEncrypt = PlainText.ToBytes();
@@ -579,7 +579,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_AES256_To_Bytes(byte[] BytesToEncrypt, string EncryptionKey)
+        public static byte[] Encrypt_AES256_ToBytes(byte[] BytesToEncrypt, string EncryptionKey)
         {
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -633,7 +633,7 @@ namespace Secure_Password_Repository.Extensions
         ///<returns>
         ///An byte array of encrypted data
         ///</returns>
-        public static byte[] Encrypt_AES256_To_Bytes(byte[] BytesToEncrypt, byte[] EncryptionKey)
+        public static byte[] Encrypt_AES256_ToBytes(byte[] BytesToEncrypt, byte[] EncryptionKey)
         {
             // Create an AesCryptoServiceProvider object 
             // with the specified key and IV. 
@@ -673,7 +673,6 @@ namespace Secure_Password_Repository.Extensions
 
             return BytesToEncrypt;
         }
-
 
         ///<summary>
         ///Decrypts the supplied string using the AES 256 algoritm
@@ -734,6 +733,63 @@ namespace Secure_Password_Repository.Extensions
         ///<summary>
         ///Decrypts the supplied string using the AES 256 algoritm
         ///</summary>
+        ///<param name="EncryptedText">
+        ///The encrypted text to be decrypted
+        ///</param>
+        ///<param name="DecryptionKey">
+        ///The key used to decrypt the text
+        ///</param>
+        ///<returns>
+        ///A string of decrypted data
+        ///</returns>
+        public static string Decrypt_AES256(string EncryptedText, byte[] DecryptionKey)
+        {
+
+            byte[] BytesToDecrypted = EncryptedText.ToBytes();
+
+            int ByteCount = 0;
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    Array.Resize(ref DecryptionKey,32);
+
+                aesAlg.Key = DecryptionKey;
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            //decrypt the bytes
+                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToDecrypted.ConvertToString();
+        }
+
+
+        ///<summary>
+        ///Decrypts the supplied string using the AES 256 algoritm
+        ///</summary>
         ///<param name="BytesToDecrypted">
         ///The encrypted bytes to be decrypted
         ///</param>
@@ -759,6 +815,278 @@ namespace Secure_Password_Repository.Extensions
                     DecryptionKey = DecryptionKey.Substring(0, 32);
 
                 aesAlg.Key = DecryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            //decrypt the bytes
+                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToDecrypted.ConvertToString();
+        }
+
+        ///<summary>
+        ///Decrypts the supplied string using the AES 256 algoritm
+        ///</summary>
+        ///<param name="EncryptedText">
+        ///The encrypted text to be decrypted
+        ///</param>
+        ///<param name="DecryptionKey">
+        ///The key used to decrypt the text
+        ///</param>
+        ///<returns>
+        ///A byte array of decrypted data
+        ///</returns>
+        public static byte[] Decrypt_AES256_ToBytes(string EncryptedText, string DecryptionKey)
+        {
+
+            byte[] BytesToDecrypted = EncryptedText.ToBytes();
+
+            int ByteCount = 0;
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    DecryptionKey = DecryptionKey.Substring(0, 32);
+
+                aesAlg.Key = DecryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            //decrypt the bytes
+                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToDecrypted;
+        }
+
+        ///<summary>
+        ///Decrypts the supplied string using the AES 256 algoritm
+        ///</summary>
+        ///<param name="EncryptedText">
+        ///The encrypted text to be decrypted
+        ///</param>
+        ///<param name="DecryptionKey">
+        ///The key used to decrypt the text
+        ///</param>
+        ///<returns>
+        ///A string of decrypted data
+        ///</returns>
+        public static byte[] Decrypt_AES256_ToBytes(string EncryptedText, byte[] DecryptionKey)
+        {
+
+            byte[] BytesToDecrypted = EncryptedText.ToBytes();
+
+            int ByteCount = 0;
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    Array.Resize(ref DecryptionKey, 32);
+
+                aesAlg.Key = DecryptionKey;
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            //decrypt the bytes
+                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToDecrypted;
+        }
+
+
+        ///<summary>
+        ///Decrypts the supplied string using the AES 256 algoritm
+        ///</summary>
+        ///<param name="BytesToDecrypted">
+        ///The encrypted bytes to be decrypted
+        ///</param>
+        ///<param name="DecryptionKey">
+        ///The key used to decrypt the text
+        ///</param>
+        ///<returns>
+        ///A string of decrypted data
+        ///</returns>
+        public static byte[] Decrypt_AES256_ToBytes(byte[] BytesToDecrypted, string DecryptionKey)
+        {
+
+            int ByteCount = 0;
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    DecryptionKey = DecryptionKey.Substring(0, 32);
+
+                aesAlg.Key = DecryptionKey.ToBytes();
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            //decrypt the bytes
+                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToDecrypted;
+        }
+
+        ///<summary>
+        ///Decrypts the supplied string using the AES 256 algoritm
+        ///</summary>
+        ///<param name="BytesToDecrypted">
+        ///The encrypted bytes to be decrypted
+        ///</param>
+        ///<param name="DecryptionKey">
+        ///The key used to decrypt the text
+        ///</param>
+        ///<returns>
+        ///A string of decrypted data
+        ///</returns>
+        public static byte[] Decrypt_AES256_ToBytes(byte[] BytesToDecrypted, byte[] DecryptionKey)
+        {
+
+            int ByteCount = 0;
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    Array.Resize(ref DecryptionKey, 32);
+
+                aesAlg.Key = DecryptionKey;
+                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                aesAlg.KeySize = 256;
+                aesAlg.BlockSize = 128;
+                aesAlg.Mode = CipherMode.CBC;
+
+                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                {
+                    using (MemoryStream MemStream = new MemoryStream())
+                    {
+                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            //decrypt the bytes
+                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
+                            MemStream.Close();
+                            CryptoStream.Close();
+                        }
+                    }
+                }
+
+                aesAlg.Clear();
+            }
+
+            return BytesToDecrypted;
+        }
+
+        ///<summary>
+        ///Decrypts the supplied string using the AES 256 algoritm
+        ///</summary>
+        ///<param name="BytesToDecrypted">
+        ///The encrypted bytes to be decrypted
+        ///</param>
+        ///<param name="DecryptionKey">
+        ///The key used to decrypt the text
+        ///</param>
+        ///<returns>
+        ///A string of decrypted data
+        ///</returns>
+        public static string Decrypt_AES256(byte[] BytesToDecrypted, byte[] DecryptionKey)
+        {
+
+            int ByteCount = 0;
+
+            // Create an AesCryptoServiceProvider object 
+            // with the specified key and IV. 
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+                //we need the key to be 32 chars long (256 bits)
+                if (DecryptionKey.Length < 32)
+                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
+                else if (DecryptionKey.Length > 32)
+                    Array.Resize(ref DecryptionKey, 32);
+
+                aesAlg.Key = DecryptionKey;
                 aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
                 aesAlg.KeySize = 256;
                 aesAlg.BlockSize = 128;
@@ -980,7 +1308,7 @@ namespace Secure_Password_Repository.Extensions
         /// <returns>
         /// A HMAC converted to Byte array
         /// </returns>
-        public static byte[] Hash_PBKDF2_To_Bytes(string Password)
+        public static byte[] Hash_PBKDF2_ToBytes(string Password)
         {
             byte[] salt;
             byte[] buffer;
@@ -1015,7 +1343,7 @@ namespace Secure_Password_Repository.Extensions
         /// <returns>
         /// A HMAC converted to a Byte array
         /// </returns>
-        public static byte[] Hash_PBKDF2_To_Bytes(string Password, string Salt)
+        public static byte[] Hash_PBKDF2_ToBytes(string Password, string Salt)
         {
             byte[] saltbytes;
             byte[] buffer;
@@ -1047,7 +1375,7 @@ namespace Secure_Password_Repository.Extensions
         /// <returns>
         /// A hashed byte array
         /// </returns>
-        public static byte[] Hash_PBKDF2_To_Bytes(byte[] Password)
+        public static byte[] Hash_PBKDF2_ToBytes(byte[] Password)
         {
             byte[] saltbytes;
             byte[] buffer;
@@ -1085,7 +1413,7 @@ namespace Secure_Password_Repository.Extensions
         /// <returns>
         /// A hashed byte array
         /// </returns>
-        public static byte[] Hash_PBKDF2_To_Bytes(byte[] Password, string Salt)
+        public static byte[] Hash_PBKDF2_ToBytes(byte[] Password, string Salt)
         {
             byte[] saltbytes;
             byte[] buffer;
@@ -1158,7 +1486,7 @@ namespace Secure_Password_Repository.Extensions
         /// </summary>
         /// <param name="PlainText"></param>
         /// <returns></returns>
-        public static byte[] Hash_SHA1_To_Bytes(string PlainText)
+        public static byte[] Hash_SHA1_ToBytes(string PlainText)
         {
             byte[] sha1hash;
 

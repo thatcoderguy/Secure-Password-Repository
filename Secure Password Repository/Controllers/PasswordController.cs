@@ -20,6 +20,7 @@ using Secure_Password_Repository.Hubs;
 using Secure_Password_Repository.Controllers;
 using System.Data.Entity.Infrastructure;
 using Microsoft.AspNet.Identity.EntityFramework;
+using System.Runtime.Caching;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
@@ -469,6 +470,61 @@ namespace Secure_Password_Repository.Controllers
                     newPasswordItem.CreatedDate = DateTime.Now;
                     newPasswordItem.Creator_Id = user.Id;
                     newPasswordItem.Location = model.Location.Replace("http://", "");
+
+                    //DO  ENCRYPTION  ///
+
+                    //rereive users private key  X
+                    //encryption key             X
+                    //convert from base64 (both) X
+                    //decrypt with DPAPI the cached key X
+                    //decrypt with aes (using the key) the private key X
+                    //encrypt wth DPAPI the cached key X
+                    //decrypt encryption key with private key 
+                    //encrypt password with private key
+                    //wipe private key
+                    //encrypt password with DPAPI
+                    //convert to base 64
+
+                    byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
+                    byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
+
+                    EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptionKey);
+                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);
+
+                    byte[] bytePrivateKeyKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+
+                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);
+
+                    bytePrivateKey = EncryptionAndHashing.Decrypt_AES256_ToBytes(bytePrivateKey, bytePrivateKeyKey);      //unencrypted private key
+
+                    EncryptionAndHashing.Encrypt_DPAPI(ref bytePrivateKeyKey);
+
+                    //byteEncryptionKey = EncryptionAndHashing.Decrypt_RSA_ToBytes(byteEncryptionKey, bytePrivateKey);       //unencrypted database key
+
+
+                    newPasswordItem.EncryptedPassword = EncryptionAndHashing.Encrypt_AES256(newPasswordItem.EncryptedPassword, strEncryptionKey);
+                    newPasswordItem.EncryptedSecondCredential = EncryptionAndHashing.Encrypt_AES256(newPasswordItem.EncryptedSecondCredential, strEncryptionKey);
+                    newPasswordItem.EncryptedUserName = EncryptionAndHashing.Encrypt_AES256(newPasswordItem.EncryptedUserName, strEncryptionKey);
+
+                    
+                    byte[] byteEncryptedPassword = newPasswordItem.EncryptedPassword.ToBytes();
+                    byte[] byteEncryptedSecondCredential = newPasswordItem.EncryptedSecondCredential.ToBytes();
+                    byte[] byteEncryptedUserName = newPasswordItem.EncryptedUserName.ToBytes();
+
+                    EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedPassword);
+                    EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedSecondCredential);
+                    EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedUserName);
+
+                    newPasswordItem.EncryptedPassword = byteEncryptedPassword.ToBase64String();
+                    newPasswordItem.EncryptedSecondCredential = byteEncryptedSecondCredential.ToBase64String();
+                    newPasswordItem.EncryptedUserName = byteEncryptedUserName.ToBase64String();
+
+                    Array.Clear(byteEncryptedPassword, 0, byteEncryptedPassword.Length);
+                    Array.Clear(byteEncryptedSecondCredential, 0, byteEncryptedSecondCredential.Length);
+                    Array.Clear(byteEncryptedUserName, 0, byteEncryptedUserName.Length);
+
+                    ////////////////////////////
+
 
                     //add the new password item
                     DatabaseContext.Passwords.Add(newPasswordItem);

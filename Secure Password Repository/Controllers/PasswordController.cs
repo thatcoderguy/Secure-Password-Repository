@@ -362,6 +362,7 @@ namespace Secure_Password_Repository.Controllers
         // GET:  ViewPassword/23
         public ActionResult ViewPassword(int PasswordId)
         {
+
             PasswordDetails passwordDisplayDetails;
             int UserId = User.Identity.GetUserId().ToInt();
             bool userIsAdmin = User.IsInRole("Administrator");
@@ -370,15 +371,17 @@ namespace Secure_Password_Repository.Controllers
             var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
 
             //Retrive the password -if the user has access
-            Password selectedPassword = DatabaseContext.Passwords.Where(pass => !pass.Deleted
-                                                && (
-                                                    (UserIDList.Contains(UserId))
-                                                 || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
-                                                 || pass.Creator_Id == UserId)
-                                                    )
-                                                    .Include("Parent_UserPasswords")
-                                                    .SingleOrDefault(p => p.PasswordId == PasswordId);
+            Password selectedPassword = DatabaseContext.Passwords
+                                                            .Where(pass => !pass.Deleted
+                                                            && (
+                                                                (UserIDList.Contains(UserId))
+                                                             || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
+                                                             || pass.Creator_Id == UserId)
+                                                                )
+                                                                .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
+                                                                .SingleOrDefault(p => p.PasswordId == PasswordId);
 
+           
             //obtain a list of users that dont have a record in the UserPassword table
             var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
 
@@ -415,12 +418,14 @@ namespace Secure_Password_Repository.Controllers
                 {
                     UserPermissions = new System.Collections.ObjectModel.Collection<PasswordUserPermission>(),
                     ViewPassword = new PasswordDisplay(),
-                    EditPassword = new PasswordEdit()
+                    EditPassword = new PasswordEdit(),
+                    OpenTab = DefaultTab.ViewPassword
                 };
 
                 ModelState.AddModelError("", "You do not have permission to view this password");
             }
 
+            passwordDisplayDetails.OpenTab = DefaultTab.ViewPassword;
             return View(passwordDisplayDetails);
         }
 
@@ -521,7 +526,7 @@ namespace Secure_Password_Repository.Controllers
                                                      || pass.Creator_Id == UserId
                                                         )
                                                    )
-                                                   .Include("Parent_UserPasswords")
+                                                   .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
                                                    .SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
 
 
@@ -533,7 +538,7 @@ namespace Secure_Password_Repository.Controllers
                     
                     
                     //if user can change permission, then load up the additional users
-                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
                     {
                         //obtain a list of users that cont have a record in the UserPassword table
                         var UserList = DatabaseContext.Users.Where(u => !UserPasswordList.Contains(u.Id)).ToList();
@@ -609,6 +614,7 @@ namespace Secure_Password_Repository.Controllers
                 model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(model.EditPassword);
             }
 
+            model.OpenTab = DefaultTab.EditPassword;
             return View("ViewPassword", model);
         }
 
@@ -623,21 +629,20 @@ namespace Secure_Password_Repository.Controllers
             //get the UserPassword records for the selected password - so we dont have multiple hits on the DB later
             var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).ToList();
 
-            //Retrive the password - if the user has access to view the password
-            Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords")
-                                        .Where(pass => !pass.Deleted
-                                                && (
-                                                    (UserPasswordList.Any(up => up.Id == UserId))
-                                                 || pass.Creator_Id == UserId
-                                                    )
-                                               ).SingleOrDefault(p => p.PasswordId == PasswordId);
+            //Retrive the password - if the user has access to delete the password
+            Password selectedPassword = DatabaseContext.Passwords
+                                                            .Include(pass => pass.Creator)
+                                                            .Where(pass => !pass.Deleted && pass.PasswordId == PasswordId)
+                                                            .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
+                                                            .Where(pass => pass.Creator_Id == UserId || pass.Parent_UserPasswords.Any(up => up.CanDeletePassword && up.Id == UserId))
+                                                            .SingleOrDefault(p => p.PasswordId == PasswordId);
 
 
             if (selectedPassword!=null)
             {
                 //user has access to delete the password
-                if(selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanDeletePassword))
-                {
+                //if(selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanDeletePassword))
+                //{
 
                     //set the password as deleted and save to database
                     selectedPassword.Deleted = true;
@@ -651,7 +656,7 @@ namespace Secure_Password_Repository.Controllers
                     //return item so it can be removed from the UI
                     return Json(deletedPassword);
 
-                }
+                //}
             }
 
             //user does not have access to delete the password
@@ -681,13 +686,16 @@ namespace Secure_Password_Repository.Controllers
                 var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
 
                 //Retrive the password - if the user has access to view the password
-                Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").AsNoTracking()
+                Password selectedPassword = DatabaseContext.Passwords.AsNoTracking()
                                             .Where(pass => !pass.Deleted
                                                     && (
                                                         (UserIDList.Contains(UserId))
                                                         || pass.Creator_Id == UserId
                                                         )
-                                                    ).SingleOrDefault(p => p.PasswordId == PasswordId);
+                                                    )
+                                                    .Include(p => p.Creator)
+                                                    .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
+                                                    .SingleOrDefault(p => p.PasswordId == PasswordId);
 
 
 
@@ -699,16 +707,14 @@ namespace Secure_Password_Repository.Controllers
                     if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
                     {
 
-                        //disable lazy loading - otherwise the whole of the UserPassword table will be loaded
-                        DatabaseContext.Configuration.LazyLoadingEnabled = false;
-
                         //get all of the users
                         var UserList = DatabaseContext.Users.AsNoTracking().ToList();
+
                         //get all of the UserPassword records for the selected password
-                        var UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking().Where(up => up.PasswordId == PasswordId).ToList();
-
-                        DatabaseContext.Configuration.LazyLoadingEnabled = true;
-
+                        var UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking()
+                                                                                .Where(up => up.PasswordId == PasswordId)
+                                                                                .Include(up => up.UserPasswordUser)
+                                                                                .ToList();
 
 
                         //load in the UserPassword records into the related User records (normally EF does this view Lazy Loading, but we can't filter on Include())
@@ -719,7 +725,6 @@ namespace Secure_Password_Repository.Controllers
                             userFullName = u.userFullName,
                             UserPasswords = UserPasswordList.Where(up => up.Id == u.Id).ToList()
                         }).ToList();
-
 
 
                         //loop through each permission item submitted
@@ -785,18 +790,18 @@ namespace Secure_Password_Repository.Controllers
                             }
                         }
 
+                        //supply the missing data, so the model can be returned
+                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                        model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
+
                         //if there were no errors
                         if (ModelState.IsValid)
                         {
-                            //supply the missing data, so the model can be returned
-                            model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                            model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
-
                             //save changes to DB
                             await DatabaseContext.SaveChangesAsync();
 
                             //send push notification (to update the UI)
-                            PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
+                            //PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
                         }
 
                     }
@@ -825,9 +830,12 @@ namespace Secure_Password_Repository.Controllers
             else
             {
                 //supply the missing data, so the model can be returned
-                
+                //return empty model
+                model.ViewPassword = new PasswordDisplay();
+                model.EditPassword = new PasswordEdit();
             }
 
+            model.OpenTab = DefaultTab.EditPermissions;
             return View("ViewPassword", model);
         }
 

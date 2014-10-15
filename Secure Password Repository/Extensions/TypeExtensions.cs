@@ -88,11 +88,12 @@ namespace Secure_Password_Repository.Extensions
             if (user == null)
                 user = HttpContext.Current.User;
             
-            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-            DatabaseContext.Configuration.LazyLoadingEnabled = true;
-            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
-            DatabaseContext.Configuration.LazyLoadingEnabled = false;
-            return ApplicationSettings.Default.RoleAllowEditCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowEditCategories) || usermodel.GetRoleName().Contains("Administrator"));
+            //ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            //DatabaseContext.Configuration.LazyLoadingEnabled = true;
+            //ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            //DatabaseContext.Configuration.LazyLoadingEnabled = false;
+            //return ApplicationSettings.Default.RoleAllowEditCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowEditCategories) || usermodel.GetRoleName().Contains("Administrator"));
+            return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || user.IsInRole("Administrator"));
         }
 
         public static bool CanDeleteCategories(this IPrincipal user)
@@ -100,11 +101,12 @@ namespace Secure_Password_Repository.Extensions
             if (user == null)
                 user = HttpContext.Current.User;
 
-            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-            DatabaseContext.Configuration.LazyLoadingEnabled = true;
-            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
-            DatabaseContext.Configuration.LazyLoadingEnabled = false;
-            return ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowDeleteCategories) || usermodel.GetRoleName().Contains("Administrator"));
+            //ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            //DatabaseContext.Configuration.LazyLoadingEnabled = true;
+            //ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            //DatabaseContext.Configuration.LazyLoadingEnabled = false;
+            //return ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowDeleteCategories) || usermodel.GetRoleName().Contains("Administrator"));
+            return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || user.IsInRole("Administrator"));
         }
 
         public static bool CanAddCategories(this IPrincipal user)
@@ -112,11 +114,12 @@ namespace Secure_Password_Repository.Extensions
             if (user == null)
                 user = HttpContext.Current.User;
 
-            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-            DatabaseContext.Configuration.LazyLoadingEnabled = true;
-            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
-            DatabaseContext.Configuration.LazyLoadingEnabled = false;
-            return ApplicationSettings.Default.RoleAllowAddCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowAddCategories) || usermodel.GetRoleName().Contains("Administrator"));
+            //ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            //DatabaseContext.Configuration.LazyLoadingEnabled = true;
+            //ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            //DatabaseContext.Configuration.LazyLoadingEnabled = false;
+            //return ApplicationSettings.Default.RoleAllowAddCategories != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowAddCategories) || usermodel.GetRoleName().Contains("Administrator"));
+            return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || user.IsInRole("Administrator"));
         }
 
         public static bool CanAddPasswords(this IPrincipal user)
@@ -124,11 +127,13 @@ namespace Secure_Password_Repository.Extensions
             if (user == null)
                 user = HttpContext.Current.User;
 
-            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-            DatabaseContext.Configuration.LazyLoadingEnabled = true;
-            ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
-            DatabaseContext.Configuration.LazyLoadingEnabled = false;
-            return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (usermodel.GetRoleName().Contains(ApplicationSettings.Default.RoleAllowAddPasswords) || usermodel.GetRoleName().Contains("Administrator"));
+            
+
+            //ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+            //DatabaseContext.Configuration.LazyLoadingEnabled = true;
+            //ApplicationUser usermodel = DatabaseContext.Users.Single(u => u.UserName == user.Identity.Name);
+            //DatabaseContext.Configuration.LazyLoadingEnabled = false;
+            return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowAddPasswords) || user.IsInRole("Administrator"));
         }
 
         public static int GetUserId(this IPrincipal user)

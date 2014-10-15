@@ -6,7 +6,9 @@ using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.ViewModels;
+using Secure_Password_Repository.Settings;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Caching;
@@ -15,7 +17,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Helpers;
 using System.Web.Mvc;
-using Secure_Password_Repository.Settings;
+using System.Data.Entity;
 
 namespace Secure_Password_Repository.Hubs
 {
@@ -73,39 +75,25 @@ namespace Secure_Password_Repository.Hubs
 
         public void getNewPasswordDetails(Int32 newPasswordId)
         {
-            int UserId = HttpContext.Current.User.Identity.GetUserId().ToInt();
-            bool canAccessAllPassword = HttpContext.Current.User.IsInRole("Administrator")
-                                                && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords;
 
-            //retreive the new password that was just created
-            Password newPassword = DatabaseContext
-                                        .Passwords
-                                        .Where(pass => !pass.Deleted
-                                        && (DatabaseContext.UserPasswords
-                                                    .Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
-                                        || (
-                                                canAccessAllPassword
-                                           )).ToList()
-                                        .Select(p => new Password()
-                                        {
-                                            PasswordId = p.PasswordId,
-                                            Creator = p.Creator,
-                                            Creator_Id = p.Creator_Id,
-                                            Description = p.Description,
-                                            Parent_UserPasswords = p.Parent_UserPasswords.Where(up => up.Id == UserId).ToList(),
-                                            Parent_CategoryId = p.Parent_CategoryId,
-                                            Parent_Category = p.Parent_Category,
-                                            CreatedDate = p.CreatedDate,
-                                            Deleted = p.Deleted,
-                                            EncryptedPassword = p.EncryptedPassword,
-                                            EncryptedSecondCredential = p.EncryptedSecondCredential,
-                                            EncryptedUserName =p.EncryptedUserName,
-                                            ModifiedDate= p.ModifiedDate,
-                                            Location = p.Location,
-                                            Notes = p.Notes,
-                                            PasswordOrder = p.PasswordOrder
-                                        })
-                                        .SingleOrDefault(p => p.PasswordId == newPasswordId);
+            int UserId = HttpContext.Current.User.Identity.GetUserId().ToInt();
+            bool userIsAdmin = HttpContext.Current.User.IsInRole("Administrator");
+
+            //get a list of userIds that have UserPassword records for this password
+            var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == newPasswordId).Select(up => up.Id).ToList();
+
+            //Retrive the password -if the user has access
+            Password newPassword = DatabaseContext.Passwords
+                                                            .Where(pass => !pass.Deleted
+                                                            && (
+                                                                (UserIDList.Contains(UserId))
+                                                             || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
+                                                             || pass.Creator_Id == UserId)
+                                                                )
+                                                                .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
+                                                                .SingleOrDefault(p => p.PasswordId == newPasswordId);
+
+            
 
             if (newPassword != null)
             {

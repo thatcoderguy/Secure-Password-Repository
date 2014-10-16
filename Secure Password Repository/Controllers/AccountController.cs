@@ -188,7 +188,7 @@ namespace Secure_Password_Repository.Controllers
                     hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
 
                     //Encrypt privateKey with the user's encryptionkey (based on their password)
-                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_ToBytes(userPrivateKeyBytes, hashedPassword).ToBase64String();
+                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_ToBytes(userPrivateKeyBytes.ToBase64String(), hashedPassword).ToBase64String();
 
                     //clear the PrivateKey data - for security
                     Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);
@@ -211,7 +211,7 @@ namespace Secure_Password_Repository.Controllers
                         EncryptionAndHashing.Encrypt_DPAPI(ref DatabaseEncryptionKeyBytes);
 
                         //second level of encryption - using RSA
-                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA_ToBytes(DatabaseEncryptionKeyBytes, user.userPublicKey).ToBase64String();
+                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA_ToBytes(DatabaseEncryptionKeyBytes.ToBase64String(), user.userPublicKey).ToBase64String();
 
                         //clear the original data
                         Array.Clear(DatabaseEncryptionKeyBytes, 0, DatabaseEncryptionKeyBytes.Length);

@@ -38,6 +38,16 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
+        /// Convert a byte array to a base64 encoded byte array
+        /// </summary>
+        /// <param name="bytes">Byte array to convert to base64</param>
+        /// <returns>A base64 encoded byte array</returns>
+        public static byte[] ToBase64(this byte[] bytes)
+        {
+            return Convert.ToBase64String(bytes).ToBytes();
+        }
+
+        /// <summary>
         /// Convert a string from base64 to ASCII
         /// </summary>
         /// <param name="original">Base64 string to convert</param>
@@ -46,6 +56,17 @@ namespace Secure_Password_Repository.Extensions
         {
             byte[] converted = Convert.FromBase64String(original);
             return Encoding.Default.GetString(converted);
+        }
+
+        /// <summary>
+        /// Convert a byte array from base64 to ASCII
+        /// </summary>
+        /// <param name="original">Base64 byte array to convert</param>
+        /// <returns>A byte array</returns>
+        public static byte[] FromBase64(this byte[] original)
+        {
+            byte[] converted = Convert.FromBase64String(original.ConvertToString());
+            return converted;
         }
 
         /// <summary>
@@ -81,6 +102,16 @@ namespace Secure_Password_Repository.Extensions
                 returnValue = 0;
 
             return returnValue;
+        }
+
+        public static string RemoveNullChars(this string original)
+        {
+            return original.Substring(0, original.IndexOf('\x00')-1);
+        }
+
+        public static byte[] RemoveNullBytes(this byte[] original)
+        {
+            return original.ToString().RemoveNullChars().ToBytes();
         }
 
         public static bool CanEditCategories(this IPrincipal user)

@@ -212,6 +212,93 @@ namespace Secure_Password_Repository.Extensions
         }
 
         ///<summary>
+        ///Decrypts the supplied text using the RSA algorithm and the Private Key provided
+        ///</summary>
+        ///<param name="EncryptedBytes">
+        ///The bytes to be decrypted
+        ///</param>
+        ///<param name="PrivateKey">
+        ///The private key to decrypt the data with
+        ///</param>
+        ///<returns>
+        ///An string of decrypted data
+        ///</returns>
+        public static string Decrypt_RSA(byte[] EncryptedBytes, byte[] PrivateKey)
+        {
+            string plaintext;
+
+            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+            rsa.PersistKeyInCsp = false;
+
+            //load in the private key for decrypting
+            rsa.FromXmlString(PrivateKey.ConvertToString());
+
+            plaintext = rsa.Encrypt(EncryptedBytes, true).ConvertToString();
+
+            rsa.Clear();
+
+            return plaintext;
+        }
+
+        ///<summary>
+        ///Decrypts the supplied text using the RSA algorithm and the Private Key provided
+        ///</summary>
+        ///<param name="EncryptedBytes">
+        ///The bytes to be decrypted
+        ///</param>
+        ///<param name="PrivateKey">
+        ///The private key to decrypt the data with
+        ///</param>
+        ///<returns>
+        ///An byte array of decrypted data
+        ///</returns>
+        public static byte[] Decrypt_RSA_ToBytes(byte[] EncryptedBytes, byte[] PrivateKey)
+        {
+            byte[] plaintext;
+
+            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+            rsa.PersistKeyInCsp = false;
+
+            //load in the private key for decrypting
+            rsa.FromXmlString(PrivateKey.ConvertToString());
+
+            plaintext = rsa.Decrypt(EncryptedBytes, true);
+
+            rsa.Clear();
+
+            return plaintext;
+        }
+
+        ///<summary>
+        ///Decrypts the supplied text using the RSA algorithm and the Private Key provided
+        ///</summary>
+        ///<param name="EncryptedText">
+        ///The text to be decrypted
+        ///</param>
+        ///<param name="PrivateKey">
+        ///The private key to decrypt the data with
+        ///</param>
+        ///<returns>
+        ///An byte array of decrypted data
+        ///</returns>
+        public static byte[] Decrypt_RSA_ToBytes(string EncryptedText, string PrivateKey)
+        {
+            byte[] plaintext;
+
+            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+            rsa.PersistKeyInCsp = false;
+
+            //load in the private key for decrypting
+            rsa.FromXmlString(PrivateKey);
+
+            plaintext = rsa.Decrypt(EncryptedText.ToBytes(), true);
+
+            rsa.Clear();
+
+            return plaintext;
+        }
+
+        ///<summary>
         ///Decrypts the supplied text using Data Protection API.
         ///Important note: the supplied text is decrypted in-memory, so the maintain security Encrypt_DPAPI should be called after the decrypted text has been used.
         ///</summary>
@@ -220,7 +307,11 @@ namespace Secure_Password_Repository.Extensions
         ///</param>
         public static void Decrypt_DPAPI(ref byte[] EncryptedText)
         {
-            ProtectedMemory.Unprotect(EncryptedText, MemoryProtectionScope.SameProcess);
+            //if the data isnt a multiple of 16, then make it so (requirment of DPAPI)
+            if (EncryptedText.Length % 16 != 0)
+                Add_BytePadding(ref EncryptedText, 16 - (EncryptedText.Length % 16), '\x00');
+
+            ProtectedMemory.Unprotect(EncryptedText, MemoryProtectionScope.SameLogon);
         }
 
         ///<summary>
@@ -232,11 +323,11 @@ namespace Secure_Password_Repository.Extensions
         public static void Encrypt_DPAPI(ref byte[] PlainText)
         {
 
-            //if the private key length isnt a multiple of 16, then make it so (requirment of DPAPI)
+            //if the data isnt a multiple of 16, then make it so (requirment of DPAPI)
             if (PlainText.Length % 16 != 0)
-                EncryptionAndHashing.Add_BytePadding(ref PlainText, 16 - (PlainText.Length % 16));
+                EncryptionAndHashing.Add_BytePadding(ref PlainText, 16 - (PlainText.Length % 16), '\x00');
 
-            ProtectedMemory.Protect(PlainText, MemoryProtectionScope.SameProcess);
+            ProtectedMemory.Protect(PlainText, MemoryProtectionScope.SameLogon);
         }
 
         ///<summary>
@@ -256,42 +347,55 @@ namespace Secure_Password_Repository.Extensions
 
             byte[] BytesToEncrypt = PlainText.ToBytes();
 
-            //clear the original text (for security)
-            //PlainText = string.Empty;
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length < 32)
+                Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+            else if (EncryptionKey.Length >= 32)
+                EncryptionKey = EncryptionKey.Substring(0, 32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
-            {
-                //we need the key to be 32 chars long (256 bits)
-                Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+            RijndaelManaged Crypto = null;  
+            MemoryStream MemStream = null;  
 
-                aesAlg.Key = EncryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;  
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
 
-                aesAlg.Clear();
-            }
+            try 
+            {  
 
-            return BytesToEncrypt.ConvertToString();
+                Crypto = new RijndaelManaged();  
+                Crypto.Key = EncryptionKey.ToBytes();  
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();  
+                
+                MemStream = new MemoryStream();  
+                
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);  
+                
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);  
+                
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);  
+
+            }  
+            finally 
+            {  
+                
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)  
+                    Crypto.Clear();  
+                
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();  
+
+            }  
+
+            //Return the memory byte array  
+            return MemStream.ToArray().ConvertToString();
         }
 
         ///<summary>
@@ -311,43 +415,55 @@ namespace Secure_Password_Repository.Extensions
 
             byte[] BytesToEncrypt = PlainText.ToBytes();
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length >= 32)
+                Array.Resize(ref EncryptionKey, 32);
+            else
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;
+
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
+
+            try
             {
 
-                if (EncryptionKey.Length > 32)
-                    Array.Resize(ref EncryptionKey, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = EncryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                //we need the key to be 32 chars long (256 bits)
-                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                MemStream = new MemoryStream();
 
-                aesAlg.Key = EncryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);
 
-                aesAlg.Clear();
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+
+            }
+            finally
+            {
+
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();
+
             }
 
-            return BytesToEncrypt.ConvertToString();
+            //Return the memory byte array  
+            return MemStream.ToArray().ConvertToString();
         }
 
         ///<summary>
@@ -364,44 +480,58 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static string Encrypt_AES256(byte[] BytesToEncrypt, string EncryptionKey)
         {
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
-            {
 
-                //we need the key to be 32 chars long (256 bits)
-                if (EncryptionKey.Length < 32)
-                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
-                else if (EncryptionKey.Length > 32)
-                    EncryptionKey = EncryptionKey.Substring(0, 32);
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length < 32)
+                Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+            else if (EncryptionKey.Length >= 32)
+                EncryptionKey = EncryptionKey.Substring(0, 32);
 
-                aesAlg.Key = EncryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+            RijndaelManaged Crypto = null;  
+            MemoryStream MemStream = null;  
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;  
 
-                aesAlg.Clear();
-            }
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
 
-            return BytesToEncrypt.ConvertToString();
+            try 
+            {  
+
+                Crypto = new RijndaelManaged();  
+                Crypto.Key = EncryptionKey.ToBytes();  
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();  
+                
+                MemStream = new MemoryStream();  
+                
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);  
+                
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);  
+                
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);  
+
+            }  
+            finally 
+            {  
+                
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)  
+                    Crypto.Clear();  
+                
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();  
+
+            }  
+
+            //Return the memory byte array  
+            return MemStream.ToArray().ConvertToString();
         }
+
 
         ///<summary>
         ///Encrypts the supplied bytes using the AES 256 algoritm
@@ -417,43 +547,56 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static string Encrypt_AES256(byte[] BytesToEncrypt, byte[] EncryptionKey)
         {
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length >= 32)
+                Array.Resize(ref EncryptionKey, 32);
+            else
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;
+
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
+
+            try
             {
 
-                if (EncryptionKey.Length > 32)
-                    Array.Resize(ref EncryptionKey, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = EncryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                //we need the key to be 32 chars long (256 bits)
-                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                MemStream = new MemoryStream();
 
-                aesAlg.Key = EncryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);
 
-                aesAlg.Clear();
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+
+            }
+            finally
+            {
+
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();
+
             }
 
-            return BytesToEncrypt.ConvertToString();
+            //Return the memory byte array  
+            return MemStream.ToArray().ConvertToString();
         }
 
         ///<summary>
@@ -472,43 +615,55 @@ namespace Secure_Password_Repository.Extensions
         {
             byte[] BytesToEncrypt = PlainText.ToBytes();
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length < 32)
+                Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+            else if (EncryptionKey.Length >= 32)
+                EncryptionKey = EncryptionKey.Substring(0, 32);
+
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;
+
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
+
+            try
             {
 
-                //we need the key to be 32 chars long (256 bits)
-                if (EncryptionKey.Length < 32)
-                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
-                else if (EncryptionKey.Length > 32)
-                    EncryptionKey = EncryptionKey.Substring(0, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = EncryptionKey.ToBytes();
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                aesAlg.Key = EncryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                MemStream = new MemoryStream();
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
 
-                aesAlg.Clear();
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);
+
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+
+            }
+            finally
+            {
+
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();
+
             }
 
-            return BytesToEncrypt;
+            //Return the memory byte array  
+            return MemStream.ToArray();
         }
 
         ///<summary>
@@ -528,43 +683,55 @@ namespace Secure_Password_Repository.Extensions
 
             byte[] BytesToEncrypt = PlainText.ToBytes();
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length >= 32)
+                Array.Resize(ref EncryptionKey, 32);
+            else
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;
+
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
+
+            try
             {
 
-                if (EncryptionKey.Length > 32)
-                    Array.Resize(ref EncryptionKey, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = EncryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                //we need the key to be 32 chars long (256 bits)
-                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                MemStream = new MemoryStream();
 
-                aesAlg.Key = EncryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);
 
-                aesAlg.Clear();
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+
+            }
+            finally
+            {
+
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();
+
             }
 
-            return BytesToEncrypt;
+            //Return the memory byte array  
+            return MemStream.ToArray();
         }
 
         ///<summary>
@@ -581,43 +748,56 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static byte[] Encrypt_AES256_ToBytes(byte[] BytesToEncrypt, string EncryptionKey)
         {
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length < 32)
+                Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+            else if (EncryptionKey.Length >= 32)
+                EncryptionKey = EncryptionKey.Substring(0, 32);
+
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;
+
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
+
+            try
             {
 
-                //we need the key to be 32 chars long (256 bits)
-                if (EncryptionKey.Length < 32)
-                    Add_StringPadding(ref EncryptionKey, 32 - EncryptionKey.Length);
-                else if (EncryptionKey.Length > 32)
-                    EncryptionKey = EncryptionKey.Substring(0, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = EncryptionKey.ToBytes();
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                aesAlg.Key = EncryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                MemStream = new MemoryStream();
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
 
-                aesAlg.Clear();
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);
+
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+
+            }
+            finally
+            {
+
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();
+
             }
 
-            return BytesToEncrypt;
+            //Return the memory byte array  
+            return MemStream.ToArray();
         }
 
 
@@ -635,43 +815,56 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static byte[] Encrypt_AES256_ToBytes(byte[] BytesToEncrypt, byte[] EncryptionKey)
         {
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+
+            //we need the key to be 32 chars long (256 bits)
+            if (EncryptionKey.Length >= 32)
+                Array.Resize(ref EncryptionKey, 32);
+            else
+                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length, '\x00');
+
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+
+            //I crypto transform is used to perform the actual decryption vs encryption, hash function are a version of crypto transforms.  
+            ICryptoTransform Encryptor = null;
+
+            //Crypto streams allow for encryption in memory.  
+            CryptoStream Crypto_Stream = null;
+
+            try
             {
 
-                if (EncryptionKey.Length > 32)
-                    Array.Resize(ref EncryptionKey, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = EncryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                //we need the key to be 32 chars long (256 bits)
-                Add_BytePadding(ref EncryptionKey, 32 - EncryptionKey.Length);
+                MemStream = new MemoryStream();
 
-                aesAlg.Key = EncryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                //Calling the method create encryptor method Needs both the Key and IV these have to be from the original Rijndael call  
+                //If these are changed nothing will work right.  
+                Encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
 
-                using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            //encrypt the bytes
-                            CryptoStream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
-                            CryptoStream.FlushFinalBlock();
-                            BytesToEncrypt = MemStream.ToArray();
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //The big parameter here is the cryptomode.write, you are writing the data to memory to perform the transformation  
+                Crypto_Stream = new CryptoStream(MemStream, Encryptor, CryptoStreamMode.Write);
 
-                aesAlg.Clear();
+                //The method write takes three params the data to be written (in bytes) the offset value (int) and the length of the stream (int)  
+                Crypto_Stream.Write(BytesToEncrypt, 0, BytesToEncrypt.Length);
+
+            }
+            finally
+            {
+
+                //if the crypto blocks are not clear lets make sure the data is gone  
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                //Close because of my need to close things then done.  
+                Crypto_Stream.Close();
+
             }
 
-            return BytesToEncrypt;
+            //Return the memory byte array  
+            return MemStream.ToArray();
         }
 
         ///<summary>
@@ -690,41 +883,48 @@ namespace Secure_Password_Repository.Extensions
         {
 
             byte[] BytesToDecrypted = EncryptedText.ToBytes();
+ 
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                DecryptionKey = DecryptionKey.Substring(0, 32);
 
-            int ByteCount = 0;
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            try
             {
 
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    DecryptionKey = DecryptionKey.Substring(0, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey.ToBytes();
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                aesAlg.Key = DecryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
 
-                aesAlg.Clear();
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted.ConvertToString();
@@ -747,45 +947,51 @@ namespace Secure_Password_Repository.Extensions
 
             byte[] BytesToDecrypted = EncryptedText.ToBytes();
 
-            int ByteCount = 0;
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                Array.Resize(ref DecryptionKey,32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
+
+            try
             {
 
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    Array.Resize(ref DecryptionKey,32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                aesAlg.Key = DecryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
 
-                aesAlg.Clear();
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted.ConvertToString();
         }
-
 
         ///<summary>
         ///Decrypts the supplied string using the AES 256 algoritm
@@ -802,39 +1008,47 @@ namespace Secure_Password_Repository.Extensions
         public static string Decrypt_AES256(byte[] BytesToDecrypted, string DecryptionKey)
         {
 
-            int ByteCount = 0;
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                DecryptionKey = DecryptionKey.Substring(0, 32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
+
+            try
             {
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    DecryptionKey = DecryptionKey.Substring(0, 32);
 
-                aesAlg.Key = DecryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey.ToBytes();
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                aesAlg.Clear();
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
+
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted.ConvertToString();
@@ -857,43 +1071,51 @@ namespace Secure_Password_Repository.Extensions
 
             byte[] BytesToDecrypted = EncryptedText.ToBytes();
 
-            int ByteCount = 0;
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                DecryptionKey = DecryptionKey.Substring(0, 32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
+
+            try
             {
 
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    DecryptionKey = DecryptionKey.Substring(0, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey.ToBytes();
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                aesAlg.Key = DecryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
 
-                aesAlg.Clear();
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted;
+
         }
 
         ///<summary>
@@ -913,40 +1135,47 @@ namespace Secure_Password_Repository.Extensions
 
             byte[] BytesToDecrypted = EncryptedText.ToBytes();
 
-            int ByteCount = 0;
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                Array.Resize(ref DecryptionKey, 32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
+
+            try
             {
 
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    Array.Resize(ref DecryptionKey, 32);
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                aesAlg.Key = DecryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
 
-                aesAlg.Clear();
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted;
@@ -968,39 +1197,47 @@ namespace Secure_Password_Repository.Extensions
         public static byte[] Decrypt_AES256_ToBytes(byte[] BytesToDecrypted, string DecryptionKey)
         {
 
-            int ByteCount = 0;
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                DecryptionKey = DecryptionKey.Substring(0, 32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
+
+            try
             {
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_StringPadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    DecryptionKey = DecryptionKey.Substring(0, 32);
 
-                aesAlg.Key = DecryptionKey.ToBytes();
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey.ToBytes();
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                aesAlg.Clear();
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
+
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted;
@@ -1021,39 +1258,47 @@ namespace Secure_Password_Repository.Extensions
         public static byte[] Decrypt_AES256_ToBytes(byte[] BytesToDecrypted, byte[] DecryptionKey)
         {
 
-            int ByteCount = 0;
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                Array.Resize(ref DecryptionKey, 32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
+
+            try
             {
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    Array.Resize(ref DecryptionKey, 32);
 
-                aesAlg.Key = DecryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                aesAlg.Clear();
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
+
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted;
@@ -1074,39 +1319,47 @@ namespace Secure_Password_Repository.Extensions
         public static string Decrypt_AES256(byte[] BytesToDecrypted, byte[] DecryptionKey)
         {
 
-            int ByteCount = 0;
+            //we need the key to be 32 chars long (256 bits)
+            if (DecryptionKey.Length < 32)
+                Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length, '\x00');
+            else if (DecryptionKey.Length >= 32)
+                Array.Resize(ref DecryptionKey, 32);
 
-            // Create an AesCryptoServiceProvider object 
-            // with the specified key and IV. 
-            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            RijndaelManaged Crypto = null;
+            MemoryStream MemStream = null;
+            ICryptoTransform Decryptor = null;
+            CryptoStream Crypto_Stream = null;
+            StreamReader Stream_Read = null;
+
+            try
             {
-                //we need the key to be 32 chars long (256 bits)
-                if (DecryptionKey.Length < 32)
-                    Add_BytePadding(ref DecryptionKey, 32 - DecryptionKey.Length);
-                else if (DecryptionKey.Length > 32)
-                    Array.Resize(ref DecryptionKey, 32);
 
-                aesAlg.Key = DecryptionKey;
-                aesAlg.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
-                aesAlg.KeySize = 256;
-                aesAlg.BlockSize = 128;
-                aesAlg.Mode = CipherMode.CBC;
+                Crypto = new RijndaelManaged();
+                Crypto.Key = DecryptionKey;
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
 
-                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
-                {
-                    using (MemoryStream MemStream = new MemoryStream())
-                    {
-                        using (CryptoStream CryptoStream = new CryptoStream(MemStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            //decrypt the bytes
-                            ByteCount = CryptoStream.Read(BytesToDecrypted, 0, BytesToDecrypted.Length);
-                            MemStream.Close();
-                            CryptoStream.Close();
-                        }
-                    }
-                }
+                MemStream = new MemoryStream(BytesToDecrypted);
 
-                aesAlg.Clear();
+                //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
+                Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
+
+                //This is different from the encryption look at the mode make sure you are reading from the stream.  
+                Crypto_Stream = new CryptoStream(MemStream, Decryptor, CryptoStreamMode.Read);
+
+                //I used the stream reader here because the ReadToEnd method is easy and because it return a string, also easy.  
+                Stream_Read = new StreamReader(Crypto_Stream);
+                BytesToDecrypted = Stream_Read.ReadToEnd().ToBytes();
+
+            }
+            finally
+            {
+
+                if (Crypto != null)
+                    Crypto.Clear();
+
+                MemStream.Flush();
+                MemStream.Close();
+
             }
 
             return BytesToDecrypted.ConvertToString();
@@ -1603,6 +1856,23 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
+        /// Pads the string with more chars from the original string
+        /// </summary>
+        /// <param name="OriginalString">
+        /// The string to add padding to
+        /// </param>
+        /// <param name="NumberOfCharsToAdd">
+        /// The number of chars to add to the string
+        /// </param>
+        /// <param name="PaddingChar">
+        /// The char to use as padding (this will be repeated NumberOfCharsToAdd times)
+        /// </param>
+        public static void Add_StringPadding(ref string OriginalString, int NumberOfCharsToAdd, char PaddingChar)
+        {
+            OriginalString = OriginalString.PadRight(OriginalString.Length + NumberOfCharsToAdd, PaddingChar);
+        }
+
+        /// <summary>
         /// Pads the byte array with more chars from the original array
         /// </summary>
         /// <param name="OriginalBytes">
@@ -1650,7 +1920,27 @@ namespace Secure_Password_Repository.Extensions
                 Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
             }
 
+        }
 
+        /// <summary>
+        /// Pads the byte array with more chars from the original array
+        /// </summary>
+        /// <param name="OriginalBytes">
+        /// The byte array to add padding to
+        /// </param>
+        /// <param name="NumberOfBytesToAdd">
+        /// The number of chars to add to the string
+        /// </param>
+        /// <param name="PaddingChar">
+        /// The char to use as padding (this will be repeated NumberOfCharsToAdd times)
+        /// </param>
+        public static void Add_BytePadding(ref byte[] OriginalBytes, int NumberOfBytesToAdd, char PaddingChar)
+        {
+            string padding = "";
+            int intOriginalLength = OriginalBytes.Length;
+            padding = padding.PadRight(NumberOfBytesToAdd, PaddingChar);
+            Array.Resize(ref OriginalBytes, OriginalBytes.Length + NumberOfBytesToAdd);
+            Buffer.BlockCopy(padding.ToBytes(), 0, OriginalBytes, intOriginalLength, NumberOfBytesToAdd);
         }
 
     }

@@ -106,12 +106,12 @@ namespace Secure_Password_Repository.Extensions
 
         public static string RemoveNullChars(this string original)
         {
-            return original.Substring(0, original.IndexOf('\x00')-1);
+            return original.Substring(0, original.IndexOf('\x00'));
         }
 
         public static byte[] RemoveNullBytes(this byte[] original)
         {
-            return original.ToString().RemoveNullChars().ToBytes();
+            return original.ConvertToString().RemoveNullChars().ToBytes();
         }
 
         public static bool CanEditCategories(this IPrincipal user)

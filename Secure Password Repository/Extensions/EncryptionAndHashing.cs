@@ -1832,94 +1832,12 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="NumberOfCharsToAdd">
         /// The number of chars to add to the string
         /// </param>
-        public static void Add_StringPadding(ref string OriginalString, int NumberOfCharsToAdd)
-        {
-            //if the number of chars to add is greater then the length of the data
-            if (NumberOfCharsToAdd > OriginalString.Length)
-            {
-                string CopyOfString = OriginalString;
-
-                //keep appending data until chars to add is not longer greater then the length of the data
-                while (NumberOfCharsToAdd > CopyOfString.Length)
-                {
-                    NumberOfCharsToAdd -= CopyOfString.Length;
-                    OriginalString += CopyOfString;
-                }
-
-                //any remaining chars
-                OriginalString += CopyOfString.Substring(0, NumberOfCharsToAdd);
-            }
-            //number of chars to add was less than the length of the data, so just append what is needed.
-            else
-                OriginalString += OriginalString.Substring(0, NumberOfCharsToAdd);
-
-        }
-
-        /// <summary>
-        /// Pads the string with more chars from the original string
-        /// </summary>
-        /// <param name="OriginalString">
-        /// The string to add padding to
-        /// </param>
-        /// <param name="NumberOfCharsToAdd">
-        /// The number of chars to add to the string
-        /// </param>
         /// <param name="PaddingChar">
         /// The char to use as padding (this will be repeated NumberOfCharsToAdd times)
         /// </param>
         public static void Add_StringPadding(ref string OriginalString, int NumberOfCharsToAdd, char PaddingChar)
         {
             OriginalString = OriginalString.PadRight(OriginalString.Length + NumberOfCharsToAdd, PaddingChar);
-        }
-
-        /// <summary>
-        /// Pads the byte array with more chars from the original array
-        /// </summary>
-        /// <param name="OriginalBytes">
-        /// The byte array to add padding to
-        /// </param>
-        /// <param name="NumberOfBytesToAdd">
-        /// The number of chars to add to the string
-        /// </param>
-        public static void Add_BytePadding(ref byte[] OriginalBytes, int NumberOfBytesToAdd)
-        {
-            //if the number of chars to add is greater then the length of the data
-            if (NumberOfBytesToAdd > OriginalBytes.Length)
-            {
-                //clone the original array
-                byte[] CopyOfBytes = new byte[OriginalBytes.Length];
-                OriginalBytes.CopyTo(CopyOfBytes, 0);
-
-                //keep appending data until bytes to add is not longer greater then the length of the data
-                while (NumberOfBytesToAdd > CopyOfBytes.Length)
-                {
-                    Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, CopyOfBytes.Length);
-                    NumberOfBytesToAdd -= CopyOfBytes.Length;
-                }
-
-                //any remaining chars
-                Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, OriginalBytes.Length, NumberOfBytesToAdd);
-
-                //clear the array (for security)
-                Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
-            }
-            //number of chars to add was less than the length of the data, so just append what is needed.
-            else
-            {
-                //clone the original array
-                byte[] CopyOfBytes = new byte[OriginalBytes.Length];
-                OriginalBytes.CopyTo(CopyOfBytes, 0);
-
-                //resize the original array
-                Array.Resize(ref OriginalBytes, OriginalBytes.Length + NumberOfBytesToAdd);
-
-                //append bytes
-                Buffer.BlockCopy(CopyOfBytes, 0, OriginalBytes, CopyOfBytes.Length, NumberOfBytesToAdd);
-                
-                //clear the array (for security)
-                Array.Clear(CopyOfBytes, 0, CopyOfBytes.Length);
-            }
-
         }
 
         /// <summary>

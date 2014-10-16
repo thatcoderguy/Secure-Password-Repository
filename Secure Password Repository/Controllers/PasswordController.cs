@@ -361,12 +361,13 @@ namespace Secure_Password_Repository.Controllers
 
 
         // GET:  ViewPassword/23
-        public ActionResult ViewPassword(int PasswordId)
+        public async Task<ActionResult> ViewPassword(int PasswordId)
         {
 
             PasswordDetails passwordDisplayDetails;
             int UserId = User.Identity.GetUserId().ToInt();
             bool userIsAdmin = User.IsInRole("Administrator");
+            var user = await UserMgr.FindByIdAsync(UserId);
 
             //get a list of userIds that have UserPassword records for this password
             var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
@@ -401,6 +402,63 @@ namespace Secure_Password_Repository.Controllers
                     UsersPassword = selectedPassword
                 });
             }
+
+            //wipe this out, as we dont want to decrypted and on show - plus we want to know if we should update the password when EditPassword is called
+            selectedPassword.EncryptedPassword = "";
+
+            ///////////// decryption process //////////////
+
+            //grab the 3 encryption keys that are required to do encryption
+            byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
+            byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
+            byte[] bytePrivateKeyKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+
+            //decrypt the key that is used to decrypt the user's private key
+            EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);
+
+            //decrypt the user private key
+            bytePrivateKey = EncryptionAndHashing.Decrypt_AES256_ToBytes(bytePrivateKey, bytePrivateKeyKey).FromBase64();
+            //decrypt again
+            EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);
+
+            //we dont need this anymote
+            Array.Clear(bytePrivateKeyKey, 0, bytePrivateKeyKey.Length);
+
+            //decrypt the user's copy of the password encryption key
+            byteEncryptionKey = EncryptionAndHashing.Decrypt_RSA_ToBytes(byteEncryptionKey, bytePrivateKey).FromBase64();
+            //decyrpt again
+            EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptionKey);
+
+            //we dont need this anymore
+            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+
+            //convert the key to base64
+            byteEncryptionKey = byteEncryptionKey.ToBase64();
+
+            //get the encrypted details and un-base64 them
+            byte[] byteEncryptedSecondCredential = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+            byte[] byteEncryptedUserName = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
+
+            //decryption first pass
+            EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptedSecondCredential);
+            EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptedUserName);
+
+            //decryption second pass
+            byteEncryptedSecondCredential = EncryptionAndHashing.Decrypt_AES256_ToBytes(byteEncryptedSecondCredential.RemoveNullBytes().FromBase64(), byteEncryptionKey);
+            byteEncryptedUserName = EncryptionAndHashing.Decrypt_AES256_ToBytes(byteEncryptedUserName.RemoveNullBytes().FromBase64(), byteEncryptionKey);
+
+            //we dont need this anymore
+            Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
+
+            //convert encrypted data to base64 and store in the model
+            selectedPassword.EncryptedSecondCredential = byteEncryptedSecondCredential.ConvertToString();
+            selectedPassword.EncryptedUserName = byteEncryptedUserName.ConvertToString();
+
+            //we dont need these arrays anymore
+            Array.Clear(byteEncryptedSecondCredential, 0, byteEncryptedSecondCredential.Length);
+            Array.Clear(byteEncryptedUserName, 0, byteEncryptedUserName.Length);
+
+            //////////////////////////////////////////////
 
             //user has access
             if (selectedPassword != null)
@@ -471,51 +529,59 @@ namespace Secure_Password_Repository.Controllers
                     newPasswordItem.Creator_Id = user.Id;
                     newPasswordItem.Location = model.Location.Replace("http://", "");
 
-                    //DO  ENCRYPTION  ///
+                    /////// encryption process //////////
 
-                    //rereive users private key  X
-                    //encryption key             X
-                    //convert from base64 (both) X
-                    //decrypt with DPAPI the cached key X
-                    //decrypt with aes (using the key) the private key X
-                    //encrypt wth DPAPI the cached key X
-                    //decrypt encryption key with private key 
-                    //encrypt password with private key
-                    //wipe private key
-                    //encrypt password with DPAPI
-                    //convert to base 64
-
+                    //grab the 3 encryption keys that are required to do encryption
                     byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
                     byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
                     byte[] bytePrivateKeyKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
 
-                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);      //unencrypted key
+                    //decrypt the key that is used to decrypt the user's private key
+                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);
 
+                    //decrypt the user private key
                     bytePrivateKey = EncryptionAndHashing.Decrypt_AES256_ToBytes(bytePrivateKey, bytePrivateKeyKey).FromBase64();
-                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);         //unencrypted private key
+                    //decrypt again
+                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);
 
+                    //we dont need this anymote
+                    Array.Clear(bytePrivateKeyKey, 0, bytePrivateKeyKey.Length);
+
+                    //decrypt the user's copy of the password encryption key
                     byteEncryptionKey = EncryptionAndHashing.Decrypt_RSA_ToBytes(byteEncryptionKey, bytePrivateKey).FromBase64();
+                    //decyrpt again
                     EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptionKey);
+
+                    //we dont need this anymore
+                    Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+
+                    //convert the key to base64
                     byteEncryptionKey = byteEncryptionKey.ToBase64();
               
-                    byte[] byteEncryptedPassword = EncryptionAndHashing.Encrypt_AES256(newPasswordItem.EncryptedPassword, byteEncryptionKey).ToBytes();
-                    byte[] byteEncryptedSecondCredential = EncryptionAndHashing.Encrypt_AES256(newPasswordItem.EncryptedSecondCredential, byteEncryptionKey).ToBytes();
-                    byte[] byteEncryptedUserName = EncryptionAndHashing.Encrypt_AES256(newPasswordItem.EncryptedUserName, byteEncryptionKey).ToBytes();
+                    //encrypt the details of the new password using AES
+                    byte[] byteEncryptedPassword = EncryptionAndHashing.Encrypt_AES256_ToBytes(newPasswordItem.EncryptedPassword, byteEncryptionKey).ToBase64();
+                    byte[] byteEncryptedSecondCredential = EncryptionAndHashing.Encrypt_AES256_ToBytes(newPasswordItem.EncryptedSecondCredential, byteEncryptionKey).ToBase64();
+                    byte[] byteEncryptedUserName = EncryptionAndHashing.Encrypt_AES256_ToBytes(newPasswordItem.EncryptedUserName, byteEncryptionKey).ToBase64();
 
+                    //we dont need this anymore
+                    Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
+
+                    //another layer of encryption
                     EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedPassword);
                     EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedSecondCredential);
                     EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedUserName);
 
+                    //convert encrypted data to base64 and store in the model
                     newPasswordItem.EncryptedPassword = byteEncryptedPassword.ToBase64String();
                     newPasswordItem.EncryptedSecondCredential = byteEncryptedSecondCredential.ToBase64String();
                     newPasswordItem.EncryptedUserName = byteEncryptedUserName.ToBase64String();
 
+                    //we dont need these arrays anymore
                     Array.Clear(byteEncryptedPassword, 0, byteEncryptedPassword.Length);
                     Array.Clear(byteEncryptedSecondCredential, 0, byteEncryptedSecondCredential.Length);
                     Array.Clear(byteEncryptedUserName, 0, byteEncryptedUserName.Length);
 
                     ////////////////////////////
-
 
                     //add the new password item
                     DatabaseContext.Passwords.Add(newPasswordItem);
@@ -583,7 +649,6 @@ namespace Secure_Password_Repository.Controllers
                 {
 
                     
-                    
                     //if user can change permission, then load up the additional users
                     if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
                     {
@@ -617,8 +682,63 @@ namespace Secure_Password_Repository.Controllers
                     //does the user have access to edit the password?
                     if(selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword))
                     {
-                        //do additional checking and re-encryption
-                        model.EditPassword.EncryptedPassword = model.EditPassword.EncryptedPassword;
+
+                        var user = await UserMgr.FindByIdAsync(UserId);
+
+                        /////// encryption process //////////
+
+                        //grab the 3 encryption keys that are required to do encryption
+                        byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
+                        byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
+                        byte[] bytePrivateKeyKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+
+                        //decrypt the key that is used to decrypt the user's private key
+                        EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);
+
+                        //decrypt the user private key
+                        bytePrivateKey = EncryptionAndHashing.Decrypt_AES256_ToBytes(bytePrivateKey, bytePrivateKeyKey).FromBase64();
+                        //decrypt again
+                        EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);
+
+                        //we dont need this anymote
+                        Array.Clear(bytePrivateKeyKey, 0, bytePrivateKeyKey.Length);
+
+                        //decrypt the user's copy of the password encryption key
+                        byteEncryptionKey = EncryptionAndHashing.Decrypt_RSA_ToBytes(byteEncryptionKey, bytePrivateKey).FromBase64();
+                        //decyrpt again
+                        EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptionKey);
+
+                        //we dont need this anymore
+                        Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+
+                        //convert the key to base64
+                        byteEncryptionKey = byteEncryptionKey.ToBase64();
+
+                        //encrypt the details of the new password using AES
+                        byte[] byteEncryptedPassword = EncryptionAndHashing.Encrypt_AES256_ToBytes(model.EditPassword.EncryptedPassword, byteEncryptionKey).ToBase64();
+                        byte[] byteEncryptedSecondCredential = EncryptionAndHashing.Encrypt_AES256_ToBytes(model.EditPassword.EncryptedSecondCredential, byteEncryptionKey).ToBase64();
+                        byte[] byteEncryptedUserName = EncryptionAndHashing.Encrypt_AES256_ToBytes(model.EditPassword.EncryptedUserName, byteEncryptionKey).ToBase64();
+
+                        //we dont need this anymore
+                        Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
+
+                        //another layer of encryption
+                        EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedPassword);
+                        EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedSecondCredential);
+                        EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedUserName);
+
+                        //convert encrypted data to base64 and store in the model
+                        model.EditPassword.EncryptedPassword = byteEncryptedPassword.ToBase64String();
+                        model.EditPassword.EncryptedSecondCredential = byteEncryptedSecondCredential.ToBase64String();
+                        model.EditPassword.EncryptedUserName = byteEncryptedUserName.ToBase64String();
+
+                        //we dont need these arrays anymore
+                        Array.Clear(byteEncryptedPassword, 0, byteEncryptedPassword.Length);
+                        Array.Clear(byteEncryptedSecondCredential, 0, byteEncryptedSecondCredential.Length);
+                        Array.Clear(byteEncryptedUserName, 0, byteEncryptedUserName.Length);
+
+                        ////////////////////////////
+
 
                         //save changes to database
                         DatabaseContext.Entry(selectedPassword).CurrentValues.SetValues(model.EditPassword);

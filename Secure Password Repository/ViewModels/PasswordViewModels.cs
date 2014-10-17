@@ -75,7 +75,6 @@ namespace Secure_Password_Repository.ViewModels
         public string Location { get; set; }
 
         [Display(Name = "Password")]
-        [Required]
         public string EncryptedPassword { get; set; }
 
         [Display(Name = "Additional Notes")]

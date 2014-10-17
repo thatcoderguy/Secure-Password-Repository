@@ -103,8 +103,8 @@ namespace Secure_Password_Repository.Controllers
 
                         //hash and encrypt the user's password - so this can be used to decrypt the user's private key
                         byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.Password);
-                        hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
-                        
+                        hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt).ToBase64();
+
                         //in-memory encryption of the hash
                         EncryptionAndHashing.Encrypt_DPAPI(ref hashedPassword);
 
@@ -180,19 +180,14 @@ namespace Secure_Password_Repository.Controllers
                     //convert the private key to bytes, then clear the original string
                     byte[] userPrivateKeyBytes = (await EncryptionAndHashing.Retrieve_PrivateKey()).ToBytes();
 
-                    //Encrypt private key with DPAPI
-                    EncryptionAndHashing.Encrypt_DPAPI(ref userPrivateKeyBytes);
+                    //encrypt the user's private key
+                    EncryptionAndHashing.EncryptPrivateKey(ref userPrivateKeyBytes, model.Password);
 
-                    //hash the user's password,and then use 
-                    byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.Password);
-                    hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt);
+                    //convert to string and store
+                    user.userPrivateKey = userPrivateKeyBytes.ToBase64String();
 
-                    //Encrypt privateKey with the user's encryptionkey (based on their password)
-                    user.userPrivateKey = EncryptionAndHashing.Encrypt_AES256_ToBytes(userPrivateKeyBytes.ToBase64String(), hashedPassword).ToBase64String();
-
-                    //clear the PrivateKey data - for security
+                    //clear the raw privatekey out of memory
                     Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);
-                    Array.Clear(hashedPassword, 0, hashedPassword.Length);
 
                     //Keys has been encrypted, the plaintext ones can now be destroyed
                     EncryptionAndHashing.Destroy_RSAKeys();
@@ -207,11 +202,11 @@ namespace Secure_Password_Repository.Controllers
                         //generate 32 random bytes - this will be the encryption key
                         byte[] DatabaseEncryptionKeyBytes = EncryptionAndHashing.Generate_RandomBytes(32);
 
-                        //first level of encryption - using DPAPI
-                        EncryptionAndHashing.Encrypt_DPAPI(ref DatabaseEncryptionKeyBytes);
+                        //encrypt the database key
+                        EncryptionAndHashing.EncryptDatabaseKey(ref DatabaseEncryptionKeyBytes, user.userPublicKey);
 
-                        //second level of encryption - using RSA
-                        user.userEncryptionKey = EncryptionAndHashing.Encrypt_RSA_ToBytes(DatabaseEncryptionKeyBytes.ToBase64String(), user.userPublicKey).ToBase64String();
+                        //convert key to string and store
+                        user.userEncryptionKey = DatabaseEncryptionKeyBytes.ToBase64String();
 
                         //clear the original data
                         Array.Clear(DatabaseEncryptionKeyBytes, 0, DatabaseEncryptionKeyBytes.Length);

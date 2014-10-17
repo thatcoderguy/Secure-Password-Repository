@@ -11,7 +11,7 @@ using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository.Extensions
 {
-    public class EncryptionAndHashing
+    public partial class EncryptionAndHashing
     {
 
         //used to store the Public and Private Keys after calling Generate_NewRSAKeys()
@@ -307,10 +307,6 @@ namespace Secure_Password_Repository.Extensions
         ///</param>
         public static void Decrypt_DPAPI(ref byte[] EncryptedText)
         {
-            //if the data isnt a multiple of 16, then make it so (requirment of DPAPI)
-            if (EncryptedText.Length % 16 != 0)
-                Add_BytePadding(ref EncryptedText, 16 - (EncryptedText.Length % 16), '\x00');
-
             ProtectedMemory.Unprotect(EncryptedText, MemoryProtectionScope.SameLogon);
         }
 
@@ -367,7 +363,8 @@ namespace Secure_Password_Repository.Extensions
 
                 Crypto = new RijndaelManaged();  
                 Crypto.Key = EncryptionKey.ToBytes();  
-                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();  
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
                 
                 MemStream = new MemoryStream();  
                 
@@ -436,6 +433,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = EncryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream();
 
@@ -501,7 +499,8 @@ namespace Secure_Password_Repository.Extensions
 
                 Crypto = new RijndaelManaged();  
                 Crypto.Key = EncryptionKey.ToBytes();  
-                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();  
+                Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
                 
                 MemStream = new MemoryStream();  
                 
@@ -569,6 +568,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = EncryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream();
 
@@ -636,6 +636,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = EncryptionKey.ToBytes();
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream();
 
@@ -704,6 +705,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = EncryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream();
 
@@ -770,6 +772,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = EncryptionKey.ToBytes();
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream();
 
@@ -837,6 +840,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = EncryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream();
 
@@ -902,6 +906,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey.ToBytes();
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
 
@@ -965,6 +970,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
 
@@ -1026,6 +1032,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey.ToBytes();
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
 
@@ -1089,6 +1096,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey.ToBytes();
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
 
@@ -1153,6 +1161,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
 
@@ -1215,6 +1224,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey.ToBytes();
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
 
@@ -1276,9 +1286,10 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
-
+                
                 //Create Decryptor make sure if you are decrypting that this is here and you did not copy paste encryptor.  
                 Decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
 
@@ -1337,6 +1348,7 @@ namespace Secure_Password_Repository.Extensions
                 Crypto = new RijndaelManaged();
                 Crypto.Key = DecryptionKey;
                 Crypto.IV = ApplicationSettings.Default.SystemInitilisationVector.ToBytes();
+                Crypto.Padding = PaddingMode.PKCS7;
 
                 MemStream = new MemoryStream(BytesToDecrypted);
 

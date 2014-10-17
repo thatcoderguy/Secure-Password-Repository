@@ -411,52 +411,29 @@ namespace Secure_Password_Repository.Controllers
             //grab the 3 encryption keys that are required to do encryption
             byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
             byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-            byte[] bytePrivateKeyKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
 
-            //decrypt the key that is used to decrypt the user's private key
-            EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);
+            //decrypt the user's private
+            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
 
-            //decrypt the user private key
-            bytePrivateKey = EncryptionAndHashing.Decrypt_AES256_ToBytes(bytePrivateKey, bytePrivateKeyKey).FromBase64();
-            //decrypt again
-            EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);
+            //decrypt the database encryption key
+            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
 
-            //we dont need this anymote
-            Array.Clear(bytePrivateKeyKey, 0, bytePrivateKeyKey.Length);
+            //decrypt the username
+            byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
+            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+            selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
+ 
+            //decrypt the second credential
+            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+            selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
 
-            //decrypt the user's copy of the password encryption key
-            byteEncryptionKey = EncryptionAndHashing.Decrypt_RSA_ToBytes(byteEncryptionKey, bytePrivateKey).FromBase64();
-            //decyrpt again
-            EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptionKey);
-
-            //we dont need this anymore
+            //clear what isnt needed any more
             Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-
-            //convert the key to base64
-            byteEncryptionKey = byteEncryptionKey.ToBase64();
-
-            //get the encrypted details and un-base64 them
-            byte[] byteEncryptedSecondCredential = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-            byte[] byteEncryptedUserName = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-
-            //decryption first pass
-            EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptedSecondCredential);
-            EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptedUserName);
-
-            //decryption second pass
-            byteEncryptedSecondCredential = EncryptionAndHashing.Decrypt_AES256_ToBytes(byteEncryptedSecondCredential.RemoveNullBytes().FromBase64(), byteEncryptionKey);
-            byteEncryptedUserName = EncryptionAndHashing.Decrypt_AES256_ToBytes(byteEncryptedUserName.RemoveNullBytes().FromBase64(), byteEncryptionKey);
-
-            //we dont need this anymore
+            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
             Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-
-            //convert encrypted data to base64 and store in the model
-            selectedPassword.EncryptedSecondCredential = byteEncryptedSecondCredential.ConvertToString();
-            selectedPassword.EncryptedUserName = byteEncryptedUserName.ConvertToString();
-
-            //we dont need these arrays anymore
-            Array.Clear(byteEncryptedSecondCredential, 0, byteEncryptedSecondCredential.Length);
-            Array.Clear(byteEncryptedUserName, 0, byteEncryptedUserName.Length);
+            Array.Clear(byteData, 0, byteData.Length);
 
             //////////////////////////////////////////////
 
@@ -534,52 +511,33 @@ namespace Secure_Password_Repository.Controllers
                     //grab the 3 encryption keys that are required to do encryption
                     byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
                     byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                    byte[] bytePrivateKeyKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+                    byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
 
-                    //decrypt the key that is used to decrypt the user's private key
-                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);
+                    EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
 
-                    //decrypt the user private key
-                    bytePrivateKey = EncryptionAndHashing.Decrypt_AES256_ToBytes(bytePrivateKey, bytePrivateKeyKey).FromBase64();
-                    //decrypt again
-                    EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);
+                    //decrypt the database key
+                    EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
 
-                    //we dont need this anymote
-                    Array.Clear(bytePrivateKeyKey, 0, bytePrivateKeyKey.Length);
+                    //encrypt the username
+                    byte[] byteData = model.EncryptedUserName.ToBytes();
+                    EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                    newPasswordItem.EncryptedUserName = byteData.ToBase64String();
 
-                    //decrypt the user's copy of the password encryption key
-                    byteEncryptionKey = EncryptionAndHashing.Decrypt_RSA_ToBytes(byteEncryptionKey, bytePrivateKey).FromBase64();
-                    //decyrpt again
-                    EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptionKey);
+                    //encrypt the second credential
+                    byteData = model.EncryptedSecondCredential.ToBytes();
+                    EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                    newPasswordItem.EncryptedSecondCredential = byteData.ToBase64String();
 
-                    //we dont need this anymore
-                    Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+                    //encrypt the password
+                    byteData = model.EncryptedPassword.ToBytes();
+                    EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                    newPasswordItem.EncryptedPassword = byteData.ToBase64String();
 
-                    //convert the key to base64
-                    byteEncryptionKey = byteEncryptionKey.ToBase64();
-              
-                    //encrypt the details of the new password using AES
-                    byte[] byteEncryptedPassword = EncryptionAndHashing.Encrypt_AES256_ToBytes(newPasswordItem.EncryptedPassword, byteEncryptionKey).ToBase64();
-                    byte[] byteEncryptedSecondCredential = EncryptionAndHashing.Encrypt_AES256_ToBytes(newPasswordItem.EncryptedSecondCredential, byteEncryptionKey).ToBase64();
-                    byte[] byteEncryptedUserName = EncryptionAndHashing.Encrypt_AES256_ToBytes(newPasswordItem.EncryptedUserName, byteEncryptionKey).ToBase64();
-
-                    //we dont need this anymore
+                    //clear what isnt needed any more
                     Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-
-                    //another layer of encryption
-                    EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedPassword);
-                    EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedSecondCredential);
-                    EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedUserName);
-
-                    //convert encrypted data to base64 and store in the model
-                    newPasswordItem.EncryptedPassword = byteEncryptedPassword.ToBase64String();
-                    newPasswordItem.EncryptedSecondCredential = byteEncryptedSecondCredential.ToBase64String();
-                    newPasswordItem.EncryptedUserName = byteEncryptedUserName.ToBase64String();
-
-                    //we dont need these arrays anymore
-                    Array.Clear(byteEncryptedPassword, 0, byteEncryptedPassword.Length);
-                    Array.Clear(byteEncryptedSecondCredential, 0, byteEncryptedSecondCredential.Length);
-                    Array.Clear(byteEncryptedUserName, 0, byteEncryptedUserName.Length);
+                    Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+                    Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
+                    Array.Clear(byteData, 0, byteData.Length);
 
                     ////////////////////////////
 
@@ -624,31 +582,29 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> EditPassword(PasswordDetails model)
         {
 
-            if (ModelState.IsValid && model.EditPassword != null)
+            int UserId = User.Identity.GetUserId().ToInt();
+
+            //get the UserPassword records for the selected password - so we dont have multiple hits on the DB later
+            var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == model.EditPassword.PasswordId).Select(up => up.Id).ToList();
+
+            //Retrive the password - if the user has access to view the password
+            Password selectedPassword = DatabaseContext.Passwords
+                                        .Where(pass => !pass.Deleted
+                                                && (
+                                                    (UserPasswordList.Contains(UserId))
+                                                 || pass.Creator_Id == UserId
+                                                    )
+                                               )
+                                               .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
+                                               .SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
+
+            //user has access to aleast view the password
+            if (selectedPassword != null)
             {
-                int UserId = User.Identity.GetUserId().ToInt();
 
-                //get the UserPassword records for the selected password - so we dont have multiple hits on the DB later
-                var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == model.EditPassword.PasswordId).Select(up => up.Id).ToList();
-
-                //Retrive the password - if the user has access to view the password
-                Password selectedPassword = DatabaseContext.Passwords
-                                            .Where(pass => !pass.Deleted
-                                                    && (
-                                                        (UserPasswordList.Contains(UserId))
-                                                     || pass.Creator_Id == UserId
-                                                        )
-                                                   )
-                                                   .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
-                                                   .SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
-
-
-
-                //user has access to aleast view the password
-                if (selectedPassword != null)
+                if (ModelState.IsValid && model.EditPassword != null)
                 {
 
-                    
                     //if user can change permission, then load up the additional users
                     if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
                     {
@@ -678,9 +634,8 @@ namespace Secure_Password_Repository.Controllers
                     }
 
 
-
                     //does the user have access to edit the password?
-                    if(selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword))
+                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword))
                     {
 
                         var user = await UserMgr.FindByIdAsync(UserId);
@@ -690,59 +645,68 @@ namespace Secure_Password_Repository.Controllers
                         //grab the 3 encryption keys that are required to do encryption
                         byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
                         byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                        byte[] bytePrivateKeyKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+                        byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
 
-                        //decrypt the key that is used to decrypt the user's private key
-                        EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKeyKey);
+                        //decrypt the user's private
+                        EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
 
-                        //decrypt the user private key
-                        bytePrivateKey = EncryptionAndHashing.Decrypt_AES256_ToBytes(bytePrivateKey, bytePrivateKeyKey).FromBase64();
-                        //decrypt again
-                        EncryptionAndHashing.Decrypt_DPAPI(ref bytePrivateKey);
+                        //decrypt the database encryption key
+                        EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
 
-                        //we dont need this anymote
-                        Array.Clear(bytePrivateKeyKey, 0, bytePrivateKeyKey.Length);
+                        //encrypt the updated username
+                        byte[] byteData = model.EditPassword.EncryptedUserName.ToBytes();
+                        EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                        model.EditPassword.EncryptedUserName = byteData.ToBase64String();
 
-                        //decrypt the user's copy of the password encryption key
-                        byteEncryptionKey = EncryptionAndHashing.Decrypt_RSA_ToBytes(byteEncryptionKey, bytePrivateKey).FromBase64();
-                        //decyrpt again
-                        EncryptionAndHashing.Decrypt_DPAPI(ref byteEncryptionKey);
+                        //encrypt the updated second credential
+                        byteData = model.EditPassword.EncryptedSecondCredential.ToBytes();
+                        EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                        model.EditPassword.EncryptedSecondCredential = byteData.ToBase64String();
 
-                        //we dont need this anymore
+                        //only if something has been entered into the password box
+                        if (model.EditPassword.EncryptedPassword != null && model.EditPassword.EncryptedPassword != string.Empty)
+                        {
+                            byteData = model.EditPassword.EncryptedPassword.ToBytes();
+                            EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                            model.EditPassword.EncryptedPassword = byteData.ToBase64String();
+                        }
+
+                        //clear what isnt needed any more
                         Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-
-                        //convert the key to base64
-                        byteEncryptionKey = byteEncryptionKey.ToBase64();
-
-                        //encrypt the details of the new password using AES
-                        byte[] byteEncryptedPassword = EncryptionAndHashing.Encrypt_AES256_ToBytes(model.EditPassword.EncryptedPassword, byteEncryptionKey).ToBase64();
-                        byte[] byteEncryptedSecondCredential = EncryptionAndHashing.Encrypt_AES256_ToBytes(model.EditPassword.EncryptedSecondCredential, byteEncryptionKey).ToBase64();
-                        byte[] byteEncryptedUserName = EncryptionAndHashing.Encrypt_AES256_ToBytes(model.EditPassword.EncryptedUserName, byteEncryptionKey).ToBase64();
-
-                        //we dont need this anymore
-                        Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-
-                        //another layer of encryption
-                        EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedPassword);
-                        EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedSecondCredential);
-                        EncryptionAndHashing.Encrypt_DPAPI(ref byteEncryptedUserName);
-
-                        //convert encrypted data to base64 and store in the model
-                        model.EditPassword.EncryptedPassword = byteEncryptedPassword.ToBase64String();
-                        model.EditPassword.EncryptedSecondCredential = byteEncryptedSecondCredential.ToBase64String();
-                        model.EditPassword.EncryptedUserName = byteEncryptedUserName.ToBase64String();
-
-                        //we dont need these arrays anymore
-                        Array.Clear(byteEncryptedPassword, 0, byteEncryptedPassword.Length);
-                        Array.Clear(byteEncryptedSecondCredential, 0, byteEncryptedSecondCredential.Length);
-                        Array.Clear(byteEncryptedUserName, 0, byteEncryptedUserName.Length);
+                        Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
 
                         ////////////////////////////
 
-
                         //save changes to database
                         DatabaseContext.Entry(selectedPassword).CurrentValues.SetValues(model.EditPassword);
+
+                        //if a new password has not been entered
+                        if (model.EditPassword.EncryptedPassword == null || model.EditPassword.EncryptedPassword == string.Empty)
+                        {
+                            DatabaseContext.Entry(selectedPassword).Property("EncryptedPassword").IsModified = false;
+                        }
+
                         await DatabaseContext.SaveChangesAsync();
+
+                        //do not display on edit form
+                        model.EditPassword.EncryptedPassword = "";
+                        selectedPassword.EncryptedPassword = "";
+
+                        //decrypt the username
+                        byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
+                        EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                        selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
+                        model.EditPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
+
+                        //decrypt the second credential
+                        byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+                        EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                        selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                        model.EditPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+
+                        //clear what isnt needed
+                        Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
+                        Array.Clear(byteData, 0, byteData.Length);
 
                         //supply the missing data, so the model can be returned
                         model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
@@ -761,24 +725,25 @@ namespace Secure_Password_Repository.Controllers
                         ModelState.AddModelError("", "You do not have permission to edit this password");
                     }
 
-
                 }
-                //user does not have access to view
+                //model is invalid
                 else
                 {
-                    //return empty model
-                    model.ViewPassword = new PasswordDisplay();
-                    model.EditPassword = new PasswordEdit();
-                    model.UserPermissions = null;
-                    
-                    ModelState.AddModelError("", "You do not have permission to view this password");
+                    //supply the missing data, so the model can be returned
+                    model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(model.EditPassword);
+                    model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
                 }
+
             }
-            //model is invalid
+            //user does not have access to view
             else
             {
-                //supply the missing data, so the model can be returned
-                model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(model.EditPassword);
+                //return empty model
+                model.ViewPassword = new PasswordDisplay();
+                model.EditPassword = new PasswordEdit();
+                model.UserPermissions = null;
+
+                ModelState.AddModelError("", "You do not have permission to view this password");
             }
 
             model.OpenTab = DefaultTab.EditPassword;
@@ -1010,10 +975,11 @@ namespace Secure_Password_Repository.Controllers
         //POST: /Password/GetEncryptedPassword/24
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult GetEncryptedPassword(int PasswordId)
+        public async Task<ActionResult> GetEncryptedPassword(int PasswordId)
         {
             int UserId = User.Identity.GetUserId().ToInt();
             bool userIsAdmin = User.IsInRole("Administrator");
+            var user = await UserMgr.FindByIdAsync(UserId);
 
             //Retrive the password -if the user has access
             Password selectedPassword = DatabaseContext.Passwords.Include("Parent_UserPasswords").Where(pass => !pass.Deleted
@@ -1027,6 +993,33 @@ namespace Secure_Password_Repository.Controllers
             //return the password if it exists
             if (selectedPassword != null)
             {
+
+                ///////////// decryption process //////////////
+
+                //grab the 3 encryption keys that are required to do encryption
+                byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
+                byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
+                byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+
+                //decrypt the user's private
+                EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+
+                //decrypt the database encryption key
+                EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
+
+                //decrypt the password
+                byte[] byteData = selectedPassword.EncryptedPassword.FromBase64().ToBytes();
+                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                selectedPassword.EncryptedPassword = byteData.FromBase64().ConvertToString();
+
+                //clear what isnt needed any more
+                Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+                Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
+                Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
+                Array.Clear(byteData, 0, byteData.Length);
+
+                //////////////////////////////////////////////
+
                 PasswordPassword passwordText = new PasswordPassword {PlainTextPassword = selectedPassword.EncryptedPassword };
                 return Json(passwordText);
             }

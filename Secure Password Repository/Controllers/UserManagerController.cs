@@ -10,7 +10,10 @@ using Microsoft.Owin.Security;
 using Owin;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.ViewModels;
+using Secure_Password_Repository.Extensions;
 using System.Threading.Tasks;
+using System.Net;
+using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -221,11 +224,57 @@ namespace Secure_Password_Repository.Controllers
             return View();
         }
 
+        //
+        // POST: /Account/AuthoriseAccount/4
         [HttpPost]
-        public ActionResult AuthoriseAccount(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> AuthoriseAccount(int UserId)
         {
-            //authorise account
-            return RedirectToAction("Index", "UserManager");
+            int intLoggedInUserId = User.Identity.GetUserId().ToInt();
+
+            var loggedInUser = await UserMgr.FindByIdAsync(intLoggedInUserId);
+            var user = await UserMgr.FindByIdAsync(UserId);
+
+            if (user != null)
+            {
+
+                #region Decrypt_Administrators_Copy_of_Encryption_Key
+
+                    //grab the 3 encryption keys that are required to do encryption
+                    byte[] bytePrivateKey = loggedInUser.userPrivateKey.FromBase64().ToBytes();
+                    byte[] byteEncryptionKey = loggedInUser.userEncryptionKey.FromBase64().ToBytes();
+                    byte[] bytePasswordBasedKey = MemoryCache.Default.Get(loggedInUser.UserName).ToString().ToBytes();
+
+                    //decrypt the user's private
+                    EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+
+                    //decrypt the database encryption key
+                    EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
+
+                #endregion
+
+                #region Encrypt_And_Store_Authorised_Users_Copy_Of_Encryption_Key
+
+                    //encrypt the database key
+                    EncryptionAndHashing.EncryptDatabaseKey(ref byteEncryptionKey, user.userPublicKey);
+
+                    //convert key to string and store
+                    user.userEncryptionKey = byteEncryptionKey.ToBase64String();
+
+                #endregion
+
+                user.isAuthorised = true;
+
+                //attempt to update the account
+                var result = await UserMgr.UpdateAsync(user);
+                if (result.Succeeded)
+                {
+                    return Json();
+                }
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
         }
 
         public ActionResult ResetPassword(ManageMessageId? message)

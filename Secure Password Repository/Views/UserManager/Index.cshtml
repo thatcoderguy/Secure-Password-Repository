@@ -1,5 +1,6 @@
 ﻿@using Secure_Password_Repository.Models
 @using Secure_Password_Repository.Database
+@using Secure_Password_Repository.Extensions
 @model ApplicationUserManager
 @{
     ViewBag.Title = "User Manager";
@@ -15,6 +16,9 @@
     </ul>
 </div>
 }
+
+<!--- token for authorising accounts  -->
+<form id="_CRSFform" action="#" method="post">@Html.AntiForgeryToken()</form>
     
 <table class="table table-striped">
     <thead>
@@ -44,17 +48,19 @@
                             <i class="glyphicon glyphicon-lock"></i>
                             Reset Password
                         </a>
-                        @if(!user.isAuthorised)
+                        @if (!user.isAuthorised)
                         {
-                            <a href="" class="btn btn-xs btn-success">
+                            <a onclick="authoriseAccount(event,'@user.Id');" href="#" class="btn btn-xs btn-success">
                                 <i class="glyphicon glyphicon-thumbs-up"></i>
                                 Authorise
                             </a>
                         }
+                        <!---
                         <a href="@Url.Action("Delete", new { user.Id })" class="btn btn-xs btn-danger">
                             <i class="glyphicon glyphicon-remove"></i>
                             Delete
                         </a>
+                            -->
                     </div>
                 </td>
             </tr>
@@ -65,4 +71,5 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
+    @RenderViewContent.RenderScripts()
 }

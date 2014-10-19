@@ -12,7 +12,7 @@ var authoriseAccount = function (event, accountid) {
         dataType: "json",
         success: function (data) {
 
-
+            $('#' + accountid).find('.btn-authorise').remove();
 
         }
     });

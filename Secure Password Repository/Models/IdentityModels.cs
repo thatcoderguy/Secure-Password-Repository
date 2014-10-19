@@ -55,6 +55,7 @@ namespace Secure_Password_Repository.Models
         public DateTime? userLastEncryptionKeyUpdate { get; set; }
         public virtual ICollection<UserPassword> UserPasswords { get; set; }
         public virtual ICollection<Password> Passwords { get; set; }
+        public bool isActive { get; set; }
 
         public string GetRoleName()
         {

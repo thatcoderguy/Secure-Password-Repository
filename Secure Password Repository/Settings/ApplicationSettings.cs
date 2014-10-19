@@ -63,6 +63,7 @@ namespace Secure_Password_Repository.Settings
             Default.RoleAllowDeleteCategories = "Administrator";
             Default.RoleAllowEditCategories = "Administrator";
             Default.RoleAllowAddPasswords = "User";
+            Default.SMTPEmailAddress = "securepasswordrepository@local";
 
             Save();
         }
@@ -145,6 +146,7 @@ namespace Secure_Password_Repository.Settings
         //class properties (settings for this app)
         public string LogoImage { get; set; }
         public string SMTPServerAddress { get; set; }
+        public string SMTPEmailAddress { get; set; }
         public string SMTPServerUsername { get; set; }
         public string SMTPServerPassword { get; set; }
         public string SystemSalt { get; set; }

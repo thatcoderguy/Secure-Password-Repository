@@ -86,6 +86,8 @@ namespace Secure_Password_Repository.ViewModels
         public string ConfirmPassword { get; set; }
 
         public string Code { get; set; }
+
+        public int UserId { get; set; }
     }
 
     public class ForgotPasswordViewModel
@@ -115,5 +117,16 @@ namespace Secure_Password_Repository.ViewModels
         [Display(Name = "Email Address")]
         public string Email { get; set; }
 
+    }
+
+    public class PasswordForgetConfirmation
+    {
+        public string CallBackURL { get; set; }
+    }
+
+    public class AccountAuthorisedConfirmation
+    {
+        public string CallBackURL { get; set; }
+        public string UserName { get; set; }
     }
 }

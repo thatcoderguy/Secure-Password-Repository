@@ -516,9 +516,10 @@ namespace Secure_Password_Repository.Controllers
                         byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
                         byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
 
+                        //decrypt the users copy of the private key
                         EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
 
-                        //decrypt the database key
+                        //decrypt the users copy of the database key
                         EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
 
                         //encrypt the username

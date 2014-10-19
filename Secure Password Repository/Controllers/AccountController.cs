@@ -92,7 +92,7 @@ namespace Secure_Password_Repository.Controllers
                     //only allow the user to sign in if their account is authorised
                     //this is because an admin needs to authorise new accounts, so that the encryption key can be 
                     //encrypted with the user's public key
-                    if (user.isAuthorised)
+                    if (user.isAuthorised && user.isActive)
                     {
 
                         if (MemoryCache.Default.Get(model.Username) != null)
@@ -106,7 +106,7 @@ namespace Secure_Password_Repository.Controllers
                         hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt).ToBase64();
 
                         //in-memory encryption of the hash
-                        EncryptionAndHashing.Encrypt_DPAPI(ref hashedPassword);
+                        EncryptionAndHashing.Encrypt_Memory_DPAPI(ref hashedPassword);
 
                         CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
 
@@ -200,7 +200,7 @@ namespace Secure_Password_Repository.Controllers
                     #region generate_new_database_symetric_encryption_key_and_encrypt
 
                         //generate 32 random bytes - this will be the encryption key
-                        byte[] DatabaseEncryptionKeyBytes = EncryptionAndHashing.Generate_RandomBytes(32);
+                        byte[] DatabaseEncryptionKeyBytes = EncryptionAndHashing.Generate_Random_ReadableBytes(32);
 
                         //encrypt the database key
                         EncryptionAndHashing.EncryptDatabaseKey(ref DatabaseEncryptionKeyBytes, user.userPublicKey);
@@ -214,6 +214,7 @@ namespace Secure_Password_Repository.Controllers
                     #endregion
 
                     user.isAuthorised = true;
+                    user.isActive = true;
                     FirstUserAccount = "Yes";
                     UserDefaultRole = "Administrator";
 
@@ -223,6 +224,7 @@ namespace Secure_Password_Repository.Controllers
 
                     //user needs to be authorised by an admin, so the encryption key can be copied to the user's account
                     user.isAuthorised = false;
+                    user.isActive = true;
                     FirstUserAccount = "No";
                     UserDefaultRole = "User";
 
@@ -231,7 +233,6 @@ namespace Secure_Password_Repository.Controllers
                 if (RoleMgr.RoleExists(UserDefaultRole))
                 {
                     IdentityResult result = await UserMgr.CreateAsync(user, model.Password);
-                    string blah = user.PasswordHash;
                     if (result.Succeeded)
                     {
                         //await SignInAsync(user, isPersistent: false);
@@ -256,14 +257,6 @@ namespace Secure_Password_Repository.Controllers
         }
 
         //
-        // GET: /Account/ForgotPassword
-        [AllowAnonymous]
-        public ActionResult ForgotPassword()
-        {
-            return View();
-        }
-
-        //
         // POST: /Account/ForgotPassword
         [HttpPost]
         [AllowAnonymous]
@@ -272,23 +265,35 @@ namespace Secure_Password_Repository.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await UserMgr.FindByNameAsync(model.Email);
-                if (user == null || !(await UserMgr.IsEmailConfirmedAsync(user.Id)))
+                var user = await UserMgr.FindByEmailAsync(model.Email);
+                if (user == null)  // || !(await UserMgr.IsEmailConfirmedAsync(user.Id))   -- maybe implement this later
                 {
                     ModelState.AddModelError("", "The user either does not exist or is not confirmed.");
                     return View();
                 }
 
+                //setup a token provider to generate the reset code
+                var provider = new Microsoft.Owin.Security.DataProtection.DpapiDataProtectionProvider("Secure Password Repository");
+                UserMgr.UserTokenProvider = new DataProtectorTokenProvider<ApplicationUser, int>(provider.Create("EmailConfirmation"));
+
                 // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                 // Send an email with this link
                 string code = await UserMgr.GeneratePasswordResetTokenAsync(user.Id);
-                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                await UserMgr.SendEmailAsync(user.Id, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { UserId = user.Id, Code = code, Email = user.Email }, protocol: Request.Url.Scheme);
+                await UserMgr.SendEmailAsync(user.Id, "Password Reset Request", RenderViewContent.RenderPartialToString("Account","ResetPasswordEmail", new PasswordForgetConfirmation { CallBackURL = callbackUrl}));
                 return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
 
             // If we got this far, something failed, redisplay form
             return View(model);
+        }
+
+        //
+        // GET: /Account/ForgotPassword
+        [AllowAnonymous]
+        public ActionResult ForgotPassword()
+        {
+            return View();
         }
 
         //
@@ -298,17 +303,17 @@ namespace Secure_Password_Repository.Controllers
         {
             return View();
         }
-	
+
         //
         // GET: /Account/ResetPassword
         [AllowAnonymous]
-        public ActionResult ResetPassword(string code)
+        public ActionResult ResetPassword(int UserId, string Code, string email)
         {
-            if (code == null) 
+            if (Code == null)
             {
                 return View("Error");
             }
-            return View();
+            return View(new ResetPasswordViewModel {  Email = email });
         }
 
         //
@@ -316,30 +321,85 @@ namespace Secure_Password_Repository.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ResetPassword(ResetPasswordViewModel model)
+        public async Task<ActionResult> ResetPassword(int UserId, ResetPasswordViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var user = await UserMgr.FindByNameAsync(model.Email);
+                var user = await UserMgr.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
                     ModelState.AddModelError("", "No user found.");
                     return View();
                 }
+
+                //setup a token provider to verify the reset code
+                var provider = new Microsoft.Owin.Security.DataProtection.DpapiDataProtectionProvider("Secure Password Repository");
+                UserMgr.UserTokenProvider = new DataProtectorTokenProvider<ApplicationUser, int>(provider.Create("EmailConfirmation"));
+
                 IdentityResult result = await UserMgr.ResetPasswordAsync(user.Id, model.Code, model.Password);
                 if (result.Succeeded)
                 {
-                    return RedirectToAction("ResetPasswordConfirmation", "Account");
+
+                    //generate a set of RSA keys - this set of keys are persistant until Destroy_RSAKeys() is called
+                    //so we'll want to call Destroy_RSAKeys ASAP, for security purposes!
+                    EncryptionAndHashing.Generate_NewRSAKeys();
+
+                    //retrieve the generated RSA public key used for new user
+                    //this can be stored as plaintext - we want people to use this key!
+                    user.userPublicKey = await EncryptionAndHashing.Retrieve_PublicKey();
+
+                    #region retrieve_and_encrypt_private_key
+
+                        //convert the private key to bytes, then clear the original string
+                        byte[] userPrivateKeyBytes = (await EncryptionAndHashing.Retrieve_PrivateKey()).ToBytes();
+
+                        //encrypt the user's private key
+                        EncryptionAndHashing.EncryptPrivateKey(ref userPrivateKeyBytes, model.Password);
+
+                        //convert to string and store
+                        user.userPrivateKey = userPrivateKeyBytes.ToBase64String();
+
+                        //clear the raw privatekey out of memory
+                        Array.Clear(userPrivateKeyBytes, 0, userPrivateKeyBytes.Length);
+
+                        //Keys has been encrypted, the plaintext ones can now be destroyed
+                        EncryptionAndHashing.Destroy_RSAKeys();
+
+                    #endregion
+
+                    user.isAuthorised = false;
+                    user.userEncryptionKey = null;
+
+                    //attempt to update the account
+                    result = await UserMgr.UpdateAsync(user);
+                    if (result.Succeeded)
+                    {
+                        //redirect back to the account list, with a success message 
+                        return RedirectToAction("ResetPasswordConfirmation", "Account");
+                    }
+                    else
+                    {
+                        //list any errors (e.g. email/username already exists)
+                        string errorlist = string.Empty;
+                        foreach (string error in result.Errors.ToList())
+                            errorlist += error + " and ";
+
+                        if (errorlist != string.Empty)
+                            errorlist = errorlist.Substring(0, errorlist.Length - 5);
+
+                        ModelState.AddModelError("", errorlist);
+                        return View("ResetPassword", model);
+                    }
                 }
                 else
                 {
                     AddErrors(result);
-                    return View();
+                    return View("ResetPassword", model);
                 }
             }
 
             // If we got this far, something failed, redisplay form
-            return View(model);
+            return View("ResetPassword", model);
         }
 
         //

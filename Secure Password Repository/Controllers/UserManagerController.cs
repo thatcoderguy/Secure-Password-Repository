@@ -78,12 +78,12 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // GET: UserManager/Edit/5
-        public async Task<ActionResult> Edit(int Id)
+        public async Task<ActionResult> Edit(int UserId)
         {
             UpdateAccountViewModel model = new UpdateAccountViewModel();
 
             //grab the selected account
-            var selectedAccount = await UserMgr.FindByIdAsync(Id);
+            var selectedAccount = await UserMgr.FindByIdAsync(UserId);
             if(selectedAccount!=null)
             {
                 //put the attributes from this account into the model, so the existing values are displayed
@@ -99,13 +99,13 @@ namespace Secure_Password_Repository.Controllers
 
         // POST: UserManager/Edit/5
         [HttpPost]
-        public async Task<ActionResult> Edit(int Id, UpdateAccountViewModel model)
+        public async Task<ActionResult> Edit(int UserId, UpdateAccountViewModel model)
         {
             try
             {
 
                 //grab the account selected
-                var selectedAccount = await UserMgr.FindByIdAsync(Id);
+                var selectedAccount = await UserMgr.FindByIdAsync(UserId);
                 if (selectedAccount != null)
                 {
 
@@ -154,12 +154,12 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // GET: UserManager/Delete/5
-        public async Task<ActionResult> Delete(int Id)
+        public async Task<ActionResult> Delete(int UserId)
         {
             UpdateAccountViewModel model = new UpdateAccountViewModel();
 
             //grab the selected account
-            var selectedAccount = await UserMgr.FindByIdAsync(Id);
+            var selectedAccount = await UserMgr.FindByIdAsync(UserId);
             if (selectedAccount != null)
             {
                 //put the attributes from this account into the model, so the existing values are displayed
@@ -175,13 +175,13 @@ namespace Secure_Password_Repository.Controllers
 
         // POST: UserManager/Delete/5
         [HttpPost]
-        public async Task<ActionResult> Delete(int Id, FormCollection collection)
+        public async Task<ActionResult> Delete(int UserId, FormCollection collection)
         {
             try
             {
 
                 //grab the account selected
-                var selectedAccount = await UserMgr.FindByIdAsync(Id);
+                var selectedAccount = await UserMgr.FindByIdAsync(UserId);
                 if (selectedAccount != null)
                 {
 
@@ -269,7 +269,14 @@ namespace Secure_Password_Repository.Controllers
                 var result = await UserMgr.UpdateAsync(user);
                 if (result.Succeeded)
                 {
-                    return Json();
+
+                    var callbackUrl = Url.Action("Login", "Account", new {}, protocol: Request.Url.Scheme);
+                    await UserMgr.SendEmailAsync(user.Id, "Account has been authorised", RenderViewContent.RenderPartialToString("UserManager", "AccountAuthorisedEmail", new AccountAuthorisedConfirmation { CallBackURL = callbackUrl, UserName = user.UserName }));
+
+                    return Json(new
+                    {
+                        AccountId = UserId
+                    });
                 }
             }
 
@@ -291,7 +298,7 @@ namespace Secure_Password_Repository.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> ResetPassword(int Id, ManageUserViewModel model)
+        public async Task<ActionResult> ResetMyPassword(int UserId, ManageUserViewModel model)
         {
             bool hasPassword = HasPassword();
             ViewBag.HasLocalPassword = hasPassword;
@@ -300,7 +307,7 @@ namespace Secure_Password_Repository.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    IdentityResult result = await UserMgr.ChangePasswordAsync(Id, model.OldPassword, model.NewPassword);
+                    IdentityResult result = await UserMgr.ChangePasswordAsync(UserId, model.OldPassword, model.NewPassword);
 
                     //decrypt admin copy of key
                     //encrypt users copy of key

@@ -47,6 +47,7 @@ namespace Secure_Password_Repository
                 AllowOnlyAlphanumericUserNames = true,
                 RequireUniqueEmail = true
             };
+
             // Configure validation logic for passwords
             manager.PasswordValidator = new PasswordValidator
             {
@@ -57,9 +58,14 @@ namespace Secure_Password_Repository
                 RequireUppercase = true,
             };
 
+            //custom service providers
             manager.PasswordHasher = new CustomPasswordHasher();
-
             manager.EmailService = new EmailService();
+
+            //account lockout config
+            manager.UserLockoutEnabledByDefault = true;
+            manager.DefaultAccountLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            manager.MaxFailedAccessAttemptsBeforeLockout = 5;
 
             return manager;
         }

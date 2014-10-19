@@ -2,6 +2,9 @@
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.ViewModels;
+using Secure_Password_Repository.Settings;
+using Secure_Password_Repository.Hubs;
+using Secure_Password_Repository.Controllers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,15 +15,12 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Net;
+using System.Runtime.Caching;
+using System.Data.Entity.Infrastructure;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin.Security;
-using Secure_Password_Repository.Settings;
-using Secure_Password_Repository.Hubs;
-using Secure_Password_Repository.Controllers;
-using System.Data.Entity.Infrastructure;
 using Microsoft.AspNet.Identity.EntityFramework;
-using System.Runtime.Caching;
+using Microsoft.Owin.Security;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
@@ -119,7 +119,6 @@ namespace Secure_Password_Repository.Controllers
         }
 
         #region CategoryActions
-
 
         // POST: Password/GetCategoryChildren/23
         [HttpPost]

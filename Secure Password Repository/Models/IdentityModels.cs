@@ -57,9 +57,22 @@ namespace Secure_Password_Repository.Models
         public virtual ICollection<Password> Passwords { get; set; }
         public bool isActive { get; set; }
 
+        public ApplicationRole GetRole()
+        {
+            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+
+            foreach (var role in this.Roles)
+            {
+                return DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
+            }
+
+            return null;
+
+        }
+
         public string GetRoleName()
         {
-            
+
             ApplicationDbContext DatabaseContext = new ApplicationDbContext();
 
             string MyRoles = string.Empty;
@@ -67,15 +80,11 @@ namespace Secure_Password_Repository.Models
             foreach (var role in this.Roles)
             {
                 //grab first role that the user has (there should be only 1)
-                var myRole = DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
-
-                if (myRole != null)
-                    MyRoles += myRole.Name;
-                else
-                    MyRoles = string.Empty;
+                ApplicationRole myRole = DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
+                return myRole.Name;
             }
 
-            return MyRoles;
+            return "";
         }
 
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser, int> manager)

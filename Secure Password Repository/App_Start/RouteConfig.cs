@@ -58,7 +58,7 @@ namespace Secure_Password_Repository
             routes.MapRoute("UserManagerDelete", "UserManager/Delete/{userid}", new { controller = "UserManager", action = "Delete", UserId = UrlParameter.Optional });
             
             //system setting
-            routes.MapRoute("SystemSetting", "SystemSetting", new { controller = "SystemSetting", action = "Index" });
+            routes.MapRoute("SystemAdministration", "Index", new { controller = "SystemAdministration", action = "Index" });
 
         }
     }

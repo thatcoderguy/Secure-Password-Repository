@@ -1,19 +1,21 @@
-﻿using System;
+﻿using Secure_Password_Repository.Models;
+using Secure_Password_Repository.ViewModels;
+using Secure_Password_Repository.Extensions;
+using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Threading.Tasks;
+using System.Net;
+using System.Runtime.Caching;
+using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
-using Owin;
-using Secure_Password_Repository.Models;
-using Secure_Password_Repository.ViewModels;
-using Secure_Password_Repository.Extensions;
-using System.Threading.Tasks;
-using System.Net;
-using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -63,8 +65,9 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // GET: UserManager
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
+            //success messages upon return to index page
             if (Request.QueryString.Get("successaction") == "Account Updated")
             {
                 ViewBag.Message = "Account updated successfully.";
@@ -74,7 +77,9 @@ namespace Secure_Password_Repository.Controllers
                 ViewBag.Message = "Account delete successfully.";
             }
 
-            return View(UserMgr);
+            return View(new UserList() { 
+                Users = await UserMgr.Users.Include("Roles").ToListAsync()
+            });
         }
 
         // GET: UserManager/Edit/5
@@ -86,10 +91,14 @@ namespace Secure_Password_Repository.Controllers
             var selectedAccount = await UserMgr.FindByIdAsync(UserId);
             if(selectedAccount!=null)
             {
+  
+                IEnumerable<ApplicationRole> availableRoles = await RoleMgr.Roles.ToListAsync();
                 //put the attributes from this account into the model, so the existing values are displayed
                 model.Email = selectedAccount.Email;
                 model.Username = selectedAccount.UserName;
                 model.FullName = selectedAccount.userFullName;
+                model.Role = selectedAccount.GetRole();
+                model.RolesList = new SelectList(availableRoles, "Id", "Name", model.Role.Id);
             }
             else
                 ModelState.AddModelError("", "User account does not exsit");
@@ -113,6 +122,8 @@ namespace Secure_Password_Repository.Controllers
                     selectedAccount.userFullName = model.FullName;
                     selectedAccount.UserName = model.Username;
                     selectedAccount.Email = model.Email;
+                    selectedAccount.Roles.Clear();
+                    selectedAccount.Roles.Add(new CustomUserRole() { RoleId = model.Role.Id, UserId = UserId });
 
                     //attempt to update the account
                     var result = await UserMgr.UpdateAsync(selectedAccount);

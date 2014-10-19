@@ -1,4 +1,9 @@
-﻿using System;
+﻿using Secure_Password_Repository.ViewModels;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Settings;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -6,17 +11,12 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using System.Runtime.Caching;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using Owin;
-using Secure_Password_Repository.ViewModels;
-using Secure_Password_Repository.Models;
-using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Extensions;
-using Secure_Password_Repository.Settings;
-using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -84,54 +84,80 @@ namespace Secure_Password_Repository.Controllers
         {
             if (ModelState.IsValid)
             {
-                
-                var user = await UserMgr.FindAsync(model.Username, model.Password);
+
+                var user = await UserMgr.FindByNameAsync(model.Username);
 
                 if (user != null)
                 {
-                    //only allow the user to sign in if their account is authorised
-                    //this is because an admin needs to authorise new accounts, so that the encryption key can be 
-                    //encrypted with the user's public key
-                    if (user.isAuthorised && user.isActive)
+                    if (await UserMgr.GetLockoutEndDateAsync(user.Id) > DateTimeOffset.Now.UtcDateTime)
                     {
-
-                        if (MemoryCache.Default.Get(model.Username) != null)
-                        {
-                            MemoryCache.Default.Remove(model.Username);
-                            MemoryCache.Default.Remove(model.Username + "-connectionId");
-                        }
-
-                        //hash and encrypt the user's password - so this can be used to decrypt the user's private key
-                        byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.Password);
-                        hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt).ToBase64();
-
-                        //in-memory encryption of the hash
-                        EncryptionAndHashing.Encrypt_Memory_DPAPI(ref hashedPassword);
-
-                        CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
-
-                        //store the encrypted memory in cache
-                        MemoryCache.Default.Set(model.Username,
-                                                hashedPassword.ConvertToString(), 
-                                                new CacheItemPolicy() { 
-                                                                        AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration, 
-                                                                        SlidingExpiration=TimeSpan.FromHours(1),    //1 hour - incase user logs out
-                                                                        Priority=CacheItemPriority.Default, 
-                                                                        RemovedCallback = onRemove });              //add item back into cache, if user logged in
-
-
-                        await SignInAsync(user, false);
-                        return RedirectToLocal(returnUrl);
+                        ModelState.AddModelError("", "Your account has been locked out.");
                     }
-                    else
+                    else if (!user.isAuthorised)
                     {
                         ModelState.AddModelError("", "Your account needs to be authorised by an Administrator.");
                     }
-                }
+                    else if (!user.isActive)
+                    {
+                        ModelState.AddModelError("", "Your account has been disabled.");
+                    }
+
+                    //only allow the user to sign in if their account is authorised
+                    //this is because an admin needs to authorise new accounts, so that the encryption key can be 
+                    //encrypted with the user's public key
+                    else
+                    {
+                        var usersignin = await UserMgr.FindAsync(model.Username, model.Password);
+
+                        if (usersignin != null)
+                        {
+
+                            if (MemoryCache.Default.Get(model.Username) != null)
+                            {
+                                MemoryCache.Default.Remove(model.Username);
+                                MemoryCache.Default.Remove(model.Username + "-connectionId");
+                            }
+
+                            //hash and encrypt the user's password - so this can be used to decrypt the user's private key
+                            byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.Password);
+                            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt).ToBase64();
+
+                            //in-memory encryption of the hash
+                            EncryptionAndHashing.Encrypt_Memory_DPAPI(ref hashedPassword);
+
+                            CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
+
+                            //store the encrypted memory in cache
+                            MemoryCache.Default.Set(model.Username,
+                                                    hashedPassword.ConvertToString(),
+                                                    new CacheItemPolicy()
+                                                    {
+                                                        AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration,
+                                                        SlidingExpiration = TimeSpan.FromHours(1),    //1 hour - incase user logs out
+                                                        Priority = CacheItemPriority.Default,
+                                                        RemovedCallback = onRemove
+                                                    });              //add item back into cache, if user logged in
+                            await SignInAsync(usersignin, false);
+
+                            await UserMgr.ResetAccessFailedCountAsync(usersignin.Id);
+
+                            return RedirectToLocal(returnUrl);
+                        }
+                        //invalid credentials
+                        else
+                        {
+                            await UserMgr.AccessFailedAsync(user.Id);
+                            ModelState.AddModelError("", "Invalid username or password.");
+                        }
+                    }
+                }                       
+                //could not find account
                 else
                 {
+                    await UserMgr.AccessFailedAsync(user.Id);
                     ModelState.AddModelError("", "Invalid username or password.");
                 }
+
             }
 
             // If we got this far, something failed, redisplay form

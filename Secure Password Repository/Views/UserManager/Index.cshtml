@@ -1,7 +1,4 @@
-﻿@using Secure_Password_Repository.Models
-@using Secure_Password_Repository.Database
-@using Secure_Password_Repository.Extensions
-@model ApplicationUserManager
+﻿@model Secure_Password_Repository.ViewModels.UserList
 @{
     ViewBag.Title = "User Manager";
 }
@@ -50,18 +47,18 @@
                             Reset Password
                         </a>
                         *@
-                        @if(user.isActive)
+                        @if(!user.isActive || user.LockoutEndDateUtc > DateTimeOffset.Now.UtcDateTime)
                         {
-                            <a href="@Url.Action("DisableAccount", "UserManager", new { UserId = user.Id })" class="btn btn-xs btn-default">
+                            <a href="@Url.Action("EnableAccount", "UserManager", new { UserId = user.Id })" class="btn btn-xs btn-default">
                                 <i class="glyphicon glyphicon-lock"></i>
-                                Disable Account
+                                Enable Account
                             </a>
                         }
                         else
                         {
-                            <a href="@Url.Action("ActivateAccount", "UserManager", new { UserId = user.Id })" class="btn btn-xs btn-default">
+                            <a href="@Url.Action("DisableAccount", "UserManager", new { UserId = user.Id })" class="btn btn-xs btn-default">
                                 <i class="glyphicon glyphicon-lock"></i>
-                                Activate Account
+                                Disable Account
                             </a>
                         }
                         @if (!user.isAuthorised)
@@ -72,12 +69,12 @@
                             </a>
                         }
                         @*
-            <a href="@Url.Action("Delete", new { UserId = user.Id })" class="btn btn-xs btn-danger">
-                <i class="glyphicon glyphicon-remove"></i>
-                Delete
-            </a>
-                            *@
-</div>
+                        <a href="@Url.Action("Delete", new { UserId = user.Id })" class="btn btn-xs btn-danger">
+                            <i class="glyphicon glyphicon-remove"></i>
+                            Delete
+                        </a>
+                        *@
+                    </div>
                 </td>
             </tr>
         }

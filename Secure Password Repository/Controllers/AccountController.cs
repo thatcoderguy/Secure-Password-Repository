@@ -4,6 +4,7 @@ using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Settings;
 using System;
+using System.Data.Entity;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -112,11 +113,18 @@ namespace Secure_Password_Repository.Controllers
                         if (usersignin != null)
                         {
 
-                            if (MemoryCache.Default.Get(model.Username) != null)
-                            {
-                                MemoryCache.Default.Remove(model.Username);
-                                MemoryCache.Default.Remove(model.Username + "-connectionId");
-                            }
+                            CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
+
+                            //store the session ID in cache - this is to stop the same user logging in twice
+                            MemoryCache.Default.Set(model.Username + "SessionID",
+                                                    Session.SessionID,
+                                                    new CacheItemPolicy()
+                                                    {
+                                                        AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration,
+                                                        SlidingExpiration = TimeSpan.FromHours(1),    //1 hour - incase user logs out
+                                                        Priority = CacheItemPriority.Default,
+                                                        RemovedCallback = onRemove
+                                                    });              //add item back into cache, if user logged in
 
                             //hash and encrypt the user's password - so this can be used to decrypt the user's private key
                             byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.Password);
@@ -125,9 +133,7 @@ namespace Secure_Password_Repository.Controllers
                             //in-memory encryption of the hash
                             EncryptionAndHashing.Encrypt_Memory_DPAPI(ref hashedPassword);
 
-                            CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
-
-                            //store the encrypted memory in cache
+                            //store the encrypted password hash in cache
                             MemoryCache.Default.Set(model.Username,
                                                     hashedPassword.ConvertToString(),
                                                     new CacheItemPolicy()
@@ -137,9 +143,13 @@ namespace Secure_Password_Repository.Controllers
                                                         Priority = CacheItemPriority.Default,
                                                         RemovedCallback = onRemove
                                                     });              //add item back into cache, if user logged in
+
                             await SignInAsync(usersignin, false);
 
                             await UserMgr.ResetAccessFailedCountAsync(usersignin.Id);
+
+                            if (returnUrl == null || returnUrl == string.Empty)
+                                returnUrl = "Password";
 
                             return RedirectToLocal(returnUrl);
                         }
@@ -264,8 +274,34 @@ namespace Secure_Password_Repository.Controllers
                         //await SignInAsync(user, isPersistent: false);
 
                         result = await UserMgr.AddToRoleAsync(user.Id, UserDefaultRole);
+                        if(result.Succeeded)
+                        {
 
-                        return RedirectToAction("RegistrationConfirmation", new { ThisIsTheFirstAccount = FirstUserAccount });
+                            //send an email to all administrators letting them know a new account needs authorising
+                            var roleId = RoleMgr.FindByName("Administrator").Id;
+                            List<int> adminUserIdList = UserMgr.Users.Include("Roles").Where(u => u.Roles.Any(r => r.RoleId == roleId && r.UserId == u.Id )).Select(u => u.Id).ToList();
+                            string callbackurl = Url.RouteUrl("UserManager", new { }, protocol: Request.Url.Scheme);
+
+                            foreach (int adminUserId in adminUserIdList)
+                            {
+                                UserMgr.SendEmail(adminUserId, "New account needs authorisation",
+                                            RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
+                                            new AccountAuthorisationRequest()
+                                            {
+                                                callbackurl = callbackurl,
+                                                userEmail = user.Email,
+                                                userFullName = user.userFullName,
+                                                userName = user.UserName
+                                            }));
+                            }
+
+                            return RedirectToAction("RegistrationConfirmation", new { ThisIsTheFirstAccount = FirstUserAccount });
+                        }
+                        else
+                        {
+                            AddErrors(result);
+                        }
+                        
                     }
                     else
                     {
@@ -274,7 +310,7 @@ namespace Secure_Password_Repository.Controllers
                 } 
                 else
                 {
-                    AddErrors(IdentityResult.Failed(new string []{ "The role: " + UserDefaultRole + " does not exist" }));
+                    AddErrors(IdentityResult.Failed(new string[] { "The role: " + UserDefaultRole + " does not exist" }));
                 }
             }
 
@@ -306,7 +342,7 @@ namespace Secure_Password_Repository.Controllers
                 // Send an email with this link
                 string code = await UserMgr.GeneratePasswordResetTokenAsync(user.Id);
                 var callbackUrl = Url.Action("ResetPassword", "Account", new { UserId = user.Id, Code = code, Email = user.Email }, protocol: Request.Url.Scheme);
-                await UserMgr.SendEmailAsync(user.Id, "Password Reset Request", RenderViewContent.RenderPartialToString("Account","ResetPasswordEmail", new PasswordForgetConfirmation { CallBackURL = callbackUrl}));
+                await UserMgr.SendEmailAsync(user.Id, "Password Reset Request", RenderViewContent.RenderViewToString("Account","ResetPasswordEmail", new PasswordForgetConfirmation { CallBackURL = callbackUrl}));
                 return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
 
@@ -400,6 +436,25 @@ namespace Secure_Password_Repository.Controllers
                     result = await UserMgr.UpdateAsync(user);
                     if (result.Succeeded)
                     {
+
+                        //send an email to all administrators letting them know a new account needs authorising
+                        var roleId = RoleMgr.FindByName("Administrator").Id;
+                        List<int> adminUserIdList = UserMgr.Users.Include("Roles").Where(u => u.Roles.Any(r => r.RoleId == roleId && r.UserId == u.Id)).Select(u => u.Id).ToList();
+                        string callbackurl = Url.RouteUrl("UserManager", new { }, protocol: Request.Url.Scheme);
+
+                        foreach (int adminUserId in adminUserIdList)
+                        {
+                            UserMgr.SendEmail(adminUserId, "New account needs authorisation",
+                                        RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
+                                        new AccountAuthorisationRequest()
+                                        {
+                                            callbackurl = callbackurl,
+                                            userEmail = user.Email,
+                                            userFullName = user.userFullName,
+                                            userName = user.UserName
+                                        }));
+                        }
+
                         //redirect back to the account list, with a success message 
                         return RedirectToAction("ResetPasswordConfirmation", "Account");
                     }

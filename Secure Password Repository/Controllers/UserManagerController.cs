@@ -282,7 +282,7 @@ namespace Secure_Password_Repository.Controllers
                 {
 
                     var callbackUrl = Url.Action("Login", "Account", new {}, protocol: Request.Url.Scheme);
-                    await UserMgr.SendEmailAsync(user.Id, "Account has been authorised", RenderViewContent.RenderPartialToString("UserManager", "AccountAuthorisedEmail", new AccountAuthorisedConfirmation { CallBackURL = callbackUrl, UserName = user.UserName }));
+                    await UserMgr.SendEmailAsync(user.Id, "Account has been authorised", RenderViewContent.RenderViewToString("UserManager", "AccountAuthorisedEmail", new AccountAuthorisedConfirmation { CallBackURL = callbackUrl, UserName = user.UserName }));
 
                     return Json(new
                     {

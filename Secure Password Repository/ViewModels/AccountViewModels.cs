@@ -69,6 +69,8 @@ namespace Secure_Password_Repository.ViewModels
         [Display(Name = "Confirm password")]
         [System.ComponentModel.DataAnnotations.Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
+
+        public string callbackurl { get; set; }
     }
 
     public class ResetPasswordViewModel
@@ -92,6 +94,7 @@ namespace Secure_Password_Repository.ViewModels
         public string Code { get; set; }
 
         public int UserId { get; set; }
+
     }
 
     public class ForgotPasswordViewModel
@@ -137,6 +140,14 @@ namespace Secure_Password_Repository.ViewModels
     {
         public string CallBackURL { get; set; }
         public string UserName { get; set; }
+    }
+
+    public class AccountAuthorisationRequest
+    {
+        public string userFullName { get; set; }
+        public string userName { get; set; }
+        public string userEmail { get; set; }
+        public string callbackurl { get; set; }
     }
 
     public class UserList

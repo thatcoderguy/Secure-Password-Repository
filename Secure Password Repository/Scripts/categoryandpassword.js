@@ -14,8 +14,7 @@ var displayForm = function(event,categoryid) {
 }
 
 //hide the form
-var cancelAction = function (event,categoryid) {
-    event.preventDefault();
+var cancelAction = function (event, categoryid) {
     $('#' + categoryid).find('.first').first().show();
     $('#' + categoryid).find('.second').first().hide();
 }
@@ -31,10 +30,8 @@ var updateCategorySuccess = function (event, data) {
 }
 
 //called when category successfully created
-var createCategorySuccess = function (event, data, parentid) {
-
-    event.preventDefault();
-
+var createCategorySuccess = function (data, parentid) {
+    
     //append the new item to the list
     $('#addnew-' + parentid).parent().append(data);
     
@@ -54,7 +51,7 @@ var createCategorySuccess = function (event, data, parentid) {
     bindClickEvent();
 
     //hide the form
-    cancelAction(event,'addnew-' + parentid);
+    cancelAction(Object, 'addnew-' + parentid);
 }
 
 //click event to delete category

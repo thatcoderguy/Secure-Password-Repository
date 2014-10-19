@@ -607,37 +607,33 @@ namespace Secure_Password_Repository.Controllers
             if (selectedPassword != null)
             {
 
+                List<UserPassword> permissionList = new List<UserPassword>();
+
+                //if user can change permission, then load up the additional users
+                if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+                {
+                    //obtain a list of users that cont have a record in the UserPassword table
+                    var UserList = DatabaseContext.Users.Where(u => !UserPasswordList.Contains(u.Id)).ToList();
+
+                    //add a new UserPassword record in to the list, so they every user is displayed on the "permissions" page.
+                    foreach (var userItem in UserList)
+                    {
+                        permissionList.Add(new UserPassword()
+                        {
+                            Id = userItem.Id,
+                            PasswordId = selectedPassword.PasswordId,
+                            CanChangePermissions = false,
+                            CanViewPassword = false,
+                            CanEditPassword = false,
+                            CanDeletePassword = false,
+                            UserPasswordUser = userItem,
+                            UsersPassword = selectedPassword
+                        });
+                    }
+                }
+
                 if (ModelState.IsValid && model.EditPassword != null)
                 {
-
-                    //if user can change permission, then load up the additional users
-                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
-                    {
-                        //obtain a list of users that cont have a record in the UserPassword table
-                        var UserList = DatabaseContext.Users.Where(u => !UserPasswordList.Contains(u.Id)).ToList();
-
-                        //add a new UserPassword record in to the list, so they every user is displayed on the "permissions" page.
-                        foreach (var userItem in UserList)
-                        {
-                            selectedPassword.Parent_UserPasswords.Add(new UserPassword()
-                            {
-                                Id = userItem.Id,
-                                PasswordId = selectedPassword.PasswordId,
-                                CanChangePermissions = false,
-                                CanViewPassword = false,
-                                CanEditPassword = false,
-                                CanDeletePassword = false,
-                                UserPasswordUser = userItem,
-                                UsersPassword = selectedPassword
-                            });
-                        }
-                    }
-                    else
-                    {
-                        //if user doesnt have access to change permissions, then clear the list
-                        selectedPassword.Parent_UserPasswords.Clear();
-                    }
-
 
                     //does the user have access to edit the password?
                     if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword))
@@ -715,7 +711,8 @@ namespace Secure_Password_Repository.Controllers
 
                         //supply the missing data, so the model can be returned
                         model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
+                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(permissionList.OrderBy(up => up.UserPasswordUser.userFullName));
+                        model.OpenTab = DefaultTab.EditPassword;
 
                         PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
                     }
@@ -725,7 +722,8 @@ namespace Secure_Password_Repository.Controllers
                         //return just a readonly model
                         model.EditPassword = new PasswordEdit();
                         model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
+                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(permissionList.OrderBy(up => up.UserPasswordUser.userFullName));
+                        model.OpenTab = DefaultTab.ViewPassword;
 
                         ModelState.AddModelError("", "You do not have permission to edit this password");
                     }
@@ -736,7 +734,8 @@ namespace Secure_Password_Repository.Controllers
                 {
                     //supply the missing data, so the model can be returned
                     model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(model.EditPassword);
-                    model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords);
+                    model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(permissionList.OrderBy(up => up.UserPasswordUser.userFullName));
+                    model.OpenTab = DefaultTab.EditPassword;
                 }
 
             }
@@ -747,11 +746,11 @@ namespace Secure_Password_Repository.Controllers
                 model.ViewPassword = new PasswordDisplay();
                 model.EditPassword = new PasswordEdit();
                 model.UserPermissions = null;
+                model.OpenTab = DefaultTab.ViewPassword;
 
                 ModelState.AddModelError("", "You do not have permission to view this password");
             }
 
-            model.OpenTab = DefaultTab.EditPassword;
             return View("ViewPassword", model);
         }
 
@@ -960,6 +959,7 @@ namespace Secure_Password_Repository.Controllers
                         //supply the missing data, so the model can be returned
                         model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
                         model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
+                        model.OpenTab = DefaultTab.EditPermissions;
 
                         //if there were no errors
                         if (ModelState.IsValid)
@@ -968,7 +968,7 @@ namespace Secure_Password_Repository.Controllers
                             await DatabaseContext.SaveChangesAsync();
 
                             //send push notification (to update the UI)
-                            //PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
+                            PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
                         }
 
                     }
@@ -978,6 +978,7 @@ namespace Secure_Password_Repository.Controllers
                         //return just a readonly model
                         model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
                         model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
+                        model.OpenTab = DefaultTab.ViewPassword;
 
                         ModelState.AddModelError("", "You do not have permission to edit permissions for this password");
                     }
@@ -989,6 +990,7 @@ namespace Secure_Password_Repository.Controllers
                     model.ViewPassword = new PasswordDisplay();
                     model.EditPassword = new PasswordEdit();
                     model.UserPermissions = null;
+                    model.OpenTab = DefaultTab.ViewPassword;
 
                     ModelState.AddModelError("", "You do not have permission to view this password");
                 }
@@ -1002,7 +1004,6 @@ namespace Secure_Password_Repository.Controllers
                 model.EditPassword = new PasswordEdit();
             }
 
-            model.OpenTab = DefaultTab.EditPermissions;
             return View("ViewPassword", model);
         }
 

@@ -95,7 +95,7 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="model">Name of the view model</param>
         /// <returns>String containing partial view HTML</returns>
         class FakeController : ControllerBase { protected override void ExecuteCore() { } }
-        public static string RenderPartialToString(string controllerName, string viewName, object model)
+        public static string RenderViewToString(string controllerName, string viewName, object model)
         {
             using (var writer = new StringWriter())
             {

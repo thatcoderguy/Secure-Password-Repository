@@ -28,26 +28,6 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
-        /// Convert a byte array to a base64 encoded string
-        /// </summary>
-        /// <param name="bytes">Byte array to convert to a string</param>
-        /// <returns>A base64 encoded string</returns>
-        public static string ToBase64String(this byte[] bytes)
-        {
-            return Convert.ToBase64String(bytes);
-        }
-
-        /// <summary>
-        /// Convert a byte array to a base64 encoded byte array
-        /// </summary>
-        /// <param name="bytes">Byte array to convert to base64</param>
-        /// <returns>A base64 encoded byte array</returns>
-        public static byte[] ToBase64(this byte[] bytes)
-        {
-            return Convert.ToBase64String(bytes).ToBytes();
-        }
-
-        /// <summary>
         /// Convert a string from base64 to ASCII
         /// </summary>
         /// <param name="original">Base64 string to convert</param>
@@ -70,6 +50,26 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
+        /// Convert a byte array to a base64 encoded string
+        /// </summary>
+        /// <param name="bytes">Byte array to convert to a string</param>
+        /// <returns>A base64 encoded string</returns>
+        public static string ToBase64String(this byte[] bytes)
+        {
+            return Convert.ToBase64String(bytes);
+        }
+
+        /// <summary>
+        /// Convert a byte array to a base64 encoded byte array
+        /// </summary>
+        /// <param name="bytes">Byte array to convert to base64</param>
+        /// <returns>A base64 encoded byte array</returns>
+        public static byte[] ToBase64(this byte[] bytes)
+        {
+            return Convert.ToBase64String(bytes).ToBytes();
+        }
+
+        /// <summary>
         /// Convert a string to base64
         /// </summary>
         /// <param name="original">String to convert to base64</param>
@@ -78,6 +78,17 @@ namespace Secure_Password_Repository.Extensions
         {
             byte[] converted = Encoding.Default.GetBytes(original);
             return Convert.ToBase64String(converted);
+        }
+
+        /// <summary>
+        /// Convert a string to base64 byte array
+        /// </summary>
+        /// <param name="original">String to convert to base64</param>
+        /// <returns>A base64 encoded byte array</returns>
+        public static byte[] ToBase64Bytes(this string original)
+        {
+            byte[] converted = Encoding.Default.GetBytes(original);
+            return converted.ToBase64();
         }
 
         /// <summary>
@@ -115,6 +126,11 @@ namespace Secure_Password_Repository.Extensions
         public static byte[] RemoveNullBytes(this byte[] original)
         {
             return original.ConvertToString().RemoveNullChars().ToBytes();
+        }
+
+        public static byte[] Trim(this byte[] original)
+        {
+            return original.ConvertToString().TrimEnd().ToBytes();
         }
 
         public static byte[] RemoveAESPadding(this byte[] original)

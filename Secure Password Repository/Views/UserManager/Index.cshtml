@@ -1,7 +1,4 @@
-﻿@using Secure_Password_Repository.Models
-@using Secure_Password_Repository.Database
-@using Secure_Password_Repository.Extensions
-@model ApplicationUserManager
+﻿@model Secure_Password_Repository.ViewModels.UserList
 @{
     ViewBag.Title = "User Manager";
 }
@@ -33,34 +30,50 @@
     <tbody>
         @foreach(var user in Model.Users)
         {
-            <tr>
+            <tr id="@user.Id">
                 <td>@user.UserName</td>
                 <td>@user.userFullName</td>
                 <td>@user.Email</td>
                 <td>@user.GetRoleName()</td>
                 <td>
                     <div class="btn-group">
-                        <a href="@Url.Action("Edit", new { user.Id })" class="btn btn-xs btn-primary">
+                        <a href="@Url.Action("Edit", new { UserId = user.Id })" class="btn btn-xs btn-primary">
                             <i class="glyphicon glyphicon-edit"></i>
                             Edit
                         </a>
-                        <a href="@Url.Action("ResetPassword", "UserManager", new { user.Id })" class="btn btn-xs btn-default">
+                        @*
+                        <a href="@Url.Action("ResetPassword", "UserManager", new { UserId = user.Id })" class="btn btn-xs btn-default">
                             <i class="glyphicon glyphicon-lock"></i>
                             Reset Password
                         </a>
+                        *@
+                        @if(!user.isActive || user.LockoutEndDateUtc > DateTimeOffset.Now.UtcDateTime)
+                        {
+                            <a href="@Url.Action("EnableAccount", "UserManager", new { UserId = user.Id })" class="btn btn-xs btn-default">
+                                <i class="glyphicon glyphicon-lock"></i>
+                                Enable Account
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("DisableAccount", "UserManager", new { UserId = user.Id })" class="btn btn-xs btn-default">
+                                <i class="glyphicon glyphicon-lock"></i>
+                                Disable Account
+                            </a>
+                        }
                         @if (!user.isAuthorised)
                         {
-                            <a onclick="authoriseAccount(event,'@user.Id');" href="#" class="btn btn-xs btn-success">
+                            <a onclick="authoriseAccount(event,'@user.Id');" href="#" class="btn btn-xs btn-success btn-authorise">
                                 <i class="glyphicon glyphicon-thumbs-up"></i>
                                 Authorise
                             </a>
                         }
-                        <!---
-                        <a href="@Url.Action("Delete", new { user.Id })" class="btn btn-xs btn-danger">
+                        @*
+                        <a href="@Url.Action("Delete", new { UserId = user.Id })" class="btn btn-xs btn-danger">
                             <i class="glyphicon glyphicon-remove"></i>
                             Delete
                         </a>
-                            -->
+                        *@
                     </div>
                 </td>
             </tr>
@@ -71,5 +84,5 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
-    @RenderViewContent.RenderScripts()
+    @Scripts.Render("~/bundles/accountmanager_controller_scripts")
 }

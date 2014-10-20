@@ -299,24 +299,25 @@ namespace Secure_Password_Repository.Extensions
         }
 
         ///<summary>
-        ///Decrypts the supplied text using Data Protection API.
+        ///Decrypts the supplied text (in-memory) using Data Protection API. 
         ///Important note: the supplied text is decrypted in-memory, so the maintain security Encrypt_DPAPI should be called after the decrypted text has been used.
         ///</summary>
         ///<param name="EncryptedText">
         ///The plain text to be EncryptedText
         ///</param>
-        public static void Decrypt_DPAPI(ref byte[] EncryptedText)
+        public static void Decrypt_Memory_DPAPI(ref byte[] EncryptedText)
         {
             ProtectedMemory.Unprotect(EncryptedText, MemoryProtectionScope.SameLogon);
         }
 
         ///<summary>
         ///Encrypts the supplied text using Data Protection API, the supplied text is decrypted in-memory.
+        ///Important note: the encrypted data will only work whilst the data in the current user account. Thus, this should only be used to encrypt non-persistant data.  
         ///</summary>
         ///<param name="PlainText">
         ///The plain text to be encrypted
         ///</param>
-        public static void Encrypt_DPAPI(ref byte[] PlainText)
+        public static void Encrypt_Memory_DPAPI(ref byte[] PlainText)
         {
 
             //if the data isnt a multiple of 16, then make it so (requirment of DPAPI)
@@ -324,6 +325,34 @@ namespace Secure_Password_Repository.Extensions
                 EncryptionAndHashing.Add_BytePadding(ref PlainText, 16 - (PlainText.Length % 16), '\x00');
 
             ProtectedMemory.Protect(PlainText, MemoryProtectionScope.SameLogon);
+        }
+
+        ///<summary>
+        ///Decrypts the supplied text using Data Protection API. Use this for encrypting persistant data.
+        ///</summary>
+        ///<param name="EncryptedText">
+        ///The plain text to be EncryptedText
+        ///</param>
+        public static void Decrypt_DPAPI(ref byte[] EncryptedText)
+        {
+            ProtectedData.Unprotect(EncryptedText, ApplicationSettings.Default.SystemSalt.ToBytes(), DataProtectionScope.LocalMachine);
+            //EncryptedText = EncryptedText.ConvertToString().FromUnicode();
+        }
+
+        ///<summary>
+        ///Encrypts the supplied text using Data Protection API. 
+        ///</summary>
+        ///<param name="PlainText">
+        ///The plain text to be encrypted
+        ///</param>
+        public static void Encrypt_DPAPI(ref byte[] PlainText)
+        {
+            //PlainText = PlainText.ConvertToString().ToUnicodeBytes();
+            //if the data isnt a multiple of 16, then make it so (requirment of DPAPI)
+            //if (PlainText.Length % 16 != 0)
+            //    EncryptionAndHashing.Add_BytePadding(ref PlainText, 16 - (PlainText.Length % 16), ' ');
+
+            ProtectedData.Protect(PlainText, ApplicationSettings.Default.SystemSalt.ToBytes(), DataProtectionScope.LocalMachine);
         }
 
         ///<summary>
@@ -1810,11 +1839,11 @@ namespace Secure_Password_Repository.Extensions
         ///The number of chars to return
         ///</param>
         ///<returns>
-        ///An string of random bytes
+        ///A string of random bytes
         ///</returns>
         public static string Generate_Random_ReadableString(int NumberOfChars)
         {
-            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
+            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz!£$%^&*()_+-=~#@?/>.<,";
             var buffer = new char[NumberOfChars];
             var usableChars = characterSet.ToCharArray();
             var usableLength = usableChars.Length;
@@ -1833,6 +1862,38 @@ namespace Secure_Password_Repository.Extensions
             }
 
             return new string(buffer);
+        }
+
+        ///<summary>
+        ///Generates a number random string of readable chars using the cryptographically secure RNG
+        ///</summary>
+        ///<param name="NumberOfBytes">
+        ///The number of chars to return
+        ///</param>
+        ///<returns>
+        ///An array of random bytes
+        ///</returns>
+        public static byte[] Generate_Random_ReadableBytes(int NumberOfChars)
+        {
+            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz!£$%^&*()_+-=~#@?/>.<,";
+            var buffer = new byte[NumberOfChars];
+            var usableChars = characterSet.ToCharArray();
+            var usableLength = usableChars.Length;
+
+            using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider())
+            {
+
+                var random = new byte[NumberOfChars];
+                rngCsp.GetNonZeroBytes(random);
+
+                for (int index = 0; index < NumberOfChars; index++)
+                {
+                    buffer[index] = (byte)usableChars[random[index] % usableLength];
+                }
+
+            }
+
+            return buffer;
         }
 
         /// <summary>

@@ -157,4 +157,14 @@ var updatePosition = function (event, ui) {
 
         }
     });
+
+}
+
+var showSpinner = function (itemid) {
+    $('#' + itemid).find('.btn-group').hide().after('<span class="loaderplaceholder"><img src="/Images/ajax-loader.gif"> Saving...</span>');
+}
+
+var hideSpinner = function (itemid) {
+    $('#' + itemid).find('.loaderplaceholder').remove();
+    $('#' + itemid).find('.btn-group').show();
 }

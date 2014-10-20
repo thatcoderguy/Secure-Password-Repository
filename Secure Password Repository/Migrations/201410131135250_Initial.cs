@@ -55,6 +55,7 @@ namespace Secure_Password_Repository.Migrations
                         userEncryptionKey = c.String(),
                         userFullName = c.String(),
                         isAuthorised = c.Boolean(nullable: false),
+                        isActive = c.Boolean(nullable: false),
                         userLastEncryptionKeyUpdate = c.DateTime(),
                         Email = c.String(maxLength: 256),
                         EmailConfirmed = c.Boolean(nullable: false),

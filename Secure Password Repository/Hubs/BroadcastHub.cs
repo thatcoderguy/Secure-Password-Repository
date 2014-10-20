@@ -67,7 +67,7 @@ namespace Secure_Password_Repository.Hubs
             CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
 
             //generate a string based view of the new category
-            string categoryPartialView = RenderViewContent.RenderPartialToString("Password", "_CategoryItem", returnCategoryViewItem);
+            string categoryPartialView = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem);
 
             //broadcast the new category details
             PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);
@@ -84,6 +84,7 @@ namespace Secure_Password_Repository.Hubs
 
             //Retrive the password -if the user has access
             Password newPassword = DatabaseContext.Passwords
+                                                            .Include("Creator")
                                                             .Where(pass => !pass.Deleted
                                                             && (
                                                                 (UserIDList.Contains(UserId))
@@ -93,7 +94,7 @@ namespace Secure_Password_Repository.Hubs
                                                                 .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
                                                                 .SingleOrDefault(p => p.PasswordId == newPasswordId);
 
-            
+
 
             if (newPassword != null)
             {
@@ -102,10 +103,18 @@ namespace Secure_Password_Repository.Hubs
                 PasswordItem returnPasswordViewItem = AutoMapper.Mapper.Map<PasswordItem>(newPassword);
 
                 //generate a string based view of the new category
-                string passwordPartialView = RenderViewContent.RenderPartialToString("Password", "_PasswordItem", returnPasswordViewItem);
+                string passwordPartialView = RenderViewContent.RenderViewToString("Password", "_PasswordItem", returnPasswordViewItem);
 
                 //broadcast the new password details
-                PushNotifications.sendAddedPasswordDetails(passwordPartialView, returnPasswordViewItem.Parent_CategoryId);
+                PushNotifications.sendAddedPasswordDetails(passwordPartialView, returnPasswordViewItem.Parent_CategoryId, returnPasswordViewItem.PasswordId);
+            }
+            else
+            {
+                //we dont have access any more, so tell UI to remove the password
+                PushNotifications.sendRemovePasswordAccess(new PasswordDelete()
+                                                                    { 
+                                                                         PasswordId = newPasswordId
+                                                                    });
             }
 
         }

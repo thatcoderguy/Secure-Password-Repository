@@ -28,11 +28,11 @@ namespace Secure_Password_Repository.Filters
             //get the current user
             IPrincipal user = filterContext.HttpContext.User;
 
-            //make sure they are autenticated
+            //make sure user isautenticated
             if (user.Identity.IsAuthenticated)
 
-                //if the encryption key doesnt exist in cache - should only happen if the app was restarted
-                if (MemoryCache.Default.Get(user.Identity.Name) == null)
+                //if the encryption key doesnt exist in cache or the session ID doesnt match (occurs on a double long) then log the user out
+                if (MemoryCache.Default.Get(user.Identity.Name) == null || !string.Equals((MemoryCache.Default.Get(user.Identity.Name + "SessionID") ?? string.Empty).ToString(), filterContext.HttpContext.Session.SessionID.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
 
                     //log out the user

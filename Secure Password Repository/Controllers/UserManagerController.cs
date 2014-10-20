@@ -1,19 +1,21 @@
-﻿using System;
+﻿using Secure_Password_Repository.Models;
+using Secure_Password_Repository.ViewModels;
+using Secure_Password_Repository.Extensions;
+using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Threading.Tasks;
+using System.Net;
+using System.Runtime.Caching;
+using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
-using Owin;
-using Secure_Password_Repository.Models;
-using Secure_Password_Repository.ViewModels;
-using Secure_Password_Repository.Extensions;
-using System.Threading.Tasks;
-using System.Net;
-using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -63,8 +65,9 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // GET: UserManager
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
+            //success messages upon return to index page
             if (Request.QueryString.Get("successaction") == "Account Updated")
             {
                 ViewBag.Message = "Account updated successfully.";
@@ -74,22 +77,28 @@ namespace Secure_Password_Repository.Controllers
                 ViewBag.Message = "Account delete successfully.";
             }
 
-            return View(UserMgr);
+            return View(new UserList() { 
+                Users = await UserMgr.Users.Include("Roles").ToListAsync()
+            });
         }
 
         // GET: UserManager/Edit/5
-        public async Task<ActionResult> Edit(int Id)
+        public async Task<ActionResult> Edit(int UserId)
         {
             UpdateAccountViewModel model = new UpdateAccountViewModel();
 
             //grab the selected account
-            var selectedAccount = await UserMgr.FindByIdAsync(Id);
+            var selectedAccount = await UserMgr.FindByIdAsync(UserId);
             if(selectedAccount!=null)
             {
+  
+                IEnumerable<ApplicationRole> availableRoles = await RoleMgr.Roles.ToListAsync();
                 //put the attributes from this account into the model, so the existing values are displayed
                 model.Email = selectedAccount.Email;
                 model.Username = selectedAccount.UserName;
                 model.FullName = selectedAccount.userFullName;
+                model.Role = selectedAccount.GetRole();
+                model.RolesList = new SelectList(availableRoles, "Id", "Name", model.Role.Id);
             }
             else
                 ModelState.AddModelError("", "User account does not exsit");
@@ -99,13 +108,13 @@ namespace Secure_Password_Repository.Controllers
 
         // POST: UserManager/Edit/5
         [HttpPost]
-        public async Task<ActionResult> Edit(int Id, UpdateAccountViewModel model)
+        public async Task<ActionResult> Edit(int UserId, UpdateAccountViewModel model)
         {
             try
             {
 
                 //grab the account selected
-                var selectedAccount = await UserMgr.FindByIdAsync(Id);
+                var selectedAccount = await UserMgr.FindByIdAsync(UserId);
                 if (selectedAccount != null)
                 {
 
@@ -113,6 +122,8 @@ namespace Secure_Password_Repository.Controllers
                     selectedAccount.userFullName = model.FullName;
                     selectedAccount.UserName = model.Username;
                     selectedAccount.Email = model.Email;
+                    selectedAccount.Roles.Clear();
+                    selectedAccount.Roles.Add(new CustomUserRole() { RoleId = model.Role.Id, UserId = UserId });
 
                     //attempt to update the account
                     var result = await UserMgr.UpdateAsync(selectedAccount);
@@ -154,12 +165,12 @@ namespace Secure_Password_Repository.Controllers
         }
 
         // GET: UserManager/Delete/5
-        public async Task<ActionResult> Delete(int Id)
+        public async Task<ActionResult> Delete(int UserId)
         {
             UpdateAccountViewModel model = new UpdateAccountViewModel();
 
             //grab the selected account
-            var selectedAccount = await UserMgr.FindByIdAsync(Id);
+            var selectedAccount = await UserMgr.FindByIdAsync(UserId);
             if (selectedAccount != null)
             {
                 //put the attributes from this account into the model, so the existing values are displayed
@@ -175,13 +186,13 @@ namespace Secure_Password_Repository.Controllers
 
         // POST: UserManager/Delete/5
         [HttpPost]
-        public async Task<ActionResult> Delete(int Id, FormCollection collection)
+        public async Task<ActionResult> Delete(int UserId, FormCollection collection)
         {
             try
             {
 
                 //grab the account selected
-                var selectedAccount = await UserMgr.FindByIdAsync(Id);
+                var selectedAccount = await UserMgr.FindByIdAsync(UserId);
                 if (selectedAccount != null)
                 {
 
@@ -269,7 +280,14 @@ namespace Secure_Password_Repository.Controllers
                 var result = await UserMgr.UpdateAsync(user);
                 if (result.Succeeded)
                 {
-                    return Json();
+
+                    var callbackUrl = Url.Action("Login", "Account", new {}, protocol: Request.Url.Scheme);
+                    await UserMgr.SendEmailAsync(user.Id, "Account has been authorised", RenderViewContent.RenderViewToString("UserManager", "AccountAuthorisedEmail", new AccountAuthorisedConfirmation { CallBackURL = callbackUrl, UserName = user.UserName }));
+
+                    return Json(new
+                    {
+                        AccountId = UserId
+                    });
                 }
             }
 
@@ -291,7 +309,7 @@ namespace Secure_Password_Repository.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> ResetPassword(int Id, ManageUserViewModel model)
+        public async Task<ActionResult> ResetMyPassword(int UserId, ManageUserViewModel model)
         {
             bool hasPassword = HasPassword();
             ViewBag.HasLocalPassword = hasPassword;
@@ -300,7 +318,7 @@ namespace Secure_Password_Repository.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    IdentityResult result = await UserMgr.ChangePasswordAsync(Id, model.OldPassword, model.NewPassword);
+                    IdentityResult result = await UserMgr.ChangePasswordAsync(UserId, model.OldPassword, model.NewPassword);
 
                     //decrypt admin copy of key
                     //encrypt users copy of key

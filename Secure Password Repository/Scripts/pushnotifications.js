@@ -23,7 +23,11 @@ $(function () {
 
 
     pushnotifierProxy.on('sendUpdatedPasswordDetails', function (updatedPassword) {
-        $('#Password-' + updatedPassword.PasswordId).find('.passwordname').text(updatedPassword.Description);           //update the display
+
+        //if the password exists in the UI
+        if ($('#Password-' + updatedPassword.PasswordId).length>0)
+            $('#Password-' + updatedPassword.PasswordId).find('.passwordname').text(updatedPassword.Description);           //update the display
+
     });
 
 
@@ -60,7 +64,11 @@ $(function () {
 
 
     //received the new password details - so now add it into the list
-    pushnotifierProxy.on('sendAddedPasswordDetails', function (addedPasswordView, passwordParentId) {
+    pushnotifierProxy.on('sendAddedPasswordDetails', function (addedPasswordView, passwordParentId, passwordId) {
+
+        //if the item already exists (this may occur on a permission change), then just remove and re-add
+        if ($('#Password-' + passwordId).length > 0)
+            $('#Password-' + passwordId).remove();
 
         //append the new item to the list
         $('#addnew-password-' + passwordParentId).parent().append(addedPasswordView);

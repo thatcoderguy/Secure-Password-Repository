@@ -23,7 +23,7 @@ namespace Secure_Password_Repository
         //make sure the session ID persists between user requests
         protected void Session_Start()
         {
-            Session["persistSessionId"] = true;
+            Session["PersistSessionId"] = true;
         }
     }
 }

@@ -100,7 +100,7 @@ namespace Secure_Password_Repository
         {
             // Credentials:
             var credentialUserName = ApplicationSettings.Default.SMTPServerUsername;
-            var sentFrom = ApplicationSettings.Default.SMTPServerUsername;
+            var sentFrom = ApplicationSettings.Default.SMTPEmailAddress;
             var pwd = ApplicationSettings.Default.SMTPServerPassword;
 
             // Configure the client:

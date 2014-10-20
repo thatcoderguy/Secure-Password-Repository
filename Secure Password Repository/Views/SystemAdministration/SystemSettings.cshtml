@@ -13,7 +13,138 @@
         <div class="form-group">
             @Html.LabelFor(model => model.LogoImage, htmlAttributes: new { @class = "control-label col-md-4" })
             <div class="col-md-10">
-                @Html.TextAreaFor(model => model.LogoImage, htmlAttributes: new { @class = "form-control password-textarea" })
+                @Html.TextBoxFor(model => model.LogoImage, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.LogoImage, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.SMTPEmailAddress, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.SMTPEmailAddress, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.SMTPEmailAddress, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.SMTPServerAddress, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.SMTPServerAddress, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.SMTPServerAddress, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.SMTPServerUsername, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.SMTPServerUsername, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.SMTPServerUsername, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.SMTPServerPassword, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.SMTPServerPassword, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.SMTPServerPassword, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.SCryptHashCost, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.SCryptHashCost, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.SCryptHashCost, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.PBKDF2IterationCount, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.PBKDF2IterationCount, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.PBKDF2IterationCount, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.RoleAllowAddCategories, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.RoleAllowAddCategories, Model.RoleAllowAddCategories)
+                @Html.ValidationMessageFor(model => model.RoleAllowAddCategories, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.RoleAllowAddPasswords, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.RoleAllowAddPasswords, Model.RoleAllowAddPasswords)
+                @Html.ValidationMessageFor(model => model.RoleAllowAddPasswords, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.RoleAllowDeleteCategories, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.RoleAllowDeleteCategories, Model.RoleAllowDeleteCategories)
+                @Html.ValidationMessageFor(model => model.RoleAllowDeleteCategories, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.RoleAllowEditCategories, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.RoleAllowEditCategories, Model.RoleAllowEditCategories)
+                @Html.ValidationMessageFor(model => model.RoleAllowEditCategories, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.AdminsHaveAccessToAllPasswords, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.AdminsHaveAccessToAllPasswords, new SelectList(
+                                                                                                    new[]
+                                                                                                    {
+                                                                                                        new { Value = "true", Text = "Yes" },
+                                                                                                        new { Value = "false", Text = "No" },
+                                                                                                    },
+                                                                                                    "Value",
+                                                                                                    "Text",
+                                                                                                    Model.AdminsHaveAccessToAllPasswords
+                                                                                                ))
+                @Html.ValidationMessageFor(model => model.AdminsHaveAccessToAllPasswords, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.BroadcastCategoryPositionChange, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.BroadcastCategoryPositionChange, new SelectList(
+                                                                                                    new[]
+                                                                                                    {
+                                                                                                        new { Value = "true", Text = "Yes" },
+                                                                                                        new { Value = "false", Text = "No" },
+                                                                                                    },
+                                                                                                    "Value",
+                                                                                                    "Text",
+                                                                                                    Model.BroadcastCategoryPositionChange
+                                                                                                ))
+                @Html.ValidationMessageFor(model => model.LogoImage, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.BroadcastPasswordPositionChange, htmlAttributes: new { @class = "control-label col-md-4" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.BroadcastPasswordPositionChange, new SelectList(
+                                                                                                    new[]
+                                                                                                    {
+                                                                                                        new { Value = "true", Text = "Yes" },
+                                                                                                        new { Value = "false", Text = "No" },
+                                                                                                    },
+                                                                                                    "Value",
+                                                                                                    "Text",
+                                                                                             Model.BroadcastPasswordPositionChange
+                                                                                                ))
                 @Html.ValidationMessageFor(model => model.LogoImage, "", new { @class = "text-danger" })
             </div>
         </div>

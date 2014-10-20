@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
+using System.Web.Mvc;
 
 namespace Secure_Password_Repository.ViewModels
 {
@@ -17,40 +18,44 @@ namespace Secure_Password_Repository.ViewModels
         public string SMTPServerAddress { get; set; }
 
         [Required]
+        [EmailAddress(ErrorMessage="This field must contain an email address")]
         [Display(Name = "Email address to send emails from")]
         public string SMTPEmailAddress { get; set; }
 
-        [Required]
+        [Required(AllowEmptyStrings=true)]
+        [EmailAddress(ErrorMessage = "This field must either be empty or contain an email address")]
         [Display(Name = "Username for the above mailbox")]
         public string SMTPServerUsername { get; set; }
 
-        [Required]
+        [Required(AllowEmptyStrings = true)]
         [Display(Name = "Password for the above mailbox")]
         public string SMTPServerPassword { get; set; }
 
         [Required]
+        [RegularExpression("([0-9]+)", ErrorMessage="This field must contain a number")]
         [Display(Name = "Use this to tweak SCrypt cost to your environment")]
         public string SCryptHashCost { get; set; }
 
         [Required]
+        [RegularExpression("([0-9]+)", ErrorMessage = "This field must contain a number")]
         [Display(Name = "Use this to tweak the number of PBKDF2 iterations to your environment")]
         public string PBKDF2IterationCount { get; set; }
 
         [Required]
         [Display(Name = "Lowest role allowed to edit categories")]
-        public string RoleAllowEditCategories { get; set; }
+        public SelectList RoleAllowEditCategories { get; set; }
 
         [Required]
         [Display(Name = "Lowest role allowed to delete categories")]
-        public string RoleAllowDeleteCategories { get; set; }
+        public SelectList RoleAllowDeleteCategories { get; set; }
 
         [Required]
         [Display(Name = "Lowest role allowed to add categories")]
-        public string RoleAllowAddCategories { get; set; }
+        public SelectList RoleAllowAddCategories { get; set; }
 
         [Required]
         [Display(Name = "Lowest role allowed to add passwords")]
-        public string RoleAllowAddPasswords { get; set; }
+        public SelectList RoleAllowAddPasswords { get; set; }
 
         [Required]
         [Display(Name = "Administrators have access to all passwords")]

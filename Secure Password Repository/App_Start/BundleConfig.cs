@@ -44,6 +44,9 @@ namespace Secure_Password_Repository
             bundles.Add(new ScriptBundle("~/bundles/accountmanager_controller_scripts").Include(
                      "~/Scripts/accountmanager.js"));
 
+            bundles.Add(new ScriptBundle("~/bundles/systemadministration_controller_scripts").Include(
+                     "~/Scripts/systemadministration.js"));
+
             bundles.Add(new ScriptBundle("~/bundles/extensions").Include(
                         "~/Scripts/extensions.js"));
                        

@@ -10,6 +10,7 @@ using System.Runtime.Caching;
 using System.IO;
 using Microsoft.VisualBasic;
 using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.ViewModels;
 
 namespace Secure_Password_Repository.Settings
 {
@@ -30,8 +31,10 @@ namespace Secure_Password_Repository.Settings
         //for locking
         private static Object thisLock = new Object();
 
-        //save changes made to the object
-        public static void Save()
+        /// <summary>
+        /// Persist changes to disk
+        /// </summary>
+        private static void Save()
         {
             //serialize this object back to disk
             string filename = Path.Combine(HttpRuntime.AppDomainAppPath, "system-config.xml");
@@ -47,7 +50,9 @@ namespace Secure_Password_Repository.Settings
                                                                                 Priority = CacheItemPriority.Default });
         }
 
-        //set default option valus
+        /// <summary>
+        /// Reset application settings to default values
+        /// </summary>
         public static void ResetAppSettings()
         {
             Default.LogoImage = "logo.png";
@@ -64,13 +69,40 @@ namespace Secure_Password_Repository.Settings
             Default.RoleAllowEditCategories = "Administrator";
             Default.RoleAllowAddPasswords = "User";
             Default.SMTPEmailAddress = "securepasswordrepository@local";
-            Default.BroadcastCategoryPositionChange = true;
-            Default.BroadcastPasswordPositionChange = true;
+            Default.BroadcastCategoryPositionChange = false;
+            Default.BroadcastPasswordPositionChange = false;
 
             Save();
         }
 
-        //this returns the default instance of this class
+        /// <summary>
+        /// Update application settings
+        /// </summary>
+        /// <param name="newSettingsModel"></param>
+        public void UpdateSettings(SystemSettingViewModel newSettingsModel)
+        {
+            //TO DO:  extra validation checks at some point - as these are important values
+            Default.LogoImage = newSettingsModel.LogoImage;
+            Default.PBKDF2IterationCount = newSettingsModel.PBKDF2IterationCount;
+            Default.SCryptHashCost = newSettingsModel.SCryptHashCost;
+            Default.SMTPEmailAddress = newSettingsModel.SMTPEmailAddress;
+            Default.SMTPServerAddress = newSettingsModel.SMTPServerAddress;
+            Default.SMTPServerPassword = newSettingsModel.SMTPServerPassword;
+            Default.SMTPServerUsername = newSettingsModel.SMTPServerUsername;
+            Default.RoleAllowAddCategories = newSettingsModel.RoleAllowAddCategories.Name;
+            Default.RoleAllowAddPasswords = newSettingsModel.RoleAllowAddPasswords.Name;
+            Default.RoleAllowDeleteCategories = newSettingsModel.RoleAllowDeleteCategories.Name;
+            Default.RoleAllowEditCategories = newSettingsModel.RoleAllowEditCategories.Name;
+            Default.AdminsHaveAccessToAllPasswords = newSettingsModel.AdminsHaveAccessToAllPasswords;
+            Default.BroadcastCategoryPositionChange = newSettingsModel.BroadcastCategoryPositionChange;
+            Default.BroadcastPasswordPositionChange = newSettingsModel.BroadcastPasswordPositionChange;
+
+            Save();
+        }
+
+        /// <summary>
+        /// Returns default instance of this class
+        /// </summary>
         public static ApplicationSettings Default
         {
             get

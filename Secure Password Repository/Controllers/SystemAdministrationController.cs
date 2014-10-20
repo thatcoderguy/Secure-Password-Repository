@@ -47,17 +47,16 @@ namespace Secure_Password_Repository.Controllers
         // GET: SystemAdministration/SystemSettings
         public async Task<ActionResult> SystemSettings()
         {
-            IEnumerable<ApplicationRole> availableRoles = await RoleMgr.Roles.ToListAsync();
 
             SystemSettingViewModel viewModel = new SystemSettingViewModel()
             {
                 AdminsHaveAccessToAllPasswords = ApplicationSettings.Default.AdminsHaveAccessToAllPasswords,
                 LogoImage = ApplicationSettings.Default.LogoImage,
                 PBKDF2IterationCount = ApplicationSettings.Default.PBKDF2IterationCount,
-                RoleAllowAddCategories = new SelectList(availableRoles, "Name", "Name", new SelectListItem() { Text = ApplicationSettings.Default.RoleAllowAddCategories, Value = ApplicationSettings.Default.RoleAllowAddCategories, Selected = true }),
-                RoleAllowAddPasswords = new SelectList(availableRoles, "Name", "Name", new SelectListItem() { Text = ApplicationSettings.Default.RoleAllowAddPasswords, Value = ApplicationSettings.Default.RoleAllowAddPasswords, Selected = true }),
-                RoleAllowDeleteCategories = new SelectList(availableRoles, "Name", "Name", new SelectListItem() { Text = ApplicationSettings.Default.RoleAllowDeleteCategories, Value = ApplicationSettings.Default.RoleAllowDeleteCategories, Selected = true }),
-                RoleAllowEditCategories = new SelectList(availableRoles, "Name", "Name", new SelectListItem() { Text = ApplicationSettings.Default.RoleAllowEditCategories, Value = ApplicationSettings.Default.RoleAllowEditCategories, Selected = true }),
+                RoleAllowAddCategories = GetRoleFromName(ApplicationSettings.Default.RoleAllowAddCategories),
+                RoleAllowAddPasswords = GetRoleFromName(ApplicationSettings.Default.RoleAllowAddPasswords),
+                RoleAllowDeleteCategories = GetRoleFromName(ApplicationSettings.Default.RoleAllowDeleteCategories),
+                RoleAllowEditCategories = GetRoleFromName(ApplicationSettings.Default.RoleAllowEditCategories),
                 SCryptHashCost = ApplicationSettings.Default.SCryptHashCost,
                 SMTPEmailAddress = ApplicationSettings.Default.SMTPEmailAddress,
                 SMTPServerAddress = ApplicationSettings.Default.SMTPServerAddress,
@@ -65,27 +64,49 @@ namespace Secure_Password_Repository.Controllers
                 SMTPServerUsername = ApplicationSettings.Default.SMTPServerUsername,
                 BroadcastCategoryPositionChange = ApplicationSettings.Default.BroadcastCategoryPositionChange,
                 BroadcastPasswordPositionChange = ApplicationSettings.Default.BroadcastPasswordPositionChange,
-
+                AvailableRoles = await RoleMgr.Roles.ToListAsync()
             };
 
             return View(viewModel);
         }
 
-        // POST: SystemSetting/Edit
+        // POST: SystemAdministration/SystemSettings
         [HttpPost]
-        public ActionResult EditSystemSettings(SystemSettingViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> SystemSettings(SystemSettingViewModel model)
         {
-            try
-            {
-                // TODO: Add update logic here
 
-                return RedirectToAction("Index");
-            }
-            catch
+            model.AvailableRoles = await RoleMgr.Roles.ToListAsync();
+
+            //Store the full role object - required for updating the settings object
+            model.RoleAllowAddCategories = model.AvailableRoles.Single(r => r.Id == model.RoleAllowAddCategories.Id);
+            model.RoleAllowAddPasswords = model.AvailableRoles.Single(r => r.Id == model.RoleAllowAddPasswords.Id);
+            model.RoleAllowEditCategories = model.AvailableRoles.Single(r => r.Id == model.RoleAllowEditCategories.Id);
+            model.RoleAllowDeleteCategories = model.AvailableRoles.Single(r => r.Id == model.RoleAllowDeleteCategories.Id);
+
+            model.SMTPServerPassword = model.SMTPServerPassword ?? string.Empty;
+            model.SMTPServerUsername = model.SMTPServerUsername ?? string.Empty;
+
+            if(ModelState.IsValid)
             {
-                return View();
+                ApplicationSettings.Default.UpdateSettings(model);
             }
+            
+            return View(model);
         }
+
+        #region helpers
+
+            /// <summary>
+            ///get a role object from it's name
+            /// </summary>
+            private ApplicationRole GetRoleFromName(string RoleName)
+            {
+                var role = RoleMgr.Roles.Where(r => r.Name == RoleName).First();
+                return role;
+            }
+
+        #endregion
 
     }
 }

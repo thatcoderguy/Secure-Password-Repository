@@ -1254,8 +1254,9 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            //notify clients that a category or password has changed position
-                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
+                            if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
+                                //notify clients that a category or password has changed position
+                                PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 
@@ -1294,8 +1295,9 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            //notify clients that a category or password has changed position
-                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
+                            if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
+                                //notify clients that a category or password has changed position
+                                PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 
@@ -1340,8 +1342,9 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            //notify clients that a category or password has changed position
-                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
+                            if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
+                                //notify clients that a category or password has changed position
+                                PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 
@@ -1380,8 +1383,9 @@ namespace Secure_Password_Repository.Controllers
                             //save changes to database
                             await DatabaseContext.SaveChangesAsync();
 
-                            //notify clients that a category or password has changed position
-                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
+                            if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
+                                //notify clients that a category or password has changed position
+                                PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
 
                             #endregion
 

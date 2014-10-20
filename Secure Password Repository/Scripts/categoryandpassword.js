@@ -4,6 +4,7 @@
 var submitAjaxForm = function (event,formid) {
     event.preventDefault();
     $('#' + formid).submit();
+    showSpinner(formid);
 }
 
 //display the edit category form
@@ -20,13 +21,15 @@ var cancelAction = function (event, categoryid) {
 }
 
 //category updates successfully
-var updateCategorySuccess = function (event, data) {
+var updateCategorySuccess = function (data) {
 
     //update text
     $('#' + data.CategoryId).find('.categoryname').text(data.CategoryName);
 
     //hide the form
-    cancelAction(event, data.CategoryId);
+    cancelAction(Object, data.CategoryId);
+
+    hideSpinner(data.CategoryId);
 }
 
 //called when category successfully created
@@ -52,6 +55,8 @@ var createCategorySuccess = function (data, parentid) {
 
     //hide the form
     cancelAction(Object, 'addnew-' + parentid);
+
+    hideSpinner('addnew-' + parentid);
 }
 
 //click event to delete category
@@ -64,6 +69,8 @@ var deleteCategory = function (event, categoryid) {
     {
         if(confirm('ARE YOU REALLY SURE YOU WISH TO DELETE THIS CATEGORY?\n\nYou will NOT be able to VIEW any PASSWORDS linked to it\n\n'))
         {
+
+            showSpinner(categoryid);
 
             var result = $.ajax({
                 type: "POST",
@@ -89,6 +96,8 @@ var deletePassword = function (event, passwordid) {
     //double confirm
     if (confirm('Are you sure you wish to delete this password\n\nAdministrators can undelete Passwords\n\n')) {
         if (confirm('ARE YOU REALLY SURE YOU WISH TO DELETE THIS PASSWORD?\n\n')) {
+
+            showSpinner('Password-' + passwordid);
 
             var result = $.ajax({
                 type: "POST",

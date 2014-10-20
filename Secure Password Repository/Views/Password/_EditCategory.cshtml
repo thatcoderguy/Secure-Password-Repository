@@ -3,7 +3,7 @@
 <div class="ui-accordion-header ui-state-default ui-corner-all ui-accordion-icons ui-sortable-handle second" style="display: none">
     <span class="ui-accordion-header-icon ui-icon treeviewicon treeviewplus"></span>
     <i class="glyphicon glyphicon-folder-open rightfolderpadding"></i>
-    @using (Ajax.BeginForm("EditCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "updateCategorySuccess(event, data)" }, new { @class = "editcategoryform", role = "form", id = "edit-" + @Model.CategoryId }))
+    @using (Ajax.BeginForm("EditCategory", "Password", new AjaxOptions { HttpMethod = "post", OnSuccess = "updateCategorySuccess(data)" }, new { @class = "editcategoryform", role = "form", id = "edit-" + @Model.CategoryId }))
     {
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.CategoryId)

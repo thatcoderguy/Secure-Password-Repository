@@ -17,8 +17,8 @@ namespace Secure_Password_Repository.Controllers
             return View();
         }
 
-        // GET: SystemAdministration/Edit
-        public ActionResult Edit()
+        // GET: SystemAdministration/SystemSettings
+        public ActionResult SystemSettings()
         {
             SystemSettingViewModel viewModel = new SystemSettingViewModel()
             {
@@ -43,7 +43,7 @@ namespace Secure_Password_Repository.Controllers
 
         // POST: SystemSetting/Edit
         [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
+        public ActionResult EditSystemSettings(SystemSettingViewModel model)
         {
             try
             {

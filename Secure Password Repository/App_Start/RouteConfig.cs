@@ -59,6 +59,7 @@ namespace Secure_Password_Repository
             
             //system setting
             routes.MapRoute("SystemAdministration", "Index", new { controller = "SystemAdministration", action = "Index" });
+            routes.MapRoute("SystemSettings", "SystemSettings", new { controller = "SystemAdministration", action = "SystemSettings" });
 
         }
     }

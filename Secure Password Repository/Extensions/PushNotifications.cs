@@ -67,6 +67,18 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
+        /// Broadcasts the details of a deleted password, so that the clients can update their UI
+        /// </summary>
+        /// <param name="deletedPassword">Instance of the deleted password model</param>
+        /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
+        public static void sendRemovePasswordAccess(PasswordDelete deletedPassword)
+        {
+            //broadcast details to all clients except the one requesting the broadcast
+            IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
+            hubContext.Clients.Client(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendDeletedPasswordDetails(deletedPassword);
+        }
+
+        /// <summary>
         /// Broadcasts the details of a newly created category, so that the clients can update their UI
         /// </summary>
         /// <param name="addedCategory">View rendered to a string of the new category</param>
@@ -83,11 +95,11 @@ namespace Secure_Password_Repository.Extensions
         /// </summary>
         /// <param name="addedPassword">View rendered to a string of the new password</param>
         /// <param name="clientConnectionId">Connection ID of the client requesting the broadcast</param>
-        public static void sendAddedPasswordDetails(string addedPassword, int? passwordParentId)
+        public static void sendAddedPasswordDetails(string addedPassword, int? passwordParentId, int passwordId)
         {
             //broadcast details to ALL clients
             IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<BroadcastHub>();
-            hubContext.Clients.Client(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendAddedPasswordDetails(addedPassword, passwordParentId);
+            hubContext.Clients.Client(MemoryCache.Default.Get(HttpContext.Current.User.Identity.Name + "-connectionId").ToString()).sendAddedPasswordDetails(addedPassword, passwordParentId, passwordId);
         }
 
         /// <summary>

@@ -23,7 +23,7 @@ namespace Secure_Password_Repository.Extensions
             //EncryptionAndHashing.Decrypt_DPAPI(ref DataToDecrypt);
 
             //convert from base64
-            DataToDecrypt = DataToDecrypt.Trim().FromBase64();
+            DataToDecrypt = DataToDecrypt.FromBase64();
 
             //decrypt the data
             DataToDecrypt = EncryptionAndHashing.Decrypt_AES256_ToBytes(DataToDecrypt, EncryptionKey);

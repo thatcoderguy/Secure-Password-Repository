@@ -164,7 +164,11 @@ namespace Secure_Password_Repository.Controllers
                 //could not find account
                 else
                 {
-                    await UserMgr.AccessFailedAsync(user.Id);
+                    try
+                    {
+                        await UserMgr.AccessFailedAsync(user.Id);
+                    }
+                    catch { }
                     ModelState.AddModelError("", "Invalid username or password.");
                 }
 
@@ -277,22 +281,25 @@ namespace Secure_Password_Repository.Controllers
                         if(result.Succeeded)
                         {
 
-                            //send an email to all administrators letting them know a new account needs authorising
-                            var roleId = RoleMgr.FindByName("Administrator").Id;
-                            List<int> adminUserIdList = UserMgr.Users.Include("Roles").Where(u => u.Roles.Any(r => r.RoleId == roleId && r.UserId == u.Id )).Select(u => u.Id).ToList();
-                            string callbackurl = Url.RouteUrl("UserManager", new { }, protocol: Request.Url.Scheme);
-
-                            foreach (int adminUserId in adminUserIdList)
+                            if (FirstUserAccount == "No")
                             {
-                                UserMgr.SendEmail(adminUserId, "New account needs authorisation",
-                                            RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
-                                            new AccountAuthorisationRequest()
-                                            {
-                                                callbackurl = callbackurl,
-                                                userEmail = user.Email,
-                                                userFullName = user.userFullName,
-                                                userName = user.UserName
-                                            }));
+                                //send an email to all administrators letting them know a new account needs authorising
+                                var roleId = RoleMgr.FindByName("Administrator").Id;
+                                List<int> adminUserIdList = UserMgr.Users.Include("Roles").Where(u => u.Roles.Any(r => r.RoleId == roleId && r.UserId == u.Id)).Select(u => u.Id).ToList();
+                                string callbackurl = Url.RouteUrl("UserManager", new { }, protocol: Request.Url.Scheme);
+
+                                foreach (int adminUserId in adminUserIdList)
+                                {
+                                    UserMgr.SendEmail(adminUserId, "New account needs authorisation",
+                                                RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
+                                                new AccountAuthorisationRequest()
+                                                {
+                                                    callbackurl = callbackurl,
+                                                    userEmail = user.Email,
+                                                    userFullName = user.userFullName,
+                                                    userName = user.UserName
+                                                }));
+                                }
                             }
 
                             return RedirectToAction("RegistrationConfirmation", new { ThisIsTheFirstAccount = FirstUserAccount });

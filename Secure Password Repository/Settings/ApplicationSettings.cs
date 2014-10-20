@@ -64,8 +64,8 @@ namespace Secure_Password_Repository.Settings
             Default.RoleAllowEditCategories = "Administrator";
             Default.RoleAllowAddPasswords = "User";
             Default.SMTPEmailAddress = "securepasswordrepository@local";
-            Default.BroadastCategoryPositionChange = true;
-            Default.BroadastPasswordPositionChange = true;
+            Default.BroadcastCategoryPositionChange = true;
+            Default.BroadcastPasswordPositionChange = true;
 
             Save();
         }
@@ -160,8 +160,8 @@ namespace Secure_Password_Repository.Settings
         public string RoleAllowAddCategories { get; set; }
         public string RoleAllowAddPasswords { get; set; }
         public bool AdminsHaveAccessToAllPasswords { get; set; }
-        public bool BroadastCategoryPositionChange { get; set; }
-        public bool BroadastPasswordPositionChange { get; set; }
+        public bool BroadcastCategoryPositionChange { get; set; }
+        public bool BroadcastPasswordPositionChange { get; set; }
 
 
     }

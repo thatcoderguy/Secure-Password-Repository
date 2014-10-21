@@ -20,6 +20,9 @@ using Microsoft.Owin.Security;
 namespace Secure_Password_Repository.Controllers
 {
     [Authorize(Roles = "Administrator")]
+    #if !DEBUG
+    [RequireHttps] //apply to all actions in controller
+    #endif
     public class UserManagerController : Controller
     {
 
@@ -93,6 +96,7 @@ namespace Secure_Password_Repository.Controllers
             {
   
                 IEnumerable<ApplicationRole> availableRoles = await RoleMgr.Roles.ToListAsync();
+
                 //put the attributes from this account into the model, so the existing values are displayed
                 model.Email = selectedAccount.Email;
                 model.Username = selectedAccount.UserName;
@@ -162,77 +166,6 @@ namespace Secure_Password_Repository.Controllers
 
             //if we got this far, something baaaaad happened
             return View(model);
-        }
-
-        // GET: UserManager/Delete/5
-        public async Task<ActionResult> Delete(int UserId)
-        {
-            UpdateAccountViewModel model = new UpdateAccountViewModel();
-
-            //grab the selected account
-            var selectedAccount = await UserMgr.FindByIdAsync(UserId);
-            if (selectedAccount != null)
-            {
-                //put the attributes from this account into the model, so the existing values are displayed
-                model.Email = selectedAccount.Email;
-                model.Username = selectedAccount.UserName;
-                model.FullName = selectedAccount.userFullName;
-            }
-            else
-                ModelState.AddModelError("", "User account does not exsit");
-
-            return View(model);
-        }
-
-        // POST: UserManager/Delete/5
-        [HttpPost]
-        public async Task<ActionResult> Delete(int UserId, FormCollection collection)
-        {
-            try
-            {
-
-                //grab the account selected
-                var selectedAccount = await UserMgr.FindByIdAsync(UserId);
-                if (selectedAccount != null)
-                {
-
-                    //attempt to delete the account
-                    var result = await UserMgr.DeleteAsync(selectedAccount);
-                    if (result.Succeeded)
-                    {
-                        //redirect back to the account list, with a success message 
-                        return RedirectToAction("Index", "UserManager", new { successaction = "Account Deleted" });
-                    }
-                    else
-                    {
-                        //list any errors (e.g. email/username already exists)
-                        string errorlist = string.Empty;
-                        foreach (string error in result.Errors.ToList())
-                            errorlist += error + " and ";
-
-                        if (errorlist != string.Empty)
-                            errorlist = errorlist.Substring(0, errorlist.Length - 5);
-
-                        ModelState.AddModelError("", errorlist);
-                    }
-
-                }
-                else
-                {
-
-                    ModelState.AddModelError("", "User account does not exist");
-
-                }
-
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", ex.Message);
-            }
-
-
-            //if we got this far, something baaaaad happened
-            return View();
         }
 
         //
@@ -306,58 +239,6 @@ namespace Secure_Password_Repository.Controllers
             ViewBag.HasLocalPassword = HasPassword();
             ViewBag.ReturnUrl = Url.Action("ResetPassword", "UserManager");
             return View();
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> ResetMyPassword(int UserId, ManageUserViewModel model)
-        {
-            bool hasPassword = HasPassword();
-            ViewBag.HasLocalPassword = hasPassword;
-            ViewBag.ReturnUrl = Url.Action("ResetPassword", "UserManager");
-            if (hasPassword)
-            {
-                if (ModelState.IsValid)
-                {
-                    IdentityResult result = await UserMgr.ChangePasswordAsync(UserId, model.OldPassword, model.NewPassword);
-
-                    //decrypt admin copy of key
-                    //encrypt users copy of key
-
-                    if (result.Succeeded)
-                    {
-                        return RedirectToAction("ResetPassword", "UserManager", new { Message = ManageMessageId.ChangePasswordSuccess });
-                    }
-                    else
-                    {
-                        AddErrors(result);
-                    }
-                }
-            }
-            else
-            {
-                // User does not have a password so remove any validation errors caused by a missing OldPassword field
-                ModelState state = ModelState["OldPassword"];
-                if (state != null)
-                {
-                    state.Errors.Clear();
-                }
-
-                if (ModelState.IsValid)
-                {
-                    IdentityResult result = await UserMgr.AddPasswordAsync(int.Parse(User.Identity.GetUserId()), model.NewPassword);
-                    if (result.Succeeded)
-                    {
-                        return RedirectToAction("ResetPassword", "UserManager", new { Message = ManageMessageId.SetPasswordSuccess });
-                    }
-                    else
-                    {
-                        AddErrors(result);
-                    }
-                }
-            }
-
-            // If we got this far, something failed, redisplay form
-            return View(model);
         }
 
         public enum ManageMessageId

@@ -15,6 +15,7 @@ namespace Secure_Password_Repository.Filters
 {
     /// <summary>
     /// Verify that the encryption key still exists in cache - otherwise return an error
+    /// Upon every action, ensure that the hashed password is still in cache, otherwise password decryption is not possible
     /// </summary>
 
     public class UserEncryptionKeyCacheVerification : IActionFilter

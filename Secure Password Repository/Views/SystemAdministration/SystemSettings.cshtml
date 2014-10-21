@@ -5,7 +5,7 @@
 
 <h2>System Settings</h2>
 
-@using (Html.BeginForm("EditSystemSettings", "SystemAdministration"))
+@using (Html.BeginForm("SystemSettings", "SystemAdministration", FormMethod.Post, new { @Id="EditSystemSettings" }))
 {
     @Html.AntiForgeryToken()
     <div class="form-horizontal toppaddding">
@@ -69,7 +69,7 @@
         <div class="form-group">
             @Html.LabelFor(model => model.RoleAllowAddCategories, htmlAttributes: new { @class = "control-label col-md-4" })
             <div class="col-md-10">
-                @Html.DropDownListFor(model => model.RoleAllowAddCategories, Model.RoleAllowAddCategories)
+                @Html.DropDownListFor(model => model.RoleAllowAddCategories.Id, new SelectList(Model.AvailableRoles, "Id", "Name", Model.RoleAllowAddCategories))
                 @Html.ValidationMessageFor(model => model.RoleAllowAddCategories, "", new { @class = "text-danger" })
             </div>
         </div>
@@ -77,7 +77,7 @@
         <div class="form-group">
             @Html.LabelFor(model => model.RoleAllowAddPasswords, htmlAttributes: new { @class = "control-label col-md-4" })
             <div class="col-md-10">
-                @Html.DropDownListFor(model => model.RoleAllowAddPasswords, Model.RoleAllowAddPasswords)
+                @Html.DropDownListFor(model => model.RoleAllowAddPasswords.Id, new SelectList(Model.AvailableRoles, "Id", "Name", Model.RoleAllowAddPasswords))
                 @Html.ValidationMessageFor(model => model.RoleAllowAddPasswords, "", new { @class = "text-danger" })
             </div>
         </div>
@@ -85,7 +85,7 @@
         <div class="form-group">
             @Html.LabelFor(model => model.RoleAllowDeleteCategories, htmlAttributes: new { @class = "control-label col-md-4" })
             <div class="col-md-10">
-                @Html.DropDownListFor(model => model.RoleAllowDeleteCategories, Model.RoleAllowDeleteCategories)
+                @Html.DropDownListFor(model => model.RoleAllowDeleteCategories.Id, new SelectList(Model.AvailableRoles, "Id", "Name", Model.RoleAllowDeleteCategories))
                 @Html.ValidationMessageFor(model => model.RoleAllowDeleteCategories, "", new { @class = "text-danger" })
             </div>
         </div>
@@ -93,7 +93,7 @@
         <div class="form-group">
             @Html.LabelFor(model => model.RoleAllowEditCategories, htmlAttributes: new { @class = "control-label col-md-4" })
             <div class="col-md-10">
-                @Html.DropDownListFor(model => model.RoleAllowEditCategories, Model.RoleAllowEditCategories)
+                @Html.DropDownListFor(model => model.RoleAllowEditCategories.Id, new SelectList(Model.AvailableRoles, "Id", "Name", Model.RoleAllowEditCategories))
                 @Html.ValidationMessageFor(model => model.RoleAllowEditCategories, "", new { @class = "text-danger" })
             </div>
         </div>
@@ -152,9 +152,15 @@
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
                 <span class="btn-group">
-                    <button type="button" value="Update" class="btn btn-primary" onclick="showPasswordSpinner(this,'EditPermission');"><i class="glyphicon glyphicon-edit">&nbsp;<span class="text">Update</span></i></button><button type="button" value="Close" class="btn btn-default" onclick="closeWindow(event);"><i class="glyphicon glyphicon-remove-circle">&nbsp;<span class="text">Close</span></i></button>
+                    <button type="button" value="Update" class="btn btn-primary" onclick="showPasswordSpinner(this, 'EditSystemSettings');"><i class="glyphicon glyphicon-edit">&nbsp;<span class="text">Update</span></i></button>
+                    <a href="@Url.Action("Index")" class="btn btn-default"><i class="glyphicon glyphicon-remove-circle">&nbsp;<span class="text">Back</span></i></a>
                 </span>
             </div>
         </div>
     </div>
+}
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/systemadministration_controller_scripts")
 }

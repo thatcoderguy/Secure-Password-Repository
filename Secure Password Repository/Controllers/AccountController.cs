@@ -22,6 +22,9 @@ using Owin;
 namespace Secure_Password_Repository.Controllers
 {
     [Authorize]
+    #if !DEBUG
+    [RequireHttps] //apply to all actions in controller
+    #endif
     public class AccountController : Controller
     {
         private ApplicationUserManager _userManager;
@@ -283,23 +286,29 @@ namespace Secure_Password_Repository.Controllers
 
                             if (FirstUserAccount == "No")
                             {
-                                //send an email to all administrators letting them know a new account needs authorising
-                                var roleId = RoleMgr.FindByName("Administrator").Id;
-                                List<int> adminUserIdList = UserMgr.Users.Include("Roles").Where(u => u.Roles.Any(r => r.RoleId == roleId && r.UserId == u.Id)).Select(u => u.Id).ToList();
-                                string callbackurl = Url.RouteUrl("UserManager", new { }, protocol: Request.Url.Scheme);
 
-                                foreach (int adminUserId in adminUserIdList)
-                                {
-                                    UserMgr.SendEmail(adminUserId, "New account needs authorisation",
-                                                RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
-                                                new AccountAuthorisationRequest()
-                                                {
-                                                    callbackurl = callbackurl,
-                                                    userEmail = user.Email,
-                                                    userFullName = user.userFullName,
-                                                    userName = user.UserName
-                                                }));
-                                }
+                                #region send_email_to_all_admins
+
+                                    //send an email to all administrators letting them know a new account needs authorising
+                                    var roleId = RoleMgr.FindByName("Administrator").Id;
+                                    List<int> adminUserIdList = UserMgr.Users.Include("Roles").Where(u => u.Roles.Any(r => r.RoleId == roleId && r.UserId == u.Id)).Select(u => u.Id).ToList();
+                                    string callbackurl = Url.RouteUrl("UserManager", new { }, protocol: Request.Url.Scheme);
+
+                                    foreach (int adminUserId in adminUserIdList)
+                                    {
+                                        UserMgr.SendEmail(adminUserId, "New account needs authorisation",
+                                                    RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
+                                                    new AccountAuthorisationRequest()
+                                                    {
+                                                        callbackurl = callbackurl,
+                                                        userEmail = user.Email,
+                                                        userFullName = user.userFullName,
+                                                        userName = user.UserName
+                                                    }));
+                                    }
+
+                                #endregion
+
                             }
 
                             return RedirectToAction("RegistrationConfirmation", new { ThisIsTheFirstAccount = FirstUserAccount });
@@ -547,9 +556,53 @@ namespace Secure_Password_Repository.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    IdentityResult result = await UserMgr.ChangePasswordAsync(int.Parse(User.Identity.GetUserId()), model.OldPassword, model.NewPassword);
+                    IdentityResult result = await UserMgr.ChangePasswordAsync(User.Identity.GetUserId().ToInt(), model.OldPassword, model.NewPassword);
                     if (result.Succeeded)
                     {
+                        var user = await UserMgr.FindByIdAsync(User.Identity.GetUserId().ToInt());
+
+                        #region re-encrypt_private_key
+
+                            byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
+                            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+
+                            //decrypt the users copy of the private key
+                            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+
+                            //clear the old password key
+                            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
+      
+                            CacheEntryRemovedCallback onRemove = new CacheEntryRemovedCallback(this.RemovedCallback);
+
+                            //hash and encrypt the user's password - so this can be used to decrypt the user's private key
+                            byte[] hashedPassword = EncryptionAndHashing.Hash_SHA1_ToBytes(model.NewPassword);
+                            hashedPassword = EncryptionAndHashing.Hash_PBKDF2_ToBytes(hashedPassword, ApplicationSettings.Default.SystemSalt).ToBase64();
+
+                            //encrypt the user's private key
+                            EncryptionAndHashing.EncryptPrivateKey(ref bytePrivateKey, hashedPassword.ConvertToString());
+
+                            //convert to string and store
+                            user.userPrivateKey = bytePrivateKey.ToBase64String();
+
+                            //clear the raw privatekey out of memory
+                            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+
+                            //in-memory encryption of the hash
+                            EncryptionAndHashing.Encrypt_Memory_DPAPI(ref hashedPassword);
+
+                            //store the encrypted password hash in cache
+                            MemoryCache.Default.Set(User.Identity.GetUserName(),
+                                                    hashedPassword.ConvertToString(),
+                                                    new CacheItemPolicy()
+                                                    {
+                                                        AbsoluteExpiration = MemoryCache.InfiniteAbsoluteExpiration,
+                                                        SlidingExpiration = TimeSpan.FromHours(1),    //1 hour - incase user logs out
+                                                        Priority = CacheItemPriority.Default,
+                                                        RemovedCallback = onRemove
+                                                    });              //add item back into cache, if user logged in
+
+                        #endregion
+
                         return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
                     }
                     else

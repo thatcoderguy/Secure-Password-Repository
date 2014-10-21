@@ -11,6 +11,9 @@ using Secure_Password_Repository.Settings;
 
 namespace Secure_Password_Repository.Extensions
 {
+    /// <summary>
+    /// This class contains all of the different types of encryption and hashing methods for this project
+    /// </summary>
     public partial class EncryptionAndHashing
     {
 
@@ -1759,10 +1762,10 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
-        /// 
+        /// Generates a SHA1 hash from the supplied string and returns a hashed string
         /// </summary>
-        /// <param name="PlainText"></param>
-        /// <returns></returns>
+        /// <param name="PlainText">text to hash</param>
+        /// <returns>string of hashed text</returns>
         public static string Hash_SHA1(string PlainText)
         {
             string sha1hash = string.Empty;
@@ -1776,10 +1779,10 @@ namespace Secure_Password_Repository.Extensions
         }
 
         /// <summary>
-        /// 
+        /// Generates a SHA1 hash from the supplied string and returns hashed bytes
         /// </summary>
-        /// <param name="PlainText"></param>
-        /// <returns></returns>
+        /// <param name="PlainText">text to hash</param>
+        /// <returns>byte array</returns>
         public static byte[] Hash_SHA1_ToBytes(string PlainText)
         {
             byte[] sha1hash;

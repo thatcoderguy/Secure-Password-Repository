@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Secure_Password_Repository.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -22,12 +23,10 @@ namespace Secure_Password_Repository.ViewModels
         [Display(Name = "Email address to send emails from")]
         public string SMTPEmailAddress { get; set; }
 
-        [Required(AllowEmptyStrings=true)]
         [EmailAddress(ErrorMessage = "This field must either be empty or contain an email address")]
         [Display(Name = "Username for the above mailbox")]
         public string SMTPServerUsername { get; set; }
 
-        [Required(AllowEmptyStrings = true)]
         [Display(Name = "Password for the above mailbox")]
         public string SMTPServerPassword { get; set; }
 
@@ -42,31 +41,33 @@ namespace Secure_Password_Repository.ViewModels
         public string PBKDF2IterationCount { get; set; }
 
         [Required]
-        [Display(Name = "Lowest role allowed to edit categories")]
-        public SelectList RoleAllowEditCategories { get; set; }
+        [Display(Name = "Minimum user level allowed to edit categories")]
+        public ApplicationRole RoleAllowEditCategories { get; set; }
 
         [Required]
-        [Display(Name = "Lowest role allowed to delete categories")]
-        public SelectList RoleAllowDeleteCategories { get; set; }
+        [Display(Name = "Minimum user level allowed to delete categories")]
+        public ApplicationRole RoleAllowDeleteCategories { get; set; }
 
         [Required]
-        [Display(Name = "Lowest role allowed to add categories")]
-        public SelectList RoleAllowAddCategories { get; set; }
+        [Display(Name = "Minimum user level allowed to add categories")]
+        public ApplicationRole RoleAllowAddCategories { get; set; }
 
         [Required]
-        [Display(Name = "Lowest role allowed to add passwords")]
-        public SelectList RoleAllowAddPasswords { get; set; }
+        [Display(Name = "Minimum user level allowed to add passwords")]
+        public ApplicationRole RoleAllowAddPasswords { get; set; }
 
         [Required]
         [Display(Name = "Administrators have access to all passwords")]
         public bool AdminsHaveAccessToAllPasswords { get; set; }
 
         [Required]
-        [Display(Name = "Automatically update all logged in clients when a category's position is updated")]
+        [Display(Name = "Automatically broadcast a category position update to all clients")]
         public bool BroadcastCategoryPositionChange { get; set; }
 
         [Required]
-        [Display(Name = "Automatically update all logged in clients when a password's position is updated")]
+        [Display(Name = "Automatically broadcast a password position update to all clients")]
         public bool BroadcastPasswordPositionChange { get; set; }
+
+        public IEnumerable<ApplicationRole> AvailableRoles { get; set; }
     }
 }

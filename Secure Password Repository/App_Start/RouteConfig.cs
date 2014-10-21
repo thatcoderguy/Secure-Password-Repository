@@ -15,6 +15,7 @@ namespace Secure_Password_Repository
 
             //front page content
             routes.MapRoute("Home", "", new { controller = "Home", action = "Index" });
+            routes.MapRoute("HomeIndex", "Home/Index", new { controller = "Home", action = "Index" });
 
             //passwords & categories
             routes.MapRoute("Password", "Password", new { controller = "Password", action = "Index" });
@@ -25,7 +26,7 @@ namespace Secure_Password_Repository
             routes.MapRoute("EditCategory", "Password/EditCategory", new { controller = "Password", action = "EditCategory" });
             routes.MapRoute("DeleteCategory", "Password/DeleteCategory/{categoryid}", new { controller = "Password", action = "DeleteCategory", CategoryId = UrlParameter.Optional });
             routes.MapRoute("GetCategoryChildren", "Password/GetCategoryChildren/{parentcategoryid}", new { controller = "Password", action = "GetCategoryChildren", ParentCategoryId = UrlParameter.Optional });
-            routes.MapRoute("UpdatePosition", "Password/UpdatePosition/{categoryid}", new { controller = "Password", action = "UpdatePosition", CategoryId = UrlParameter.Optional, NewPosition = UrlParameter.Optional, isCategoryItem = UrlParameter.Optional });
+            routes.MapRoute("UpdatePosition", "Password/UpdatePosition/{itemid}", new { controller = "Password", action = "UpdatePosition", ItemId = UrlParameter.Optional, NewPosition = UrlParameter.Optional, isCategoryItem = UrlParameter.Optional });
 
             //passwords
             routes.MapRoute("AddPassword", "Password/AddPassword/{parentcategoryid}", new { controller = "Password", action = "AddPassword", ParentCategoryId = UrlParameter.Optional });
@@ -47,20 +48,17 @@ namespace Secure_Password_Repository
             routes.MapRoute("ResetPasswordConfirmation", "ResetPasswordConfirmation", new { controller = "Account", action = "ResetPasswordConfirmation" });
             routes.MapRoute("AccountResetPasswordConfirmation", "Account/ResetPasswordConfirmation", new { controller = "Account", action = "ResetPasswordConfirmation" });
 
-
             //account managment
             routes.MapRoute("Manage", "Manage", new { controller = "Account", action = "Manage" });
             routes.MapRoute("UserManagerIndex", "UserManager/Index", new { controller = "UserManager", action = "Index" });
             routes.MapRoute("UserManager", "UserManager", new { controller = "UserManager", action = "Index" });
             routes.MapRoute("AuthoriseAccount", "UserManager/AuthoriseAccount/{userid}", new { controller = "UserManager", action = "AuthoriseAccount", UserId = UrlParameter.Optional });
             routes.MapRoute("UserManagerEdit", "UserManager/Edit/{userid}", new { controller = "UserManager", action = "Edit", UserId = UrlParameter.Optional });
-            routes.MapRoute("ResetMyPassword", "UserManager/ResetPassword/{userid}", new { controller = "UserManager", action = "ResetPassword", UserId = UrlParameter.Optional, Code = UrlParameter.Optional });
             routes.MapRoute("UserManagerDelete", "UserManager/Delete/{userid}", new { controller = "UserManager", action = "Delete", UserId = UrlParameter.Optional });
             
             //system setting
             routes.MapRoute("SystemAdministration", "SystemAdministration/Index", new { controller = "SystemAdministration", action = "Index" });
             routes.MapRoute("SystemSettings", "SystemAdministration/SystemSettings", new { controller = "SystemAdministration", action = "SystemSettings" });
-
         }
     }
 }

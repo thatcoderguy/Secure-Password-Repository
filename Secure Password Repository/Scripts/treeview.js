@@ -143,11 +143,11 @@ var updatePosition = function (event, ui) {
     var newposition = ui.item.index() + 1;
     var oldposition = ui.item.data('previndex');
     ui.item.removeAttr('data-previndex');
-
+    
     var result = $.ajax({
         type: "POST",
         url: "/Password/UpdatePosition",
-        data: AddAntiForgeryToken({ ItemID: itemid, NewPosition: newposition, OldPosition: oldposition, isCategoryItem: (ui.item.data('type').toString().toLowerCase() == 'category') }),
+        data: AddAntiForgeryToken({ ItemId: itemid.replace('Password',''), NewPosition: newposition, OldPosition: oldposition, isCategoryItem: (ui.item.data('type').toString().toLowerCase() == 'category') }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
         dataType: "html",
         success: function (data) {

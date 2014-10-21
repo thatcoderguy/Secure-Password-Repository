@@ -26,6 +26,9 @@ using Microsoft.Owin.Security;
 namespace Secure_Password_Repository.Controllers
 {
     [Authorize(Roles = "Administrator, Super User, User")]
+#if !DEBUG
+[RequireHttps] //apply to all actions in controller
+#endif
     public class PasswordController : Controller
     {
 
@@ -986,6 +989,13 @@ namespace Secure_Password_Repository.Controllers
                             }
                         }
 
+                        //save changes to DB
+                        await DatabaseContext.SaveChangesAsync();
+
+                        //grab the current user's UserPassword record again - incase they changed their own permissions
+                        UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking()
+                                                                                .Where(up => up.PasswordId == PasswordId && up.Id == UserId)
+                                                                                .ToList();
 
                         #region Decrypt_Password_Fields
 
@@ -1024,13 +1034,13 @@ namespace Secure_Password_Repository.Controllers
                         
                         //make sure the user can edit the password before returning an edit password form
                         //the use the model to see if the user has added the edit permission to their account (they can do this as they have "edit permission")
-                        if (model.UserPermissions.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
+                        if (model.UserPermissions.Any(up => up.Id == UserId && up.CanEditPassword) || UserPasswordList.Any(up => up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
                             model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
                         else
                             model.EditPassword = new PasswordEdit();
                         
                         //check if the user disabled change permission for themself (also check thier existing records)
-                        if (model.UserPermissions.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+                        if (model.UserPermissions.Any(up => up.Id == UserId && up.CanChangePermissions) || UserPasswordList.Any(up => up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
                             model.OpenTab = DefaultTab.EditPermissions;
                         else
                         {
@@ -1038,15 +1048,8 @@ namespace Secure_Password_Repository.Controllers
                             model.OpenTab = DefaultTab.ViewPassword;
                         }
 
-                        //if there were no errors
-                        if (ModelState.IsValid)
-                        {
-                            //save changes to DB
-                            await DatabaseContext.SaveChangesAsync();
-
-                            //It's easier to just tell the client to pull down a whole new copy of the password
-                            PushNotifications.newPasswordAdded(model.EditPassword.PasswordId);
-                        }
+                        //It's easier to just tell the client to pull down a whole new copy of the password
+                        PushNotifications.newPasswordAdded(model.EditPassword.PasswordId);
 
                     }
                     //user does not have access to edit user permissions
@@ -1208,7 +1211,7 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
         {
             //check if user can edit categories
-            if (User.CanEditCategories() || User.IsInRole("Administrator"))
+            if (User.CanEditCategories() || User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administrator"))
             {
                 try
                 {

@@ -6,6 +6,9 @@ using System.Web.Mvc;
 
 namespace Secure_Password_Repository.Controllers
 {
+    #if !DEBUG
+    [RequireHttps] //apply to all actions in controller
+    #endif
     public class HomeController : Controller
     {
         public ActionResult Index()

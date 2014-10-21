@@ -6,8 +6,18 @@ using System.Web;
 
 namespace Secure_Password_Repository.Extensions
 {
+    /// <summary>
+    /// This class contains addition hashing and encryption methods used in the project
+    /// used to create a level of abstraction when it comes to dealing with the 3 encryption keys
+    /// </summary>
     public partial class EncryptionAndHashing
     {
+
+        /// <summary>
+        /// Encrypts the supplied data with AES256
+        /// </summary>
+        /// <param name="EncryptionKey">Encryption key</param>
+        /// <param name="DataToEncrypt">Data to encrypt</param>
         public static void EncryptData(byte[] EncryptionKey, ref byte[] DataToEncrypt)
         {
             //encrypt the details of the new password using AES
@@ -17,6 +27,11 @@ namespace Secure_Password_Repository.Extensions
             //EncryptionAndHashing.Encrypt_DPAPI(ref DataToEncrypt);
         }
 
+        /// <summary>
+        /// Decrypts the supplied data
+        /// </summary>
+        /// <param name="EncryptionKey">Encryption key</param>
+        /// <param name="DataToDecrypt">Data to decrypt</param>
         public static void DecryptData(byte[] EncryptionKey, ref byte[] DataToDecrypt)
         {
             //first decryption padd
@@ -29,9 +44,13 @@ namespace Secure_Password_Repository.Extensions
             DataToDecrypt = EncryptionAndHashing.Decrypt_AES256_ToBytes(DataToDecrypt, EncryptionKey);
         }
 
+        /// <summary>
+        /// Encrypts the database encryption key with RSA encryption
+        /// </summary>
+        /// <param name="EncryptionKey">Encryption key to encrypt</param>
+        /// <param name="PublicKey">Public Key</param>
         public static void EncryptDatabaseKey(ref byte[] EncryptionKey, string PublicKey)
         {
-            //EncryptionKey = EncryptionKey.ToBase64();
 
             //first level of encryption - using DPAPI
             //EncryptionAndHashing.Encrypt_DPAPI(ref EncryptionKey);
@@ -40,6 +59,11 @@ namespace Secure_Password_Repository.Extensions
             EncryptionKey = EncryptionAndHashing.Encrypt_RSA_ToBytes(EncryptionKey, PublicKey);
         }
 
+        /// <summary>
+        /// Decrypts the database encryption key with RSA encryption
+        /// </summary>
+        /// <param name="EncryptionKey">Encryption key to decrypt</param>
+        /// <param name="PrivateKey">Private key</param>
         public static void DecryptDatabaseKey(ref byte[] EncryptionKey, byte[] PrivateKey)
         {
             //decrypt the user's copy of the password encryption key
@@ -52,7 +76,11 @@ namespace Secure_Password_Repository.Extensions
             Array.Clear(PrivateKey, 0, PrivateKey.Length);
         }
 
-
+        /// <summary>
+        /// Encrypts private key with AES256
+        /// </summary>
+        /// <param name="PrivateKey">Private key to encrypt</param>
+        /// <param name="PasswordBasedKey">Password based encryption key</param>
         public static void EncryptPrivateKey(ref byte[] PrivateKey, string PasswordBasedKey)
         {
             //Encrypt private key with DPAPI
@@ -66,6 +94,11 @@ namespace Secure_Password_Repository.Extensions
             PrivateKey = EncryptionAndHashing.Encrypt_AES256_ToBytes(PrivateKey.ToBase64String(), hashedPassword);
         }
 
+        /// <summary>
+        /// Decrypts private key with AES256
+        /// </summary>
+        /// <param name="PrivateKey">Private key to decrypt</param>
+        /// <param name="PasswordBasedKey">Password based encryption key</param>
         public static void DecryptPrivateKey(ref byte[] PrivateKey, byte[] PasswordBasedKey)
         {
             //decrypt the key that is used to decrypt the user's private key
@@ -79,8 +112,6 @@ namespace Secure_Password_Repository.Extensions
 
             //decrypt again
             //EncryptionAndHashing.Decrypt_DPAPI(ref PrivateKey);
-
-            PrivateKey = PrivateKey.Trim();
         }
 
     }

@@ -20,6 +20,9 @@ using Microsoft.Owin.Security;
 namespace Secure_Password_Repository.Controllers
 {
     [Authorize(Roles = "Administrator")]
+    #if !DEBUG
+    [RequireHttps] //apply to all actions in controller
+    #endif
     public class UserManagerController : Controller
     {
 
@@ -93,6 +96,7 @@ namespace Secure_Password_Repository.Controllers
             {
   
                 IEnumerable<ApplicationRole> availableRoles = await RoleMgr.Roles.ToListAsync();
+
                 //put the attributes from this account into the model, so the existing values are displayed
                 model.Email = selectedAccount.Email;
                 model.Username = selectedAccount.UserName;
@@ -235,58 +239,6 @@ namespace Secure_Password_Repository.Controllers
             ViewBag.HasLocalPassword = HasPassword();
             ViewBag.ReturnUrl = Url.Action("ResetPassword", "UserManager");
             return View();
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> ResetMyPassword(int UserId, ManageUserViewModel model)
-        {
-            bool hasPassword = HasPassword();
-            ViewBag.HasLocalPassword = hasPassword;
-            ViewBag.ReturnUrl = Url.Action("ResetPassword", "UserManager");
-            if (hasPassword)
-            {
-                if (ModelState.IsValid)
-                {
-                    IdentityResult result = await UserMgr.ChangePasswordAsync(UserId, model.OldPassword, model.NewPassword);
-
-                    //decrypt admin copy of key
-                    //encrypt users copy of key
-
-                    if (result.Succeeded)
-                    {
-                        return RedirectToAction("ResetPassword", "UserManager", new { Message = ManageMessageId.ChangePasswordSuccess });
-                    }
-                    else
-                    {
-                        AddErrors(result);
-                    }
-                }
-            }
-            else
-            {
-                // User does not have a password so remove any validation errors caused by a missing OldPassword field
-                ModelState state = ModelState["OldPassword"];
-                if (state != null)
-                {
-                    state.Errors.Clear();
-                }
-
-                if (ModelState.IsValid)
-                {
-                    IdentityResult result = await UserMgr.AddPasswordAsync(int.Parse(User.Identity.GetUserId()), model.NewPassword);
-                    if (result.Succeeded)
-                    {
-                        return RedirectToAction("ResetPassword", "UserManager", new { Message = ManageMessageId.SetPasswordSuccess });
-                    }
-                    else
-                    {
-                        AddErrors(result);
-                    }
-                }
-            }
-
-            // If we got this far, something failed, redisplay form
-            return View(model);
         }
 
         public enum ManageMessageId

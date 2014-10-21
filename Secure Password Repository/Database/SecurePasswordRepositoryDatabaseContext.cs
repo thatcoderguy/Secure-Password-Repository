@@ -34,6 +34,8 @@ namespace Secure_Password_Repository.Database
         {
             base.OnModelCreating(modelBuilder);
 
+            //setup foreign key relationships
+
             modelBuilder.Entity<Category>()
                 .HasRequired(a => a.Parent_Category)
                 .WithMany(b => b.SubCategories)

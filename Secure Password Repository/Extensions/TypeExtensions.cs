@@ -115,29 +115,11 @@ namespace Secure_Password_Repository.Extensions
             return returnValue;
         }
 
-        public static string RemoveNullChars(this string original)
-        {
-            if (original.IndexOf('\x00') > 0)
-                original = original.Substring(0, original.IndexOf('\x00'));
-
-            return original;
-        }
-
-        public static byte[] RemoveNullBytes(this byte[] original)
-        {
-            return original.ConvertToString().RemoveNullChars().ToBytes();
-        }
-
-        public static byte[] Trim(this byte[] original)
-        {
-            return original.ConvertToString().TrimEnd().ToBytes();
-        }
-
-        public static byte[] RemoveAESPadding(this byte[] original)
-        {
-            return original;
-        }
-
+        /// <summary>
+        /// Confirms if the user account has permission to edit categories
+        /// </summary>
+        /// <param name="user">the identity user</param>
+        /// <returns>boolean</returns>
         public static bool CanEditCategories(this IPrincipal user)
         {
             if (user == null)
@@ -146,6 +128,11 @@ namespace Secure_Password_Repository.Extensions
             return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || user.IsInRole("Administrator"));
         }
 
+        /// <summary>
+        /// Confirms if the user account has permission to delete categories
+        /// </summary>
+        /// <param name="user">the identity user</param>
+        /// <returns>boolean</returns>
         public static bool CanDeleteCategories(this IPrincipal user)
         {
             if (user == null)
@@ -154,6 +141,11 @@ namespace Secure_Password_Repository.Extensions
             return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowDeleteCategories) || user.IsInRole("Administrator"));
         }
 
+        /// <summary>
+        /// Confirms is the user account has permission to add categories
+        /// </summary>
+        /// <param name="user">the identity user</param>
+        /// <returns>boolean</returns>
         public static bool CanAddCategories(this IPrincipal user)
         {
             if (user == null)
@@ -162,6 +154,11 @@ namespace Secure_Password_Repository.Extensions
             return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowAddCategories) || user.IsInRole("Administrator"));
         }
 
+        /// <summary>
+        /// Confirms if the user account has permission to add passwords
+        /// </summary>
+        /// <param name="user">the identity user</param>
+        /// <returns>boolean</returns>
         public static bool CanAddPasswords(this IPrincipal user)
         {
             if (user == null)
@@ -170,6 +167,11 @@ namespace Secure_Password_Repository.Extensions
             return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && (user.IsInRole(ApplicationSettings.Default.RoleAllowAddPasswords) || user.IsInRole("Administrator"));
         }
 
+        /// <summary>
+        /// Returns the user Id of the identity user - casts the user Id to an intt
+        /// </summary>
+        /// <param name="user">the identity user</param>
+        /// <returns>int</returns>
         public static int GetUserId(this IPrincipal user)
         {
             if (user == null)

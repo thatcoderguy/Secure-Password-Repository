@@ -13,6 +13,10 @@ using Microsoft.AspNet.Identity.Owin;
 namespace Secure_Password_Repository.Controllers
 {
     [Authorize(Roles = "Administrator")]
+    #if !DEBUG
+    [RequireHttps] //apply to all actions in controller
+    #endif
+
     public class SystemAdministrationController : Controller
     {
         private ApplicationRoleManager _roleManager;

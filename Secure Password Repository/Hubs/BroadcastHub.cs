@@ -31,6 +31,9 @@ namespace Secure_Password_Repository.Hubs
 
         private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
 
+        /// <summary>
+        /// When client connects, store the connection id - used later to ignore certain clients when broadcasting
+        /// </summary>
         public override Task OnConnected()
         {
             System.Runtime.Caching.MemoryCache.Default.Set(
@@ -44,6 +47,9 @@ namespace Secure_Password_Repository.Hubs
             return base.OnConnected();
         }
 
+        /// <summary>
+        /// When client reconnects, store the connection id - used later to ignore certain clients when broadcasting
+        /// </summary>
         public override Task OnReconnected()
         {
             System.Runtime.Caching.MemoryCache.Default.Set(
@@ -57,6 +63,10 @@ namespace Secure_Password_Repository.Hubs
             return base.OnReconnected();
         }
 
+        /// <summary>
+        /// When a new category is added, all clients request a copy via this method - this is so the view can be rendered with correct permissions
+        /// </summary>
+        /// <param name="newCategoryId">ID of the new category</param>
         public void getNewCategoryDetails(Int32 newCategoryId)
         {
             //retreive the new category that was just created
@@ -73,6 +83,10 @@ namespace Secure_Password_Repository.Hubs
             PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);
         }
 
+        /// <summary>
+        /// When a new password is added, all clients request a copy via this method - this is so the view can be rendered with correct permissions
+        /// </summary>
+        /// <param name="newPasswordId">ID of the new password</param>
         public void getNewPasswordDetails(Int32 newPasswordId)
         {
 

@@ -1846,7 +1846,7 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static string Generate_Random_ReadableString(int NumberOfChars)
         {
-            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz!£$%^&*()_+-=~#@?/>.<,";
+            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz!^*()_-=~#@?/.,";
             var buffer = new char[NumberOfChars];
             var usableChars = characterSet.ToCharArray();
             var usableLength = usableChars.Length;
@@ -1878,7 +1878,7 @@ namespace Secure_Password_Repository.Extensions
         ///</returns>
         public static byte[] Generate_Random_ReadableBytes(int NumberOfChars)
         {
-            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz!£$%^&*()_+-=~#@?/>.<,";
+            string characterSet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz!^*()_-=~#@?/.,";
             var buffer = new byte[NumberOfChars];
             var usableChars = characterSet.ToCharArray();
             var usableLength = usableChars.Length;

@@ -20,7 +20,7 @@ var bindClipBoard = function () {
     if (window.location.toString().indexOf('localhost') > 0) {
         ZeroClipboard.config({ swfPath: "http://www.fauxbank.co.uk/ZeroClipboard.swf" });
     } else {
-        ZeroClipboard.config({ swfPath: "Flash/ZeroClipboard.swf" });
+        ZeroClipboard.config({ swfPath: "/Flash/ZeroClipboard.swf" });
     }
 
     //declare a new clipboard client
@@ -128,9 +128,9 @@ var bindCheckboxActions = function () {
 }
 
 var showPasswordSpinner = function(obj, formid) {
-    $(obj).parent().after('<span class="loaderplaceholder"><img src="/images/ajax-loader.gif"> Saving...</span>').remove();
 
     setTimeout(function () {
-        $('#' + formid).submit();
-    }, 500);
+        $(obj).parent().after('<span class="loaderplaceholder"><img src="/images/ajax-loader.gif"> Saving...</span>').remove();
+    }, 10);
+
 }

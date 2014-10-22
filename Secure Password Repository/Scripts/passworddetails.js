@@ -20,7 +20,7 @@ var bindClipBoard = function () {
     if (window.location.toString().indexOf('localhost') > 0) {
         ZeroClipboard.config({ swfPath: "http://www.fauxbank.co.uk/ZeroClipboard.swf" });
     } else {
-        ZeroClipboard.config({ swfPath: "Flash/ZeroClipboard.swf" });
+        ZeroClipboard.config({ swfPath: "/Flash/ZeroClipboard.swf" });
     }
 
     //declare a new clipboard client

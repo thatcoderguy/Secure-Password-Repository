@@ -427,11 +427,14 @@ namespace Secure_Password_Repository.Controllers
                 byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
                 EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
                 selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
- 
-                //decrypt the second credential
-                byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+
+                if (selectedPassword.EncryptedSecondCredential != null && selectedPassword.EncryptedSecondCredential != string.Empty)
+                {
+                    //decrypt the second credential
+                    byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+                    EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                    selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                }
 
                 //clear what isnt needed any more
                 Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
@@ -483,36 +486,40 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddPassword(PasswordAdd model)
         {
-            //check if usercan add passwords
-            if (User.CanAddPasswords() || User.IsInRole("Administrator"))
+            try
             {
 
-                if (ModelState.IsValid)
+
+                //check if usercan add passwords
+                if (User.CanAddPasswords() || User.IsInRole("Administrator"))
                 {
-                    Password newPasswordItem = AutoMapper.Mapper.Map<Password>(model);
 
-                    var userId = int.Parse(User.Identity.GetUserId());
-                    var user = await UserMgr.FindByIdAsync(userId);
+                    if (ModelState.IsValid)
+                    {
+                        Password newPasswordItem = AutoMapper.Mapper.Map<Password>(model);
 
-                    //get the parent category node, and include it's passwords
-                    var passwordList = DatabaseContext.Categories
-                                                            .Where(c => c.CategoryId == model.Parent_CategoryId)
-                                                            .Include("Passwords")
-                                                            .Single(c => c.CategoryId == model.Parent_CategoryId);
+                        var userId = int.Parse(User.Identity.GetUserId());
+                        var user = await UserMgr.FindByIdAsync(userId);
 
-                    //set the order of the category by getting the number of subcategories
-                    if (passwordList.Passwords.Where(p => !p.Deleted).ToList().Count > 0)
-                        newPasswordItem.PasswordOrder = (Int16)(passwordList.Passwords.Where(p => !p.Deleted).Max(p => p.PasswordOrder) + 1);
-                    else
-                        newPasswordItem.PasswordOrder = 1;
+                        //get the parent category node, and include it's passwords
+                        var passwordList = DatabaseContext.Categories
+                                                                .Where(c => c.CategoryId == model.Parent_CategoryId)
+                                                                .Include("Passwords")
+                                                                .Single(c => c.CategoryId == model.Parent_CategoryId);
 
-                    newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
-                    newPasswordItem.CreatedDate = DateTime.Now;
-                    newPasswordItem.Creator_Id = user.Id;
-                    newPasswordItem.Location = model.Location.Replace("http://", "");
+                        //set the order of the category by getting the number of subcategories
+                        if (passwordList.Passwords.Where(p => !p.Deleted).ToList().Count > 0)
+                            newPasswordItem.PasswordOrder = (Int16)(passwordList.Passwords.Where(p => !p.Deleted).Max(p => p.PasswordOrder) + 1);
+                        else
+                            newPasswordItem.PasswordOrder = 1;
+
+                        newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
+                        newPasswordItem.CreatedDate = DateTime.Now;
+                        newPasswordItem.Creator_Id = user.Id;
+                        newPasswordItem.Location = model.Location.Replace("http://", "");
 
 
-                    #region Encrypt_Password_Fields
+                        #region Encrypt_Password_Fields
 
                         //grab the 3 encryption keys that are required to do encryption
                         byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
@@ -530,10 +537,13 @@ namespace Secure_Password_Repository.Controllers
                         EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
                         newPasswordItem.EncryptedUserName = byteData.ToBase64String();
 
-                        //encrypt the second credential
-                        byteData = model.EncryptedSecondCredential.ToBytes();
-                        EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                        newPasswordItem.EncryptedSecondCredential = byteData.ToBase64String();
+                        if(model.EncryptedSecondCredential!=null && model.EncryptedSecondCredential!=string.Empty)
+                        { 
+                            //encrypt the second credential
+                            byteData = model.EncryptedSecondCredential.ToBytes();
+                            EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                            newPasswordItem.EncryptedSecondCredential = byteData.ToBase64String();
+                        }
 
                         //encrypt the password
                         byteData = model.EncryptedPassword.ToBytes();
@@ -546,40 +556,45 @@ namespace Secure_Password_Repository.Controllers
                         Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
                         Array.Clear(byteData, 0, byteData.Length);
 
-                    #endregion 
+                        #endregion
 
 
-                    //add the new password item
-                    DatabaseContext.Passwords.Add(newPasswordItem);
+                        //add the new password item
+                        DatabaseContext.Passwords.Add(newPasswordItem);
 
-                    //also create the UserPassword record
-                    UserPassword newUserPassword = new UserPassword()
-                    {
-                        CanDeletePassword = true,
-                        CanEditPassword = true,
-                        CanViewPassword = true,
-                        CanChangePermissions = true,
-                        PasswordId = newPasswordItem.PasswordId,
-                        Id = user.Id
-                    };
+                        //also create the UserPassword record
+                        UserPassword newUserPassword = new UserPassword()
+                        {
+                            CanDeletePassword = true,
+                            CanEditPassword = true,
+                            CanViewPassword = true,
+                            CanChangePermissions = true,
+                            PasswordId = newPasswordItem.PasswordId,
+                            Id = user.Id
+                        };
 
-                    //add the new userpassword item
-                    DatabaseContext.UserPasswords.Add(newUserPassword);
+                        //add the new userpassword item
+                        DatabaseContext.UserPasswords.Add(newUserPassword);
 
-                    //save both items to database
-                    await DatabaseContext.SaveChangesAsync();
+                        //save both items to database
+                        await DatabaseContext.SaveChangesAsync();
 
-                    //notify clients that a new password has been added
-                    PushNotifications.newPasswordAdded(newPasswordItem.PasswordId);
+                        //notify clients that a new password has been added
+                        PushNotifications.newPasswordAdded(newPasswordItem.PasswordId);
 
-                    return RedirectToAction("ViewPassword", new System.Web.Routing.RouteValueDictionary { { "PasswordId", newPasswordItem.PasswordId } });
+                        return RedirectToAction("ViewPassword", new System.Web.Routing.RouteValueDictionary { { "PasswordId", newPasswordItem.PasswordId } });
+                    }
+
+                }
+                else
+                {
+                    ModelState.AddModelError("", "You do not have permission to create passwords");
                 }
             }
-            else
+            catch (Exception Ex)
             {
-                ModelState.AddModelError("", "You do not have permission to create passwords");
+                ModelState.AddModelError("", "An error occured: " + Ex.Message);
             }
-
             return View(model);
         }
 
@@ -662,10 +677,13 @@ namespace Secure_Password_Repository.Controllers
                             EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
                             model.EditPassword.EncryptedUserName = byteData.ToBase64String();
 
-                            //encrypt the updated second credential
-                            byteData = model.EditPassword.EncryptedSecondCredential.ToBytes();
-                            EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                            model.EditPassword.EncryptedSecondCredential = byteData.ToBase64String();
+                            if ( model.EditPassword.EncryptedSecondCredential != null && model.EditPassword.EncryptedSecondCredential != string.Empty)
+                            {
+                                //encrypt the updated second credential
+                                byteData = model.EditPassword.EncryptedSecondCredential.ToBytes();
+                                EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                                model.EditPassword.EncryptedSecondCredential = byteData.ToBase64String();
+                            }
 
                             //only if something has been entered into the password box
                             if (model.EditPassword.EncryptedPassword != null && model.EditPassword.EncryptedPassword != string.Empty)
@@ -703,11 +721,14 @@ namespace Secure_Password_Repository.Controllers
                         selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
                         model.EditPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
 
-                        //decrypt the second credential
-                        byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                        EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                        selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                        model.EditPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                        if (selectedPassword.EncryptedSecondCredential != string.Empty && selectedPassword.EncryptedSecondCredential != null)
+                        {
+                            //decrypt the second credential
+                            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                            selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                            model.EditPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                        }
 
                         //clear what isnt needed
                         Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
@@ -742,10 +763,13 @@ namespace Secure_Password_Repository.Controllers
                             EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
                             selectedPassword.EncryptedUserName = byteData.ConvertToString();
 
-                            //encrypt the updated second credential
-                            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedSecondCredential = byteData.ConvertToString();
+                            if (selectedPassword.EncryptedSecondCredential != null  && selectedPassword.EncryptedSecondCredential != string.Empty)
+                            {
+                                //encrypt the updated second credential
+                                byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+                                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                                selectedPassword.EncryptedSecondCredential = byteData.ConvertToString();
+                            }
 
                             //clear what isnt needed any more
                             Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);

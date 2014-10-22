@@ -8,6 +8,7 @@ $(function () {
 
     setupTreeView('treeview');
     bindClickEvent();
+    reopenTreeItems();
     
 });
 
@@ -77,6 +78,9 @@ var bindClickEvent = function() {
                 populatingItemDictionary[$(this).find('.categoryname').text()] = true;
                 treeListItemClick(event, $(this));
             }
+
+            var catid = $(this).parent().parent().attr('id');
+            addToOpenCategoriesCookie(catid);
         
         //category is not open
         } else if (!$(this).parent().hasClass('ui-state-active')) {
@@ -85,8 +89,14 @@ var bindClickEvent = function() {
             $(this).parent().addClass('ui-state-active');
             $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus').parent().find('i').removeClass('glyphicon-folder-close').addClass('glyphicon-folder-open');
 
+            var catid = $(this).parent().parent().attr('id');
+            addToOpenCategoriesCookie(catid);
+
         //already populated and open
         } else {
+
+            var catid = $(this).parent().parent().attr('id');
+            removeFromOpenCategoriesCookie(catid);
 
             $(this).parent().parent().find('ul').slideUp();
             $(this).parent().removeClass('ui-state-active');
@@ -167,4 +177,41 @@ var showSpinner = function (itemid) {
 var hideSpinner = function (itemid) {
     $('#' + itemid).find('.loaderplaceholder').remove();
     $('#' + itemid).find('.btn-group').show();
+}
+
+var reopenTreeItems = function () {
+
+    //read cookie
+    //loop through tree items (recursive)
+    //call get getchildren
+
+}
+
+//this cookie is used to store which categories are currently open - so that if a user hits F5, then the categories will be reopened
+var addToOpenCategoriesCookie = function (value) {
+
+    if ($.cookie('opencategories') === null || $.cookie('opencategories') == '') {
+
+        $.cookie('opencategories') = value;
+
+    } else {
+
+        var valueList = $.cookie('opencategories');
+        valueList += ',' + value;
+        $.cookie('opencategories', valueList);
+
+    }
+
+}
+
+var removeFromOpenCategoriesCookie = function(value) {
+
+    if ($.cookie('opencategories') != null) {
+
+        var valueList = $.cookie('opencategories');
+        valueList = valueList.replace(value, '').replace(',,', '');
+        $.cookie('opencategories', valueList);
+
+    }
+
 }

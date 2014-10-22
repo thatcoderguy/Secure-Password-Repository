@@ -537,7 +537,7 @@ namespace Secure_Password_Repository.Controllers
                         EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
                         newPasswordItem.EncryptedUserName = byteData.ToBase64String();
 
-                        if(model.EncryptedSecondCredential!=null && model.EncryptedSecondCredential!=string.Empty)
+                        if(model.EncryptedSecondCredential != null && model.EncryptedSecondCredential != string.Empty)
                         { 
                             //encrypt the second credential
                             byteData = model.EncryptedSecondCredential.ToBytes();
@@ -677,7 +677,7 @@ namespace Secure_Password_Repository.Controllers
                             EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
                             model.EditPassword.EncryptedUserName = byteData.ToBase64String();
 
-                            if ( model.EditPassword.EncryptedSecondCredential != null && model.EditPassword.EncryptedSecondCredential != string.Empty)
+                            if (model.EditPassword.EncryptedSecondCredential != null && model.EditPassword.EncryptedSecondCredential != string.Empty)
                             {
                                 //encrypt the updated second credential
                                 byteData = model.EditPassword.EncryptedSecondCredential.ToBytes();
@@ -810,10 +810,13 @@ namespace Secure_Password_Repository.Controllers
                         EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
                         selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
 
-                        //encrypt the updated second credential
-                        byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                        EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                        selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                        if (selectedPassword.EncryptedSecondCredential != null && selectedPassword.EncryptedSecondCredential != string.Empty)
+                        {
+                            //encrypt the updated second credential
+                            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                            selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                        }
 
                         //clear what isnt needed any more
                         Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
@@ -1039,10 +1042,13 @@ namespace Secure_Password_Repository.Controllers
                             EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
                             selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
 
-                            //decrypt the second credential
-                            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                            if (selectedPassword.EncryptedSecondCredential != null && selectedPassword.EncryptedSecondCredential != string.Empty)
+                            {
+                                //decrypt the second credential
+                                byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+                                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                                selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                            }
 
                             //clear what isnt needed any more
                             Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
@@ -1114,10 +1120,13 @@ namespace Secure_Password_Repository.Controllers
                             EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
                             selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
 
-                            //decrypt the second credential
-                            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                            if (selectedPassword.EncryptedSecondCredential != null || selectedPassword.EncryptedSecondCredential != string.Empty)
+                            {
+                                //decrypt the second credential
+                                byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
+                                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                                selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
+                            }
 
                             //clear what isnt needed any more
                             Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);

@@ -80,6 +80,7 @@ var bindClickEvent = function() {
             }
 
             var catid = $(this).parent().parent().attr('id');
+
             addToOpenCategoriesCookie(catid);
         
         //category is not open
@@ -90,12 +91,14 @@ var bindClickEvent = function() {
             $(this).find('span').removeClass('treeviewplus').addClass('treeviewminus').parent().find('i').removeClass('glyphicon-folder-close').addClass('glyphicon-folder-open');
 
             var catid = $(this).parent().parent().attr('id');
+
             addToOpenCategoriesCookie(catid);
 
         //already populated and open
         } else {
 
             var catid = $(this).parent().parent().attr('id');
+
             removeFromOpenCategoriesCookie(catid);
 
             $(this).parent().parent().find('ul').slideUp();
@@ -111,7 +114,13 @@ var bindClickEvent = function() {
 //load children of the category clicked on
 var treeListItemClick = function (event, listItem) {
 
-    event.preventDefault();
+    var parentId;
+    
+    if (typeof (event) === Object)
+        event.preventDefault();
+    
+    if (typeof (listItem) == 'string')
+        listItem = $('#' + listItem).find('.clickable');
 
     listItem.parent().find('.loaderplaceholder').show();
 
@@ -181,24 +190,44 @@ var hideSpinner = function (itemid) {
 
 var reopenTreeItems = function () {
 
-    //read cookie
-    //loop through tree items (recursive)
-    //call get getchildren
+    if ($.cookie('opencategories') !== null && $.cookie('opencategories') !== '' && $.cookie('opencategories') !== undefined) {
+
+        var valueList = $.cookie('opencategories');
+
+        //convert list to array
+        var array = valueList.split(',');
+        
+        for (var i = 0; i < array.length; i++) {
+            
+            if (typeof ($('#' + array[i])) !== 'object')
+                array.push(array[i]);
+            else
+                treeListItemClick(null, array[i]);
+
+        }
+    }
 
 }
 
 //this cookie is used to store which categories are currently open - so that if a user hits F5, then the categories will be reopened
 var addToOpenCategoriesCookie = function (value) {
-
-    if ($.cookie('opencategories') === null || $.cookie('opencategories') == '') {
-
-        $.cookie('opencategories') = value;
+    
+    if ($.cookie('opencategories') === null || $.cookie('opencategories') == '' || $.cookie('opencategories') === undefined) {
+        
+        $.cookie('opencategories', value);
 
     } else {
-
+        
         var valueList = $.cookie('opencategories');
-        valueList += ',' + value;
-        $.cookie('opencategories', valueList);
+
+        //convert list to array
+        var array = valueList.split(',');
+
+        //add the value
+        array.push(value)
+
+        //convert back to array, and store
+        $.cookie('opencategories', array.join());
 
     }
 
@@ -206,12 +235,23 @@ var addToOpenCategoriesCookie = function (value) {
 
 var removeFromOpenCategoriesCookie = function(value) {
 
-    if ($.cookie('opencategories') != null) {
+    if ($.cookie('opencategories') !== null && $.cookie('opencategories') !== '' && $.cookie('opencategories') !== undefined) {
 
         var valueList = $.cookie('opencategories');
-        valueList = valueList.replace(value, '').replace(',,', '');
-        $.cookie('opencategories', valueList);
+        
+        //convert list to array
+        var array = valueList.split(',');
 
+        //find the value to remove
+        var index = array.indexOf(value);
+
+        //remove the item
+        if (index > -1) {
+            array.splice(index, 1);
+        }
+
+        //convert back to array, and store
+        $.cookie('opencategories', array.join());
     }
 
 }

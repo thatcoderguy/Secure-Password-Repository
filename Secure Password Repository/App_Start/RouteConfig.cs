@@ -16,6 +16,7 @@ namespace Secure_Password_Repository
             //front page content
             routes.MapRoute("Home", "", new { controller = "Home", action = "Index" });
             routes.MapRoute("HomeIndex", "Home/Index", new { controller = "Home", action = "Index" });
+            routes.MapRoute("HomeIndexReturnURL", "Home/Index/{ReturnUrl}", new { controller = "Home", action = "Index", ReturnUrl = UrlParameter.Optional });
 
             //passwords & categories
             routes.MapRoute("Password", "Password", new { controller = "Password", action = "Index" });
@@ -39,6 +40,7 @@ namespace Secure_Password_Repository
             //account handling
             routes.MapRoute("Login", "Login", new { controller = "Account", action = "Login", returnUrl = UrlParameter.Optional });
             routes.MapRoute("AccountLogin", "Account/Login", new { controller = "Account", action = "Login", returnUrl = UrlParameter.Optional });
+            routes.MapRoute("AccountLoginRturnURL", "Account/Login/{ReturnURL}", new { controller = "Account", action = "Login", returnUrl = UrlParameter.Optional });
             routes.MapRoute("Register", "Register", new { controller = "Account", action = "Register" });
             routes.MapRoute("LogOff", "LogOff", new { controller = "Account", action = "LogOff" });
             routes.MapRoute("RegistrationConfirmation", "RegistrationConfirmation", new { controller = "Account", action = "RegistrationConfirmation" });

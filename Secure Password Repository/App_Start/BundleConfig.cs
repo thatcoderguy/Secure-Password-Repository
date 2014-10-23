@@ -17,6 +17,9 @@ namespace Secure_Password_Repository
             bundles.Add(new ScriptBundle("~/bundles/jquery-ui").Include(
                         "~/Scripts/jquery-ui.min.js"));
 
+            bundles.Add(new ScriptBundle("~/bundles/jquery-cookie").Include(
+                        "~/Scripts/jquery.cookie.js"));
+
             // Use the development version of Modernizr to develop with and learn from. Then, when you're
             // ready for production, use the build tool at http://modernizr.com to pick only the tests you need.
             bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(

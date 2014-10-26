@@ -3,6 +3,10 @@
 //used to stop double population
 var populatingItemDictionary = {};
 
+var calculatedCategoryHeirachy = {};
+
+var categoryLevel = 0;
+
 //category treeview - called upon script load
 $(function () {
 
@@ -116,18 +120,22 @@ var treeListItemClick = function (event, listItem) {
 
     var parentId;
     
+    //check if an event has been submitted
     if (typeof (event) === Object)
         event.preventDefault();
     
+    //if the listItem value supplied is a string, then find and return the object
     if (typeof (listItem) == 'string')
         listItem = $('#' + listItem).find('.clickable');
 
     listItem.parent().find('.loaderplaceholder').show();
 
+    parentId = listItem.parent().parent().attr('id');
+
     var result = $.ajax({
         type: "POST",
         url: "/Password/GetCategoryChildren",
-        data: AddAntiForgeryToken({ ParentCategoryId: listItem.parent().parent().attr('id') }),
+        data: AddAntiForgeryToken({ ParentCategoryId: parentId }),
         contentType: "application/x-www-form-urlencoded; charset=utf-8",
         dataType: "html",
         success: function (data) {
@@ -151,6 +159,10 @@ var treeListItemClick = function (event, listItem) {
             listItem.slideDown();
 
             populatingItemDictionary[listItem.find('.categoryname').text()] = false;
+
+            //if this item exists in the calculated heirachy (i.e. this is re-populating after F5), then remove it from the list
+            if (calculatedCategoryHeirachy[categoryLevel].indexOf(parentId) > 0)
+                calculatedCategoryHeirachy[categoryLevel].splice(calculatedCategoryHeirachy[categoryLevel].indexOf(parentId), 1);
 
         }
     });
@@ -195,17 +207,44 @@ var reopenTreeItems = function () {
         var valueList = $.cookie('opencategories');
 
         //convert list to array
-        var array = valueList.split(',');
-        
-        for (var i = 0; i < array.length; i++) {
+        calculatedCategoryHeirachy[categoryLevel] = valueList.split(',');
+
+        //start the processes of reopening categories
+        calculateCategoryHeirachy();
+
+    }
+
+}
+
+var calculateCategoryHeirachy = function () {
+
+    //loop through all categories an find which ones are deeper than the current level
+    for (var i = 0; i < calculatedCategoryHeirachy[categoryLevel].length; i++) {
             
-            if (typeof ($('#' + array[i])) !== 'object')
-                array.push(array[i]);
-            else
-                treeListItemClick(null, array[i]);
+        //if the category is deep than the current level
+        if (typeof ($('#' + calculatedCategoryHeirachy[categoryLevel][i])) !== 'object') {
+
+            //add the category to the next level
+            calculatedCategoryHeirachy[categoryLevel+1].push(calculatedCategoryHeirachy[categoryLevel][i]);
+
+            //remove the category from the current level
+            calculatedCategoryHeirachy[categoryLevel][i].splice(i,1);
 
         }
     }
+
+}
+
+var reopenCalculatedCategories = function() {
+
+    //loop through all the current level categories and request child population
+    for (var i = 0; i < calculatedCategoryHeirachy[categoryLevel].length; i++) {
+
+        $('#' + calculatedCategoryHeirachy[categoryLevel].indexOf(parentId)[i]).find('.clickable').click();
+
+    }
+
+
 
 }
 
@@ -224,7 +263,7 @@ var addToOpenCategoriesCookie = function (value) {
         var array = valueList.split(',');
 
         //add the value
-        array.push(value)
+        array.push(value);
 
         //convert back to array, and store
         $.cookie('opencategories', array.join());

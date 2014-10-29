@@ -23,38 +23,54 @@ var cancelAction = function (event, categoryid) {
 //category updates successfully
 var updateCategorySuccess = function (data) {
 
-    //update text
-    $('#' + data.CategoryId).find('.categoryname').text(data.CategoryName);
+    if (data.Status == "OK") {
 
-    //hide the form
-    cancelAction(Object, data.CategoryId);
+        //update text
+        $('#' + data.Data.CategoryId).find('.categoryname').text(data.Data.CategoryName);
 
-    hideSpinner(data.CategoryId);
+        //hide the form
+        cancelAction(Object, data.Data.CategoryId);
+
+    } else {
+
+        alert(data.Data.ErrorMessage);
+
+    }
+
+    hideSpinner(data.Data.CategoryId);
 }
 
 //called when category successfully created
 var createCategorySuccess = function (data, parentid) {
     
-    //append the new item to the list
-    $('#addnew-' + parentid).parent().append(data);
-    
-    //move the new item to the bottom of the list
-    $('#addnew-' + parentid).appendTo($('#addnew-' + parentid).parent());
-    
-    //remove the "add new password" button
-    $('#addnew-password-' + parentid).remove();
-    
-    //clear add new category form
-    $('#addnew-' + parentid).find('.second input[name="CategoryName"]').val('');
+    if (data.Status == "OK") {
 
-    //refresh treeview, so new item is part of sortable
-    setupTreeView('treeview');
+        //append the new item to the list
+        $('#addnew-' + parentid).parent().append(data.Data);
 
-    //bind click events
-    bindClickEvent();
+        //move the new item to the bottom of the list
+        $('#addnew-' + parentid).appendTo($('#addnew-' + parentid).parent());
 
-    //hide the form
-    cancelAction(Object, 'addnew-' + parentid);
+        //remove the "add new password" button
+        $('#addnew-password-' + parentid).remove();
+
+        //clear add new category form
+        $('#addnew-' + parentid).find('.second input[name="CategoryName"]').val('');
+
+        //refresh treeview, so new item is part of sortable
+        setupTreeView('treeview');
+
+        //bind click events
+        bindClickEvent();
+
+        //hide the form
+        cancelAction(Object, 'addnew-' + parentid);
+
+    } else {
+
+        alert(data.Data);
+        
+    }
 
     hideSpinner('addnew-' + parentid);
 }

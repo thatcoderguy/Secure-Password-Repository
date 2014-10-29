@@ -82,30 +82,30 @@ namespace Secure_Password_Repository.Controllers
 
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
-                .Where(c => c.CategoryId == 1)
-                .Include("SubCategories")
-                .ToList()
-                .Select(c => new Category()
-                {
-                    SubCategories = c.SubCategories
-                                        .Where(sub => !sub.Deleted)
-                                        .OrderBy(sub => sub.CategoryOrder)
-                                        .Select(s => new Category()                 //remove subcategories and passwords - as these cant be mapped
-                                        {
-                                            Category_ParentID = s.Category_ParentID,
-                                            CategoryId = s.CategoryId,
-                                            CategoryName = s.CategoryName,
-                                            CategoryOrder = s.CategoryOrder
-                                        })
-                                        .ToList(),                                  //make sure only undeleted subcategories are returned
-                    CategoryId = c.CategoryId,
-                    CategoryName = c.CategoryName,
-                    Category_ParentID = c.Category_ParentID,
-                    CategoryOrder = c.CategoryOrder,
-                    Parent_Category = c.Parent_Category,
-                    Deleted = c.Deleted
-                })
-                .Single(c => c.CategoryId == 1);
+                                                        .Where(c => c.CategoryId == 1)
+                                                        .Include("SubCategories")
+                                                        .ToList()
+                                                        .Select(c => new Category()
+                                                        {
+                                                            SubCategories = c.SubCategories
+                                                                                .Where(sub => !sub.Deleted)
+                                                                                .OrderBy(sub => sub.CategoryOrder)
+                                                                                .Select(s => new Category()        //remove subcategories and passwords - as these cant be mapped
+                                                                                {
+                                                                                    Category_ParentID = s.Category_ParentID,
+                                                                                    CategoryId = s.CategoryId,
+                                                                                    CategoryName = s.CategoryName,
+                                                                                    CategoryOrder = s.CategoryOrder
+                                                                                })
+                                                                                .ToList(),                         //make sure only undeleted subcategories are returned
+                                                            CategoryId = c.CategoryId,
+                                                            CategoryName = c.CategoryName,
+                                                            Category_ParentID = c.Category_ParentID,
+                                                            CategoryOrder = c.CategoryOrder,
+                                                            Parent_Category = c.Parent_Category,
+                                                            Deleted = c.Deleted
+                                                        })
+                                                        .Single(c => c.CategoryId == 1);
 
             //create the model view from the model
             CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
@@ -134,7 +134,12 @@ namespace Secure_Password_Repository.Controllers
                 bool userIsAdmin = User.IsInRole("Administrator");
 
                 //load all of the userpassword item that are related to the passwords being return - this stops multiple hits on the DB when calling Any below
-                var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.Id == UserId && DatabaseContext.Passwords.Where(p => p.Parent_CategoryId == ParentCategoryId).Select(p => p.PasswordId).Contains(up.PasswordId)).ToList();
+                var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.Id == UserId && 
+                                                                                DatabaseContext.Passwords
+                                                                                                    .Where(p => p.Parent_CategoryId == ParentCategoryId)
+                                                                                                    .Select(p => p.PasswordId)
+                                                                                                    .Contains(up.PasswordId))
+                                                                                                    .ToList();
 
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
@@ -211,33 +216,56 @@ namespace Secure_Password_Repository.Controllers
                 {
                     if (ModelState.IsValid)
                     {
+
                         //create model from view model
                         Category newCategory = AutoMapper.Mapper.Map<Category>(model);
 
-                        //get the parent node, and include it's subcategories
-                        var categoryList = DatabaseContext.Categories
-                                                                .Where(c => c.CategoryId == model.Category_ParentID)
-                                                                .Include("SubCategories")
-                                                                .Single(c => c.CategoryId == model.Category_ParentID);
+                        //make sure there are no spaces at the end or start of the name
+                        newCategory.CategoryName = newCategory.CategoryName.Trim();
 
-                        //set the order of the category by getting the number of subcategories
-                        if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
-                            newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
+                        //if another category with the same parent and the same name is found
+                        var foundDuplicate = DatabaseContext.Categories.Any(c => c.Category_ParentID == newCategory.Category_ParentID
+                                                                                                                && !c.Deleted && c.CategoryName == newCategory.CategoryName);
+
+                        if (!foundDuplicate)
+                        {
+                            //get the parent node, and include it's subcategories
+                            var categoryList = DatabaseContext.Categories
+                                                                    .Where(c => c.CategoryId == model.Category_ParentID)
+                                                                    .Include("SubCategories")
+                                                                    .SingleOrDefault(c => c.CategoryId == model.Category_ParentID);
+
+                            if (categoryList != null)
+                            {
+
+                                //set the order of the category by getting the number of subcategories
+                                if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
+                                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
+                                else
+                                    newCategory.CategoryOrder = 1;
+
+                                //save the new category
+                                DatabaseContext.Categories.Add(newCategory);
+                                await DatabaseContext.SaveChangesAsync();
+
+                                //map new category to display view model
+                                CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
+
+                                //notify clients that a new category has been added
+                                PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
+
+                                return Json(new { Status = "OK", Data = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem) });
+                            }
+                            else
+                            {
+                                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+                            }
+                            
+                        }
                         else
-                            newCategory.CategoryOrder = 1;
-
-                        //save the new category
-                        DatabaseContext.Categories.Add(newCategory);
-                        await DatabaseContext.SaveChangesAsync();
-
-                        //map new category to display view model
-                        CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
-
-                        //notify clients that a new category has been added
-                        PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
-
-                        return PartialView("_CategoryItem", returnCategoryViewItem);
-
+                        {
+                            return Json(new { Status = "Error", Data = "Duplicate Category Name" });
+                        }
                     }
                     else
                     {
@@ -266,23 +294,41 @@ namespace Secure_Password_Repository.Controllers
                 {
                     if (ModelState.IsValid)
                     {
+                        //map the view model to a category mode
                         Category editedCategory = AutoMapper.Mapper.Map<Category>(model);
 
-                        //update the category
-                        DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
+                        //remove any spaces from the end of the name
+                        editedCategory.CategoryName = editedCategory.CategoryName.Trim();
 
-                        //dont update the categoryorder value
-                        DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified = false;
-                        DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
+                        int intParentId = DatabaseContext.Categories.AsNoTracking().SingleOrDefault(c => c.CategoryId == model.CategoryId).Category_ParentID ?? -1;
 
-                        //save changes
-                        await DatabaseContext.SaveChangesAsync();
+                        //if another category with the same parent and the same name is found
+                        var foundDuplicate = DatabaseContext.Categories.AsNoTracking().Any(c => c.Category_ParentID == intParentId
+                                                                                        && !c.Deleted && c.CategoryId != model.CategoryId
+                                                                                                                                && c.CategoryName == model.CategoryName);
 
-                        //notify clients that a category has been updated
-                        PushNotifications.sendUpdatedCategoryDetails(model);
+                        if (!foundDuplicate)
+                        {
+                            //update the category
+                            DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
 
-                        //return the object, so that the UI can be updated
-                        return Json(model);
+                            //dont update the categoryorder value
+                            DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified = false;
+                            DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
+
+                            //save changes
+                            await DatabaseContext.SaveChangesAsync();
+
+                            //notify clients that a category has been updated
+                            PushNotifications.sendUpdatedCategoryDetails(model);
+
+                            //return the object, so that the UI can be updated
+                            return Json(new { Status = "OK", Data = editedCategory });
+                        }
+                        else
+                        {
+                            return Json(new { Status = "Error", Data = new { ErrorMessage = "Duplicate Category Name", CategoryId = editedCategory.CategoryId } });
+                        }
                     }
                 }
                 catch {

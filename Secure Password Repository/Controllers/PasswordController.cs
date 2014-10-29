@@ -1,4 +1,4 @@
-﻿using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.ViewModels;
@@ -83,21 +83,15 @@ namespace Secure_Password_Repository.Controllers
             //get the root node, and include it's subcategories
             var rootCategoryItem = DatabaseContext.Categories
                                                         .Where(c => c.CategoryId == 1)
-                                                        .Include("SubCategories")
+                                                        .Include(c => c.SubCategories)
                                                         .ToList()
                                                         .Select(c => new Category()
                                                         {
                                                             SubCategories = c.SubCategories
                                                                                 .Where(sub => !sub.Deleted)
                                                                                 .OrderBy(sub => sub.CategoryOrder)
-                                                                                .Select(s => new Category()        //remove subcategories and passwords - as these cant be mapped
-                                                                                {
-                                                                                    Category_ParentID = s.Category_ParentID,
-                                                                                    CategoryId = s.CategoryId,
-                                                                                    CategoryName = s.CategoryName,
-                                                                                    CategoryOrder = s.CategoryOrder
-                                                                                })
                                                                                 .ToList(),                         //make sure only undeleted subcategories are returned
+
                                                             CategoryId = c.CategoryId,
                                                             CategoryName = c.CategoryName,
                                                             Category_ParentID = c.Category_ParentID,
@@ -144,29 +138,18 @@ namespace Secure_Password_Repository.Controllers
                 //return the selected item - with its children
                 var selectedCategoryItem = DatabaseContext.Categories
                                                             .Where(c => c.CategoryId == ParentCategoryId)
-                                                            .Include("SubCategories")
-                                                            .Include("Passwords")
+                                                            .Include(c => c.SubCategories)
+                                                            .Include(c => c.Passwords)
                                                             .Include(c => c.Passwords.Select(p => p.Creator))
                                                             .ToList()
                                                             .Select(c => new Category()
                                                             {
+
                                                                 SubCategories = c.SubCategories
                                                                                     .Where(sub => !sub.Deleted)
                                                                                     .OrderBy(sub => sub.CategoryOrder)
-                                                                                    .Select(s => new Category()         //remove subcategories and passwords - as these cant be mapped
-                                                                                    {
-                                                                                        Category_ParentID = s.Category_ParentID,
-                                                                                        CategoryId = s.CategoryId,
-                                                                                        CategoryName = s.CategoryName,
-                                                                                        CategoryOrder = s.CategoryOrder
-                                                                                    })
                                                                                     .ToList(),                          //make sure only undeleted subcategories are returned
-                                                                CategoryId = c.CategoryId,
-                                                                CategoryName = c.CategoryName,
-                                                                Category_ParentID = c.Category_ParentID,
-                                                                CategoryOrder = c.CategoryOrder,
-                                                                Parent_Category = c.Parent_Category,
-                                                                Deleted = c.Deleted,
+
                                                                 Passwords = c.Passwords
                                                                                     .Where(pass => !pass.Deleted
                                                                                     && (
@@ -175,8 +158,15 @@ namespace Secure_Password_Repository.Controllers
                                                                                         || pass.Creator_Id == UserId
                                                                                         )
                                                                                         )   //make sure only undeleted passwords - that the current user has acccess to - are returned
-                                                                .OrderBy(pass => pass.PasswordOrder)
-                                                                .ToList()
+                                                                                    .OrderBy(pass => pass.PasswordOrder)
+                                                                                    .ToList(),
+
+                                                                CategoryId = c.CategoryId,
+                                                                CategoryName = c.CategoryName,
+                                                                Category_ParentID = c.Category_ParentID,
+                                                                CategoryOrder = c.CategoryOrder,
+                                                                Parent_Category = c.Parent_Category,
+                                                                Deleted = c.Deleted
                                                             })
                                                             .Single(c => c.CategoryId == ParentCategoryId);
 
@@ -184,18 +174,21 @@ namespace Secure_Password_Repository.Controllers
                 CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
 
                 //return wrapper class
-                return PartialView("_ReturnCategoryChildren", new CategoryDisplayItem()
-                {
-                    categoryListItem = selectedCategoryViewItem,
-                    categoryAddItem = new CategoryAdd()
-                    {
-                        Category_ParentID = selectedCategoryViewItem.CategoryId
-                    },
-                    passwordAddItem = new PasswordAdd()
-                    {
-                        Parent_CategoryId = (Int32)selectedCategoryViewItem.CategoryId
-                    }
-                });
+                return PartialView("_ReturnCategoryChildren", 
+                                            new CategoryDisplayItem() {
+                                                                        categoryListItem = selectedCategoryViewItem,
+
+                                                                        categoryAddItem = new CategoryAdd()
+                                                                        {
+                                                                            Category_ParentID = selectedCategoryViewItem.CategoryId
+                                                                        },
+
+                                                                        passwordAddItem = new PasswordAdd()
+                                                                        {
+                                                                            Parent_CategoryId = (Int32)selectedCategoryViewItem.CategoryId
+                                                                        }
+
+                                                                    });
 
             }
             catch { }
@@ -232,7 +225,7 @@ namespace Secure_Password_Repository.Controllers
                             //get the parent node, and include it's subcategories
                             var categoryList = DatabaseContext.Categories
                                                                     .Where(c => c.CategoryId == model.Category_ParentID)
-                                                                    .Include("SubCategories")
+                                                                    .Include(c => c.SubCategories)
                                                                     .SingleOrDefault(c => c.CategoryId == model.Category_ParentID);
 
                             if (categoryList != null)

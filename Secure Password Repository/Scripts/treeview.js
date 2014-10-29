@@ -195,6 +195,7 @@ var hideSpinner = function (itemid) {
     $('#' + itemid).find('.btn-group').show();
 }
 
+//used to reopen categories if F5 has been pressed
 var reopenCategories = function () {
 
     //loop through all categories an find which ones are deeper than the current level

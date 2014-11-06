@@ -61,6 +61,7 @@
             this.txtInstance.Name = "txtInstance";
             this.txtInstance.Size = new System.Drawing.Size(188, 20);
             this.txtInstance.TabIndex = 1;
+            this.txtInstance.Text = "WGS-DEV";
             // 
             // label1
             // 
@@ -86,6 +87,7 @@
             this.txtV2DBName.Name = "txtV2DBName";
             this.txtV2DBName.Size = new System.Drawing.Size(188, 20);
             this.txtV2DBName.TabIndex = 3;
+            this.txtV2DBName.Text = "Secure Password Repository";
             // 
             // label4
             // 
@@ -103,6 +105,7 @@
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.Size = new System.Drawing.Size(188, 20);
             this.txtUsername.TabIndex = 8;
+            this.txtUsername.Text = "matt";
             // 
             // txtPassword
             // 
@@ -111,6 +114,7 @@
             this.txtPassword.PasswordChar = '*';
             this.txtPassword.Size = new System.Drawing.Size(188, 20);
             this.txtPassword.TabIndex = 10;
+            this.txtPassword.Text = "adifferentpass";
             // 
             // label5
             // 
@@ -129,6 +133,7 @@
             this.txtSalt.PasswordChar = '*';
             this.txtSalt.Size = new System.Drawing.Size(188, 20);
             this.txtSalt.TabIndex = 12;
+            this.txtSalt.Text = "0(C_ZWCK-AWaN?e_Hh1eq3nwbq4_U2i4";
             // 
             // label6
             // 
@@ -148,6 +153,7 @@
             this.txtIterationCount.PasswordChar = '*';
             this.txtIterationCount.Size = new System.Drawing.Size(188, 20);
             this.txtIterationCount.TabIndex = 14;
+            this.txtIterationCount.Text = "1000";
             // 
             // label7
             // 
@@ -166,6 +172,7 @@
             this.txtIV.PasswordChar = '*';
             this.txtIV.Size = new System.Drawing.Size(188, 20);
             this.txtIV.TabIndex = 16;
+            this.txtIV.Text = "Ap#ie34uMA4C=4.7";
             // 
             // label8
             // 

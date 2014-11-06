@@ -45,8 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensions\EncryptionAndHashing.cs" />
-    <Compile Include="Extensions\TypeExtensions.cs" />
+    <Compile Include="EncryptionAndHashing.cs" />
+    <Compile Include="TypeExtensions.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

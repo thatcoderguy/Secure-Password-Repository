@@ -121,15 +121,20 @@ namespace V1_Import_Tool
 
                     /*
              
-                    INSERT INTO [Secure Password Repository].[dbo].[Password] ([PasswordId],[Description],[EncryptedUserName],[EncryptedSecondCredential],[EncryptedPassword],[Location],[Notes],[Parent_CategoryId],[Deleted],[PasswordOrder],[Creator_Id],[CreatedDate],[ModifiedDate])
-                    SELECT p.[passwordID],[passwordSystem],[passwordLogin],'',[passwordPassword],[passwordLocation],'',c.CategoryId,[passwordDeleted],[passwordID],CASE WHEN [passwordCustodian] IS NULL THEN 3 ELSE [passwordCustodian] END,[passwordLastUpdated],[passwordLastUpdated]
-                    FROM [passwords].dbo.tblPassword p
-                    INNER JOIN [Secure Password Repository].dbo.Category c ON c.CategoryName  COLLATE Latin1_General_CI_AS  =p.passwordType
+                        INSERT INTO [Secure Password Repository].[dbo].[Password] ([PasswordId],[Description],[EncryptedUserName],[EncryptedSecondCredential],[EncryptedPassword],[Location],[Notes],[Parent_CategoryId],[Deleted],[PasswordOrder],[Creator_Id],[CreatedDate],[ModifiedDate])
+                        SELECT p.[passwordID],[passwordSystem],[passwordLogin],'',[passwordPassword],[passwordLocation],'',c.CategoryId,[passwordDeleted],[passwordID],CASE WHEN [passwordCustodian] IS NULL THEN 3 ELSE [passwordCustodian] END,[passwordLastUpdated],[passwordLastUpdated]
+                        FROM [passwords].dbo.tblPassword p
+                        INNER JOIN [Secure Password Repository].dbo.Category c ON c.CategoryName  COLLATE Latin1_General_CI_AS  =p.passwordType
 
+                        INSERT INTO [dbo].[UserPassword] ([Id],[PasswordId],[CanEditPassword],[CanDeletePassword],[CanViewPassword],[CanChangePermissions])
+                        SELECT [userID],[passwordID],1,0,0,0
+                        FROM [tblUserPassword]
+
+                        update p
+                        set p.EncryptedUserName=p2.passwordLogin,p.EncryptedPassword=p2.passwordPassword
+                        FROM [Secure Password Repository].dbo.Password p
+                        INNER JOIN [Passwords].dbo.tblPassword p2 ON p2.passwordID=p.PasswordId
                      
-                    INSERT INTO [dbo].[UserPassword] ([Id],[PasswordId],[CanEditPassword],[CanDeletePassword],[CanViewPassword],[CanChangePermissions])
-                    SELECT [userID],[passwordID],1,0,0,0
-                    FROM [tblUserPassword]
                     */
 
 
@@ -155,8 +160,11 @@ namespace V1_Import_Tool
                     foreach (DataRow row in dt.Rows)
                     {
 
-                        string newEncrypedUsername = objEncryption.Encrypt_AES256(row["EncryptedUserName"].ToString(), encryptionKey).ToBase64();
-                        string newEncryptedPassword = objEncryption.Encrypt_AES256(row["EncryptedPassword"].ToString(), encryptionKey).ToBase64();
+                        byte[] byteEncrypedUsername = row["EncryptedUserName"].ToString().ToBytes();
+                        string newEncrypedUsername = objEncryption.Encrypt_AES256_ToBytes(byteEncrypedUsername.ToBase64(), encryptionKey).ToBase64().ToBase64String();
+
+                        byte[] byteEncryptedPassword = row["EncryptedPassword"].ToString().ToBytes();
+                        string newEncryptedPassword = objEncryption.Encrypt_AES256_ToBytes(byteEncryptedPassword.ToBase64(), encryptionKey).ToBase64().ToBase64String();
 
                         SqlCommand sqlcomm2 = new SqlCommand("UPDATE Password SET EncryptedUserName='" + newEncrypedUsername + "',EncryptedPassword='" + newEncryptedPassword + "' WHERE [PasswordId]=" + row["PasswordId"].ToString());
 

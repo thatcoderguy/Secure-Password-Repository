@@ -133,7 +133,7 @@ namespace V1_Import_Tool
                     */
 
 
-                    sqlcomm = new SqlCommand("SELECT PasswordId,EncryptedUserName,EncryptedPassword FROM Password WHERE PasswordId>3");
+                    sqlcomm = new SqlCommand("SELECT PasswordId,EncryptedUserName,EncryptedPassword FROM Password");
                     sqlcomm.Connection = version2dbconnection;
                     sqlreader = sqlcomm.ExecuteReader();
 
@@ -155,8 +155,8 @@ namespace V1_Import_Tool
                     foreach (DataRow row in dt.Rows)
                     {
 
-                        string newEncrypedUsername = objEncryption.Encrypt_AES256(row["EncryptedUserName"].ToString().ToBase64(), encryptionKey).ToBase64();
-                        string newEncryptedPassword = objEncryption.Encrypt_AES256(row["EncryptedPassword"].ToString().ToBase64(), encryptionKey).ToBase64();
+                        string newEncrypedUsername = objEncryption.Encrypt_AES256(row["EncryptedUserName"].ToString(), encryptionKey).ToBase64();
+                        string newEncryptedPassword = objEncryption.Encrypt_AES256(row["EncryptedPassword"].ToString(), encryptionKey).ToBase64();
 
                         SqlCommand sqlcomm2 = new SqlCommand("UPDATE Password SET EncryptedUserName='" + newEncrypedUsername + "',EncryptedPassword='" + newEncryptedPassword + "' WHERE [PasswordId]=" + row["PasswordId"].ToString());
 

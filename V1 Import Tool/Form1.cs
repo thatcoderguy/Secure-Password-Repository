@@ -23,29 +23,33 @@ namespace V1_Import_Tool
         private void button1_Click(object sender, EventArgs e)
         {
 
+            int stage = 2;
+
             SqlConnection version2dbconnection = new SqlConnection("Data Source=" + txtInstance.Text + ";Initial Catalog=" + txtV2DBName.Text + ";Integrated Security=SSPI");
 
             version2dbconnection.Open();
 
             EncryptionAndHashing objEncryption = new EncryptionAndHashing();
 
+            byte[] privateKey;
+            byte[] encryptionKey = new byte[] { };
+            DataTable dt = new DataTable();
+
             objEncryption.systemIterationCount = txtIterationCount.Text;
             objEncryption.systemIV = txtIV.Text;
             objEncryption.systemSalt = txtSalt.Text;
 
-            byte[] privateKey;
-            byte[] encryptionKey = new byte[] {};
-
             //first retrieve DB key
-            SqlCommand sqlcomm = new SqlCommand("SELECT userPrivateKey, userEncryptionKey FROM AspNetUsers WHERE UserName = '" + txtUsername.Text + ';');
+            SqlCommand sqlcomm = new SqlCommand("SELECT userPrivateKey, userEncryptionKey FROM AspNetUsers WHERE UserName = '" + txtUsername.Text + "';");
             sqlcomm.Connection = version2dbconnection;
             SqlDataReader sqlreader = sqlcomm.ExecuteReader();
-            
-            if(sqlreader.HasRows)
+
+
+            if (sqlreader.HasRows)
             {
                 sqlreader.Read();
-                privateKey = sqlreader["userPrivateKey"].ToString().ToBytes();
-                encryptionKey = sqlreader["userEncryptionKey"].ToString().ToBytes();
+                privateKey = sqlreader["userPrivateKey"].ToString().FromBase64().ToBytes();
+                encryptionKey = sqlreader["userEncryptionKey"].ToString().FromBase64().ToBytes();
 
                 //hash and encrypt the user's password - so this can be used to decrypt the user's private key
                 byte[] hashedPassword = objEncryption.Hash_SHA1_ToBytes(txtPassword.Text);
@@ -62,86 +66,116 @@ namespace V1_Import_Tool
             sqlreader.Dispose();
             sqlcomm.Dispose();
 
-            //INSERT INTO [dbo].[AspNetUsers] ([userPrivateKey],[userPublicKey],[userEncryptionKey],[userFullName],[isAuthorised],[isActive],[userLastEncryptionKeyUpdate],[Email],[EmailConfirmed],
-            //[PasswordHash],[SecurityStamp],[PhoneNumber],[PhoneNumberConfirmed],[TwoFactorEnabled],[LockoutEndDateUtc],[LockoutEnabled],[AccessFailedCount],[UserName])
-            //SELECT 'pk','pk','ek', [userFullName], 1, [userActive], NULL, 'emil',1,[userPassword],NULL,'',0,0,NULL,1,0,[userLogin] FROM [tblUser]
+            switch(stage)
+            {
+                //update user passwords
+                case 1:
 
-            sqlcomm = new SqlCommand("SELECT id,UserName,PasswordHash FROM AspNetUsers");
-            sqlcomm.Connection = version2dbconnection;
-            sqlreader = sqlcomm.ExecuteReader();
+                    sqlcomm = new SqlCommand("SELECT id,UserName,PasswordHash FROM AspNetUsers WHERE username<>'" + txtUsername.Text + "' and LEN([PasswordHash])>1 AND LEN([PasswordHash])<30");
+                    sqlcomm.Connection = version2dbconnection;
+                    sqlreader = sqlcomm.ExecuteReader();
 
+                    if (sqlreader.HasRows)
+                    {
+                        dt.Load(sqlreader);
+                    }
+
+                    sqlreader.Close();
+                    sqlreader.Dispose();
+                    sqlcomm.Dispose();
+
+                    foreach(DataRow row in dt.Rows) {
+
+                        objEncryption.Generate_NewRSAKeys();
+                        string newPrivateKey = objEncryption.Retrieve_PrivateKey();
+                        string newPublicKey = objEncryption.Retrieve_PublicKey();
+                        objEncryption.Destroy_RSAKeys();
+
+                        string newPassword = row["PasswordHash"].ToString();
+
+                        //hash the user's password
+                        byte[] hashedPassword = objEncryption.Hash_SHA1_ToBytes(newPassword);
+                        hashedPassword = objEncryption.Hash_PBKDF2_ToBytes(hashedPassword, txtSalt.Text).ToBase64();
+
+                        newPassword = objEncryption.Hash_PBKDF2(newPassword).ToBase64();
+
+                        //Encrypt privateKey with the user's encryptionkey (based on their password)
+                        newPrivateKey = objEncryption.Encrypt_AES256_ToBytes(newPrivateKey.ToBase64Bytes(), hashedPassword).ToBase64String();
+
+                        string newEncryptionKey = objEncryption.Encrypt_RSA(encryptionKey, newPublicKey).ToBase64();
+              
+
+                        SqlCommand sqlcomm2 = new SqlCommand("UPDATE AspNetUsers SET SecurityStamp='" + Guid.NewGuid().ToString() + "', [userPrivateKey]='" + newPrivateKey + "',[userPublicKey]='" + newPublicKey + "',[userEncryptionKey]='" + newEncryptionKey + "',[PasswordHash]='" + newPassword + "' WHERE [id]=" + row["id"].ToString());
+
+                        sqlcomm2.Connection = version2dbconnection;
+                        sqlcomm2.ExecuteNonQuery();
+                        sqlcomm2.Dispose();
+               
+
+                    }
+
+                    break;
+
+            //encrypt passwords      
+            case 2:
+
+                    /*
+             
+                        INSERT INTO [Secure Password Repository].[dbo].[Password] ([PasswordId],[Description],[EncryptedUserName],[EncryptedSecondCredential],[EncryptedPassword],[Location],[Notes],[Parent_CategoryId],[Deleted],[PasswordOrder],[Creator_Id],[CreatedDate],[ModifiedDate])
+                        SELECT p.[passwordID],[passwordSystem],[passwordLogin],'',[passwordPassword],[passwordLocation],'',c.CategoryId,[passwordDeleted],[passwordID],CASE WHEN [passwordCustodian] IS NULL THEN 3 ELSE [passwordCustodian] END,[passwordLastUpdated],[passwordLastUpdated]
+                        FROM [passwords].dbo.tblPassword p
+                        INNER JOIN [Secure Password Repository].dbo.Category c ON c.CategoryName  COLLATE Latin1_General_CI_AS  =p.passwordType
+
+                        INSERT INTO [dbo].[UserPassword] ([Id],[PasswordId],[CanEditPassword],[CanDeletePassword],[CanViewPassword],[CanChangePermissions])
+                        SELECT [userID],[passwordID],1,0,0,0
+                        FROM [tblUserPassword]
+
+                        update p
+                        set p.EncryptedUserName=p2.passwordLogin,p.EncryptedPassword=p2.passwordPassword
+                        FROM [Secure Password Repository].dbo.Password p
+                        INNER JOIN [Passwords].dbo.tblPassword p2 ON p2.passwordID=p.PasswordId
+                     
+                    */
+
+
+                    sqlcomm = new SqlCommand("SELECT PasswordId,EncryptedUserName,EncryptedPassword FROM Password");
+                    sqlcomm.Connection = version2dbconnection;
+                    sqlreader = sqlcomm.ExecuteReader();
+
+                    if (sqlreader.HasRows)
+                    {
+
+                        dt = new DataTable();
+
+                        if (sqlreader.HasRows)
+                        {
+                            dt.Load(sqlreader);
+                        }
+                    }
+
+                    sqlreader.Close();
+                    sqlreader.Dispose();
+                    sqlcomm.Dispose();
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+
+                        byte[] byteEncrypedUsername = row["EncryptedUserName"].ToString().ToBytes();
+                        string newEncrypedUsername = objEncryption.Encrypt_AES256_ToBytes(byteEncrypedUsername.ToBase64(), encryptionKey).ToBase64().ToBase64String();
+
+                        byte[] byteEncryptedPassword = row["EncryptedPassword"].ToString().ToBytes();
+                        string newEncryptedPassword = objEncryption.Encrypt_AES256_ToBytes(byteEncryptedPassword.ToBase64(), encryptionKey).ToBase64().ToBase64String();
+
+                        SqlCommand sqlcomm2 = new SqlCommand("UPDATE Password SET EncryptedUserName='" + newEncrypedUsername + "',EncryptedPassword='" + newEncryptedPassword + "' WHERE [PasswordId]=" + row["PasswordId"].ToString());
+
+                        sqlcomm2.Connection = version2dbconnection;
+                        sqlcomm2.ExecuteNonQuery();
+                        sqlcomm2.Dispose();
+
+                    }
             
-            if (sqlreader.HasRows)
-            {
-                while(sqlreader.Read())
-                {
-                    objEncryption.Generate_NewRSAKeys();
-                    string newPrivateKey = objEncryption.Retrieve_PrivateKey();
-                    string newPublicKey = objEncryption.Retrieve_PublicKey();
-                    objEncryption.Destroy_RSAKeys();
-
-                    string newPassword = sqlreader["PasswordHash"].ToString();
-
-                    //hash the user's password
-                    byte[] hashedPassword = objEncryption.Hash_SHA1_ToBytes(newPassword);
-                    hashedPassword = objEncryption.Hash_PBKDF2_ToBytes(hashedPassword, txtSalt.Text);
-
-                    newPassword = objEncryption.Hash_PBKDF2(newPassword).ToBase64();
-
-                    //Encrypt privateKey with the user's encryptionkey (based on their password)
-                    newPrivateKey = objEncryption.Encrypt_AES256_ToBytes(newPrivateKey.ToBase64Bytes(), hashedPassword).ToBase64String();
-                    
-                    string newEncryptionKey = objEncryption.Encrypt_RSA_ToBytes(encryptionKey, newPublicKey).ToString();
-
-                    SqlCommand sqlcomm2 = new SqlCommand("UPDATE AspNetUsers SET [userPrivateKey]='" + newPrivateKey + "',[userPublicKey]='" + newPublicKey + "',[userEncryptionKey]='" + newEncryptionKey + "',[PasswordHash]='" + hashedPassword.ToBase64String() + "' WHERE [id]=" + sqlreader["id"].ToString());
-
-                    sqlcomm2.ExecuteNonQuery();
-                    sqlcomm2.Dispose();
-
-                }
+                    break;
             }
-
-            sqlreader.Close();
-            sqlreader.Dispose();
-            sqlcomm.Dispose();
-
-            /*
-                INSERT INTO [dbo].[Password] ([Description],[EncryptedUserName],[EncryptedSecondCredential],[EncryptedPassword],[Location],[Notes],[Parent_CategoryId],[Deleted],[PasswordOrder],[Creator_Id],[CreatedDate],[ModifiedDate]
-                SELECT [passwordSystem],[passwordLogin],'',[passwordPassword],[passwordLocation],'',???,[passwordDeleted],1,[passwordID],[passwordCustodian],[passwordLastUpdated],[passwordLastUpdated]
-                FROM tblPassword
-             */
-
-
-            /*
-             INSERT INTO [dbo].[UserPassword] ([Id],[PasswordId],[CanEditPassword],[CanDeletePassword],[CanViewPassword],[CanChangePermissions])
-                SELECT [userID],[passwordID],1,0,0,0
-                FROM [tblUserPassword]
-	        */
-
-            sqlcomm = new SqlCommand("SELECT PasswordId,EncryptedUserName,EncryptedPassword FROM Password");
-            sqlcomm.Connection = version2dbconnection;
-            sqlreader = sqlcomm.ExecuteReader();
-
-            if (sqlreader.HasRows)
-            {
-                while (sqlreader.Read())
-                {
-
-                    string newEncrypedUsername = objEncryption.Encrypt_AES256(sqlreader["EncryptedUserName"].ToString().ToBase64(), encryptionKey).ToBase64();
-                    string newEncryptedPassword = objEncryption.Encrypt_AES256(sqlreader["EncryptedPassword"].ToString().ToBase64(), encryptionKey).ToBase64();
-
-                    SqlCommand sqlcomm2 = new SqlCommand("UPDATE AspNetUsers SET EncryptedUserName='" + newEncrypedUsername + ",EncryptedPassword='" + newEncryptedPassword + "' WHERE [id]=" + sqlreader["id"].ToString());
-
-                    sqlcomm2.ExecuteNonQuery();
-                    sqlcomm2.Dispose();
-
-                }
-            }
-
-            sqlreader.Close();
-            sqlreader.Dispose();
-            sqlcomm.Dispose();
-
         }
 
         private void label6_Click(object sender, EventArgs e)

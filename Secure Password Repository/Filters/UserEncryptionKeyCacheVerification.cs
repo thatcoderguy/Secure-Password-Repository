@@ -1,15 +1,11 @@
-﻿using Secure_Password_Repository.Models;
+﻿using Microsoft.Owin.Security;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
+using System.Runtime.Caching;
 using System.Security.Principal;
 using System.Web;
 using System.Web.Mvc;
-using System.Net.Http;
-using Microsoft.Owin.Security;
 using System.Web.Routing;
-using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Filters
 {

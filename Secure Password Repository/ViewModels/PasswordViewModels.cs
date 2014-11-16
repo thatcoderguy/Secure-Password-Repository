@@ -1,11 +1,11 @@
-﻿using Secure_Password_Repository.Models;
+﻿using Microsoft.AspNet.Identity;
+using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
-using Microsoft.AspNet.Identity;
-using Secure_Password_Repository.Extensions;
 
 namespace Secure_Password_Repository.ViewModels
 {
@@ -52,6 +52,11 @@ namespace Secure_Password_Repository.ViewModels
 
         [Display(Name = "Additional Notes")]
         public string Notes { get; set; }
+
+        public bool isLink()
+        {
+            return Location.Length > 7 && (Location.Substring(0, 7) == "http://" || Location.Substring(0, 8) == "https://");
+        }
     }
 
     public class PasswordEdit
@@ -70,7 +75,7 @@ namespace Secure_Password_Repository.ViewModels
         [Display(Name = "Optional Secondary Credential")]
         public string EncryptedSecondCredential { get; set; }
 
-        [Display(Name = "Location - Ideally a URL")]
+        [Display(Name = "Location (prepend http:// or https:// to create a link)")]
         [Required]
         public string Location { get; set; }
 
@@ -97,7 +102,7 @@ namespace Secure_Password_Repository.ViewModels
         [Display(Name = "Optional Secondary Credential")]
         public string EncryptedSecondCredential { get; set; }
 
-        [Display(Name = "Location - Ideally a URL")]
+        [Display(Name = "Location (prepend http:// or https:// to create a link)")]
         [Required]
         public string Location { get; set; }
 
@@ -107,7 +112,6 @@ namespace Secure_Password_Repository.ViewModels
 
         [Display(Name = "Additional Notes")]
         public string Notes { get; set; }
-
     }
 
     public class PasswordDelete

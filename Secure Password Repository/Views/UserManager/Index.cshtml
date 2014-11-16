@@ -5,7 +5,7 @@
 
 <h2>@ViewBag.Title.</h2>
 
-@if (ViewBag.Message != string.Empty && ViewBag.Message != null)
+@if (string.IsNullOrEmpty(ViewBag.Message))
 { 
 <div class="validation-summary-information text-success">
     <ul>

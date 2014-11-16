@@ -1,23 +1,19 @@
-﻿using Secure_Password_Repository.ViewModels;
-using Secure_Password_Repository.Models;
-using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Extensions;
-using Secure_Password_Repository.Settings;
-using System;
-using System.Data.Entity;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Text;
-using System.Web;
-using System.Web.Mvc;
-using System.Runtime.Caching;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
+﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
-using Owin;
+using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Settings;
+using Secure_Password_Repository.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Linq;
+using System.Runtime.Caching;
+using System.Threading.Tasks;
+using System.Web;
+using System.Web.Mvc;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -151,7 +147,7 @@ namespace Secure_Password_Repository.Controllers
 
                             await UserMgr.ResetAccessFailedCountAsync(usersignin.Id);
 
-                            if (returnUrl == null || returnUrl == string.Empty)
+                            if (string.IsNullOrEmpty(returnUrl))
                                 returnUrl = "Password";
 
                             return RedirectToLocal(returnUrl);
@@ -296,15 +292,16 @@ namespace Secure_Password_Repository.Controllers
 
                                     foreach (int adminUserId in adminUserIdList)
                                     {
-                                        UserMgr.SendEmail(adminUserId, "New account needs authorisation",
-                                                    RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
-                                                    new AccountAuthorisationRequest()
-                                                    {
-                                                        callbackurl = callbackurl,
-                                                        userEmail = user.Email,
-                                                        userFullName = user.userFullName,
-                                                        userName = user.UserName
-                                                    }));
+                                        string bodyText = RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
+                                                                                                                                        new AccountAuthorisationRequest()
+                                                                                                                                        {
+                                                                                                                                            callbackurl = callbackurl,
+                                                                                                                                            userEmail = user.Email,
+                                                                                                                                            userFullName = user.userFullName,
+                                                                                                                                            userName = user.UserName
+                                                                                                                                        });
+
+                                        await UserMgr.SendEmailAsync(adminUserId, "New account needs authorisation", bodyText);
                                     }
 
                                 #endregion
@@ -354,11 +351,15 @@ namespace Secure_Password_Repository.Controllers
                 var provider = new Microsoft.Owin.Security.DataProtection.DpapiDataProtectionProvider("Secure Password Repository");
                 UserMgr.UserTokenProvider = new DataProtectorTokenProvider<ApplicationUser, int>(provider.Create("EmailConfirmation"));
 
-                // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                 // Send an email with this link
                 string code = await UserMgr.GeneratePasswordResetTokenAsync(user.Id);
                 var callbackUrl = Url.Action("ResetPassword", "Account", new { UserId = user.Id, Code = code, Email = user.Email }, protocol: Request.Url.Scheme);
-                await UserMgr.SendEmailAsync(user.Id, "Password Reset Request", RenderViewContent.RenderViewToString("Account","ResetPasswordEmail", new PasswordForgetConfirmation { CallBackURL = callbackUrl}));
+                string bodyText = RenderViewContent.RenderViewToString("Account", "ResetPasswordEmail", 
+                                                                                                        new PasswordForgetConfirmation { 
+                                                                                                            CallBackURL = callbackUrl 
+                                                                                                        });
+
+                await UserMgr.SendEmailAsync(user.Id, "Password Reset Request", bodyText);
                 return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
 
@@ -460,15 +461,17 @@ namespace Secure_Password_Repository.Controllers
 
                         foreach (int adminUserId in adminUserIdList)
                         {
-                            UserMgr.SendEmail(adminUserId, "New account needs authorisation",
-                                        RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail",
-                                        new AccountAuthorisationRequest()
-                                        {
-                                            callbackurl = callbackurl,
-                                            userEmail = user.Email,
-                                            userFullName = user.userFullName,
-                                            userName = user.UserName
-                                        }));
+
+                            string bodyText =  RenderViewContent.RenderViewToString("Account", "AuthorisationRequiredEmail", 
+                                                                                                                            new AccountAuthorisationRequest()
+                                                                                                                            {
+                                                                                                                                callbackurl = callbackurl,
+                                                                                                                                userEmail = user.Email,
+                                                                                                                                userFullName = user.userFullName,
+                                                                                                                                userName = user.UserName
+                                                                                                                           });
+
+                            await UserMgr.SendEmailAsync(adminUserId, "New account needs authorisation", bodyText);
                         }
 
                         //redirect back to the account list, with a success message 
@@ -710,14 +713,6 @@ namespace Secure_Password_Repository.Controllers
                 return user.PasswordHash != null;
             }
             return false;
-        }
-
-        private void SendEmail(string email, string callbackUrl, string subject, string message)
-        {
-            // For information on sending mail, please visit http://go.microsoft.com/fwlink/?LinkID=320771
-
-
-
         }
 
         public enum ManageMessageId

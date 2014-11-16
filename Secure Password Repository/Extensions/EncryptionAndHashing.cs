@@ -1,13 +1,9 @@
 ﻿using CryptSharp.Utility;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
 using Secure_Password_Repository.Settings;
+using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Extensions
 {
@@ -1579,7 +1575,7 @@ namespace Secure_Password_Repository.Extensions
             if (Password == null || Password.Length == 0)
                 throw new ArgumentNullException("Missing Password");
 
-            if (Salt == null || Salt == String.Empty)
+            if (string.IsNullOrEmpty(Salt))
                 throw new ArgumentNullException("Missing Salt");
 
             //user specified hash
@@ -1719,7 +1715,7 @@ namespace Secure_Password_Repository.Extensions
             if (Password.Length==0 || Password == null)
                 throw new ArgumentNullException("Missing Password");
 
-            if(Salt == string.Empty || Salt == null)
+            if(string.IsNullOrEmpty(Salt))
                 throw new ArgumentNullException("Missing Salt");
 
             //user specified hash

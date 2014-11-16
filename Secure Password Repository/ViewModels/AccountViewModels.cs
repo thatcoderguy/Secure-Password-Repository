@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
-using System.Web.UI.WebControls;
 
 namespace Secure_Password_Repository.ViewModels
 {

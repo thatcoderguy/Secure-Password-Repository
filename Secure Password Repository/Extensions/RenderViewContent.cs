@@ -1,15 +1,10 @@
-﻿using Secure_Password_Repository.Controllers;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
-using System.Web.UI;
-using System.Web.WebPages;
 
 namespace Secure_Password_Repository.Extensions
 {

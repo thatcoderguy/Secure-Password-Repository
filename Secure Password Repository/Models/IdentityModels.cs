@@ -1,18 +1,12 @@
-﻿using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
+﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
-using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin.Security;
-using Owin;
+using Secure_Password_Repository.Database;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
-using System.Web;
-using Secure_Password_Repository.Extensions;
-using Secure_Password_Repository.Database;
-using System;
-using Secure_Password_Repository.Settings;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Models
 {

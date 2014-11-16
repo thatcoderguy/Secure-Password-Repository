@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.ComponentModel;
-using System.Security.Cryptography;
-using System.Configuration;
-using System.Xml.Serialization;
-using System.Runtime.Caching;
-using System.IO;
-using Microsoft.VisualBasic;
-using Secure_Password_Repository.Extensions;
+﻿using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.ViewModels;
+using System;
+using System.IO;
+using System.Runtime.Caching;
+using System.Web;
+using System.Xml.Serialization;
 
 namespace Secure_Password_Repository.Settings
 {

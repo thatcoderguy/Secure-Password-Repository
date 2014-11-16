@@ -1,23 +1,16 @@
-﻿using Microsoft.AspNet.SignalR;
-using Microsoft.AspNet.SignalR.Hubs;
-using Microsoft.AspNet.Identity;
-using Secure_Password_Repository.Controllers;
+﻿using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.SignalR;
 using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Models;
-using Secure_Password_Repository.ViewModels;
 using Secure_Password_Repository.Settings;
+using Secure_Password_Repository.ViewModels;
 using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Runtime.Caching;
-using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Web;
-using System.Web.Helpers;
-using System.Web.Mvc;
-using System.Data.Entity;
 
 namespace Secure_Password_Repository.Hubs
 {

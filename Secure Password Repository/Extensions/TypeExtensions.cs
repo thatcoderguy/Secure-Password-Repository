@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Text;
-using System.Security;
-using Microsoft.AspNet.Identity;
+﻿using Microsoft.AspNet.Identity;
 using Secure_Password_Repository.Settings;
-using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Models;
+using System;
 using System.Security.Principal;
+using System.Text;
+using System.Web;
 
 namespace Secure_Password_Repository.Extensions
 {

@@ -1,15 +1,9 @@
 ﻿using Microsoft.AspNet.SignalR;
-using Microsoft.AspNet.SignalR.Hubs;
-using Microsoft.AspNet.SignalR.Infrastructure;
-using Microsoft.AspNet.SignalR.Transports;
 using Secure_Password_Repository.Hubs;
-using Secure_Password_Repository.Models;
 using Secure_Password_Repository.ViewModels;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 using System.Runtime.Caching;
+using System.Web;
 
 namespace Secure_Password_Repository.Extensions
 {

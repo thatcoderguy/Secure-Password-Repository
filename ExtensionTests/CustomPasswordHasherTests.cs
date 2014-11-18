@@ -1,10 +1,10 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace ControllerTests
+namespace ExtensionTests
 {
     [TestClass]
-    public class UnitTest1
+    public class CustomPasswordHasherTests
     {
         [TestMethod]
         public void TestMethod1()

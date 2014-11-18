@@ -50,8 +50,13 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="CustomPasswordHasherTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="EncryptionAndHashingTests.cs" />
+    <Compile Include="ProjectSpecificEncryptionAndHashingTsts.cs" />
+    <Compile Include="PushNotificationsTests.cs" />
+    <Compile Include="RenderViewContentTests.cs" />
+    <Compile Include="TypeExtensionsTests.cs" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

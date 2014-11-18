@@ -1,10 +1,10 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace ExtensionTests
+namespace ControllerTests
 {
     [TestClass]
-    public class UnitTest1
+    public class AccountControllerTests
     {
         [TestMethod]
         public void TestMethod1()

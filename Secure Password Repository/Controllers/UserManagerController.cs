@@ -136,12 +136,7 @@ namespace Secure_Password_Repository.Controllers
                     else
                     {
                         //list any errors (e.g. email/username already exists)
-                        string errorlist = string.Empty;
-                        foreach (string error in result.Errors.ToList())
-                            errorlist += error + " and ";
-
-                        if (errorlist != string.Empty)
-                            errorlist = errorlist.Substring(0, errorlist.Length - 5);
+                        string errorlist = string.Join(" and ", result.Errors);
 
                         ModelState.AddModelError("", errorlist);
                     }
@@ -210,8 +205,10 @@ namespace Secure_Password_Repository.Controllers
                 var result = await UserMgr.UpdateAsync(user);
                 if (result.Succeeded)
                 {
-
+                    ///generate url to login action
                     var callbackUrl = Url.Action("Login", "Account", new {}, protocol: Request.Url.Scheme);
+
+                    //generate html body from a view
                     string bodyText = RenderViewContent.RenderViewToString("UserManager", "AccountAuthorisedEmail", 
                                                                                                                     new AccountAuthorisedConfirmation { 
                                                                                                                         CallBackURL = callbackUrl, 
@@ -264,10 +261,7 @@ namespace Secure_Password_Repository.Controllers
 
         private void AddErrors(IdentityResult result)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error);
-            }
+            ModelState.AddModelError("", string.Join(" and ", result.Errors));
         }
 
     }

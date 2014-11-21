@@ -147,14 +147,16 @@ namespace Secure_Password_Repository
                 ContentType mimeType = new System.Net.Mime.ContentType("text/plain");
                 AlternateView alternate = AlternateView.CreateAlternateViewFromString(plainBodyText, mimeType);
 
-                mail.Body = bodyText;
-                mail.IsBodyHtml = true;
+                mail.AlternateViews.Add(alternate);
+
+                mimeType = new System.Net.Mime.ContentType("text/html");
+                alternate = AlternateView.CreateAlternateViewFromString(bodyText, mimeType);
+
                 mail.AlternateViews.Add(alternate);
 
             }
             catch(Exception){
 
-                bodyText = message.Body;
                 mail.Body = message.Body;
                 mail.IsBodyHtml = true;
 

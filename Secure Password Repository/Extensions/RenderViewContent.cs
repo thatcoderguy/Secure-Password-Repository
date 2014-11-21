@@ -37,10 +37,7 @@ namespace Secure_Password_Repository.Extensions
             var bundleList = bundlecontext.BundleCollection.Where(b => b.Path.StartsWith(bundlename)).ToList();
             
             //store the path of each bundle item in the returned list
-            foreach (Bundle bundleItem in bundleList)
-            {
-                bundlePaths.Add(bundleItem.Path);
-            }
+            bundlePaths.AddRange(bundleList.Select(bundle => bundle.Path));
 
             //render the scripts contrained in the bundle list
             return Scripts.Render(bundlePaths.ToArray());
@@ -73,10 +70,7 @@ namespace Secure_Password_Repository.Extensions
             var bundleList = bundlecontext.BundleCollection.Where(b => b.Path.StartsWith(bundlename)).ToList();
 
             //store the path of each bundle item in the returned list
-            foreach (Bundle bundleItem in bundleList)
-            {
-                bundlePaths.Add(bundleItem.Path);
-            }
+            bundlePaths.AddRange(bundleList.Select(bundle => bundle.Path));
 
             //render the scripts contrained in the bundle list
             return Scripts.Render(bundlePaths.ToArray());

@@ -353,8 +353,9 @@ namespace Secure_Password_Repository.Controllers
                                             .Load();
 
                     //loop through and adjust category order
-                    foreach (Category siblingCategory in selectedCategory.Parent_Category.SubCategories
-                                                                                            .Where(c => !c.Deleted && c.CategoryOrder > selectedCategory.CategoryOrder))
+                    foreach (Category siblingCategory in selectedCategory.Parent_Category
+                                                                                    .SubCategories
+                                                                                    .Where(c => !c.Deleted && c.CategoryOrder > selectedCategory.CategoryOrder))
                     {
                         siblingCategory.CategoryOrder--;
                         DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
@@ -1307,7 +1308,9 @@ namespace Secure_Password_Repository.Controllers
                                                     .Load();
 
                             //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
-                            foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
+                            foreach (Category childCategory in currentCategory.Parent_Category
+                                                                                    .SubCategories
+                                                                                    .Where(c => c.CategoryOrder > OldPosition && c.CategoryOrder < NewPosition + 1))
                             {
                                 //move the category up
                                 childCategory.CategoryOrder--;
@@ -1348,7 +1351,9 @@ namespace Secure_Password_Repository.Controllers
                                                     .Load();
 
                             //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                            foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder > OldPosition).Where(p => p.PasswordOrder < NewPosition + 1))
+                            foreach (Password childPassword in currentPassword.Parent_Category
+                                                                                        .Passwords
+                                                                                        .Where(p => p.PasswordOrder > OldPosition && p.PasswordOrder < NewPosition + 1))
                             {
                                 //move the password up
                                 childPassword.PasswordOrder--;
@@ -1395,7 +1400,9 @@ namespace Secure_Password_Repository.Controllers
                                                     .Load();
 
                             //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
-                            foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
+                            foreach (Category childCategory in currentCategory.Parent_Category
+                                                                                    .SubCategories
+                                                                                    .Where(c => c.CategoryOrder < OldPosition && c.CategoryOrder > NewPosition - 1))
                             {
                                 //move the category up
                                 childCategory.CategoryOrder++;
@@ -1436,7 +1443,9 @@ namespace Secure_Password_Repository.Controllers
                                                     .Load();
 
                             //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                            foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder < OldPosition).Where(p => p.PasswordOrder > NewPosition - 1))
+                            foreach (Password childPassword in currentPassword.Parent_Category
+                                                                                    .Passwords
+                                                                                    .Where(p => p.PasswordOrder < OldPosition && p.PasswordOrder > NewPosition - 1))
                             {
                                 //move the password up
                                 childPassword.PasswordOrder++;
@@ -1487,10 +1496,7 @@ namespace Secure_Password_Repository.Controllers
 
         private void AddErrors(IdentityResult result)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error);
-            }
+            ModelState.AddModelError("", string.Join(" and ", result.Errors));
         }
 
         #endregion

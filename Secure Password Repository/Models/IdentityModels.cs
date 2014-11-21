@@ -69,8 +69,6 @@ namespace Secure_Password_Repository.Models
 
             ApplicationDbContext DatabaseContext = new ApplicationDbContext();
 
-            string MyRoles = string.Empty;
-
             foreach (var role in this.Roles)
             {
                 //grab first role that the user has (there should be only 1)

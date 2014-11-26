@@ -55,7 +55,7 @@ namespace Secure_Password_Repository.ViewModels
 
         public bool isLink()
         {
-            return Location.Length > 7 && (Location.Substring(0, 7) == "http://" || Location.Substring(0, 8) == "https://");
+            return !string.IsNullOrEmpty(Location) && Location.Length > 7 && (Location.Substring(0, 7) == "http://" || Location.Substring(0, 8) == "https://");
         }
     }
 

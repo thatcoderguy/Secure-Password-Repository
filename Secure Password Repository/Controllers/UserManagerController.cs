@@ -68,18 +68,23 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> Index()
         {
             //success messages upon return to index page
-            if (Request.QueryString.Get("successaction") == "Account Updated")
+            switch(Request.QueryString.Get("successaction"))
             {
-                ViewBag.Message = "Account updated successfully.";
-            }
-            else if (Request.QueryString.Get("successaction") == "Account Deleted")
-            {
-                ViewBag.Message = "Account delete successfully.";
+                case "Account Updated":
+                    ViewBag.Message = "Account updated successfully.";
+                    break;
+
+                case "Account Deleted":
+                    ViewBag.Message = "Account delete successfully.";
+                    break;
+
+                default:
+                    break;
             }
 
             return View(new UserList() { 
-                Users = await UserMgr.Users.Include("Roles").ToListAsync()
-            });
+                                        Users = await UserMgr.Users.Include("Roles").ToListAsync()
+                                        });
         }
 
         // GET: UserManager/Edit/5

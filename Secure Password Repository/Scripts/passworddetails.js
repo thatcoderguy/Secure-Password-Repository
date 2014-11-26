@@ -51,7 +51,7 @@ var bindClipBoard = function () {
                 success: function (data) {
                     $(event.target).parent().parent().parent().find('input').val(data.PlainTextPassword);
                 }
-            })
+            });
         });
 
         //copy the password into clipboard

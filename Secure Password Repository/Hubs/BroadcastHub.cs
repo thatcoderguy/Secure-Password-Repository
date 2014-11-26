@@ -59,21 +59,25 @@ namespace Secure_Password_Repository.Hubs
         /// <summary>
         /// When a new category is added, all clients request a copy via this method - this is so the view can be rendered with correct permissions
         /// </summary>
-        /// <param name="newCategoryId">ID of the new category</param>
-        public void getNewCategoryDetails(Int32 newCategoryId)
+        /// <param name="newcategoryid">ID of the new category</param>
+        public void getNewCategoryDetails(Int32 newcategoryid)
         {
             //retreive the new category that was just created
-            Category newCategory = DatabaseContext.Categories.Single(c => c.CategoryId == newCategoryId);
+            Category newCategoryDetails = DatabaseContext.Categories.SingleOrDefault(c => c.CategoryId == newcategoryid);
+
+            //category not found
+            if (newCategoryDetails == null)
+                return;
             
             //map new category to display view model
             AutoMapper.Mapper.CreateMap<Category, CategoryItem>();
-            CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
+            CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategoryDetails);
 
             //generate a string based view of the new category
             string categoryPartialView = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem);
 
             //broadcast the new category details
-            PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategory.Category_ParentID);
+            PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategoryDetails.Category_ParentID);
         }
 
         /// <summary>

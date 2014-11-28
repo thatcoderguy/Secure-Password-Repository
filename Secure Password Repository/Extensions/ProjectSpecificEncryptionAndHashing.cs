@@ -113,6 +113,13 @@ namespace Secure_Password_Repository.Extensions
             //EncryptionAndHashing.Decrypt_DPAPI(ref PrivateKey);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentuser"></param>
+        /// <param name="username"></param>
+        /// <param name="secondcredential"></param>
+        /// <param name="password"></param>
         public static void EncryptUsernameAndPasswordFields(ApplicationUser currentuser, ref string username, ref string secondcredential, ref string password)
         {
 
@@ -153,7 +160,13 @@ namespace Secure_Password_Repository.Extensions
             Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
         }
 
-        public static void DecryptUsernameAndPasswordFields(ApplicationUser currentuser, ref string username, ref string secondcredential)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentuser"></param>
+        /// <param name="username"></param>
+        /// <param name="secondcredential"></param>
+        public static void DecryptUsernameFields(ApplicationUser currentuser, ref string username, ref string secondcredential)
         {
 
             //grab the 3 encryption keys that are required to do encryption
@@ -178,6 +191,40 @@ namespace Secure_Password_Repository.Extensions
                 byteData = secondcredential.FromBase64().ToBytes();
                 EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
                 secondcredential = byteData.FromBase64().ConvertToString();
+            }
+
+            //clear what isnt needed any more
+            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentuser"></param>
+        /// <param name="username"></param>
+        /// <param name="secondcredential"></param>
+        public static void DecryptPasswordField(ApplicationUser currentuser, ref string password)
+        {
+
+            //grab the 3 encryption keys that are required to do encryption
+            byte[] bytePrivateKey = currentuser.userPrivateKey.FromBase64().ToBytes();
+            byte[] byteEncryptionKey = currentuser.userEncryptionKey.FromBase64().ToBytes();
+            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(currentuser.UserName).ToString().ToBytes();
+
+            //decrypt the user's private
+            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+
+            //decrypt the database encryption key
+            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
+
+            if (!string.IsNullOrEmpty(password))
+            {
+                //encrypt the updated second credential
+                byte[] byteData = password.FromBase64().ToBytes();
+                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                password = byteData.FromBase64().ConvertToString();
             }
 
             //clear what isnt needed any more

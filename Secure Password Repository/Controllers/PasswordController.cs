@@ -97,11 +97,10 @@ namespace Secure_Password_Repository.Controllers
 
             //root item not found
             if (rootCategoryItem == null)
-                return View(new CategoryDisplayItem()
-                {
-                    categoryListItem = new CategoryItem(),
-                    categoryAddItem = new CategoryAdd() { Category_ParentID = null }
-                });
+                return View(new CategoryDisplayItem() {
+                                                            categoryListItem = new CategoryItem(),
+                                                            categoryAddItem = new CategoryAdd() { Category_ParentID = null }
+                                                      });
 
             //create the model view from the model
             CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
@@ -194,7 +193,9 @@ namespace Secure_Password_Repository.Controllers
                                                                     });
 
             }
-            catch { }
+            catch { 
+                //add logging here
+            }
 
             return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
@@ -205,77 +206,60 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddCategory(CategoryAdd model)
         {
-            //check user can add categories
-            if (User.CanAddCategories() || User.IsInRole("Administrator"))
-            {
-                try
-                {
-                    if (ModelState.IsValid)
-                    {
-
-                        //create model from view model
-                        Category newCategory = AutoMapper.Mapper.Map<Category>(model);
-
-                        //make sure there are no spaces at the end or start of the name
-                        newCategory.CategoryName = newCategory.CategoryName.Trim();
-
-                        //if another category with the same parent and the same name is found
-                        var foundDuplicate = DatabaseContext.Categories.Any(c => c.Category_ParentID == newCategory.Category_ParentID
-                                                                                                                && !c.Deleted && c.CategoryName == newCategory.CategoryName);
-
-                        if (!foundDuplicate)
-                        {
-                            //get the parent node, and include it's subcategories
-                            var categoryList = DatabaseContext.Categories
-                                                                    .Where(c => c.CategoryId == model.Category_ParentID)
-                                                                    .Include(c => c.SubCategories)
-                                                                    .SingleOrDefault(c => c.CategoryId == model.Category_ParentID);
-
-                            if (categoryList != null)
-                            {
-
-                                //set the order of the category by getting the number of subcategories
-                                if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
-                                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
-                                else
-                                    newCategory.CategoryOrder = 1;
-
-                                //save the new category
-                                DatabaseContext.Categories.Add(newCategory);
-                                await DatabaseContext.SaveChangesAsync();
-
-                                //map new category to display view model
-                                CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
-
-                                //notify clients that a new category has been added
-                                PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
-
-                                return Json(new { Status = "OK", Data = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem) });
-                            }
-                            else
-                            {
-                                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                            }
-                            
-                        }
-                        else
-                        {
-                            return Json(new { Status = "Error", Data = "Duplicate Category Name" });
-                        }
-                    }
-                    else
-                    {
-                        return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                    }
-
-                }
-                catch {
-                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                }
-            }
+            if (ModelState.IsValid)
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
             //user does not have access to add passwords
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (!User.CanAddCategories() && !User.IsInRole("Administrator"))
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            try
+            {
+                    
+                //create model from view model
+                Category newCategory = AutoMapper.Mapper.Map<Category>(model);
+
+                //make sure there are no spaces at the end or start of the name
+                newCategory.CategoryName = newCategory.CategoryName.Trim();
+
+                //if another category with the same parent and the same name is found
+                var foundDuplicate = DatabaseContext.Categories.Any(c => c.Category_ParentID == newCategory.Category_ParentID
+                                                                                                        && !c.Deleted && c.CategoryName == newCategory.CategoryName);
+
+                if (foundDuplicate)
+                    return Json(new { Status = "Error", Data = "Duplicate Category Name" });
+
+                //get the parent node, and include it's subcategories
+                var categoryList = DatabaseContext.Categories
+                                                        .Where(c => c.CategoryId == model.Category_ParentID)
+                                                        .Include(c => c.SubCategories)
+                                                        .SingleOrDefault();
+                //parent not not found
+                if (categoryList == null)
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+                //set the order of the category by getting the number of subcategories
+                if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
+                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
+                else
+                    newCategory.CategoryOrder = 1;
+
+                //save the new category
+                DatabaseContext.Categories.Add(newCategory);
+                await DatabaseContext.SaveChangesAsync();
+
+                //map new category to display view model
+                CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
+
+                //notify clients that a new category has been added
+                PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
+
+                return Json(new { Status = "OK", Data = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem) });
+
+            }
+            catch {
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+            }
         }
 
         // POST: Password/EditCategory/5
@@ -283,57 +267,60 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> EditCategory(CategoryEdit model)
         {
-            //check user has access to edit categories
-            if (User.CanEditCategories() || User.IsInRole("Administrator"))
-            {
-                try
-                {
-                    if (ModelState.IsValid)
-                    {
-                        //map the view model to a category mode
-                        Category editedCategory = AutoMapper.Mapper.Map<Category>(model);
-
-                        //remove any spaces from the end of the name
-                        editedCategory.CategoryName = editedCategory.CategoryName.Trim();
-
-                        int intParentId = DatabaseContext.Categories.AsNoTracking().SingleOrDefault(c => c.CategoryId == model.CategoryId).Category_ParentID ?? -1;
-
-                        //if another category with the same parent and the same name is found
-                        var foundDuplicate = DatabaseContext.Categories.AsNoTracking().Any(c => c.Category_ParentID == intParentId
-                                                                                        && !c.Deleted && c.CategoryId != model.CategoryId
-                                                                                                                                && c.CategoryName == model.CategoryName);
-
-                        if (!foundDuplicate)
-                        {
-                            //update the category
-                            DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
-
-                            //dont update the categoryorder value
-                            DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified = false;
-                            DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
-
-                            //save changes
-                            await DatabaseContext.SaveChangesAsync();
-
-                            //notify clients that a category has been updated
-                            PushNotifications.sendUpdatedCategoryDetails(model);
-
-                            //return the object, so that the UI can be updated
-                            return Json(new { Status = "OK", Data = editedCategory });
-                        }
-                        else
-                        {
-                            return Json(new { Status = "Error", Data = new { ErrorMessage = "Duplicate Category Name", CategoryId = editedCategory.CategoryId } });
-                        }
-                    }
-                }
-                catch {
-                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                }
-            }
+            if (ModelState.IsValid)
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
             //user does not have access to edit category
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (!User.CanEditCategories() && !User.IsInRole("Administrator"))
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+       
+            try
+            {
+  
+                //map the view model to a category mode
+                Category editedCategory = AutoMapper.Mapper.Map<Category>(model);
+
+                //remove any spaces from the end of the name
+                editedCategory.CategoryName = editedCategory.CategoryName.Trim();
+
+                int intParentId = DatabaseContext.Categories.AsNoTracking().SingleOrDefault(c => c.CategoryId == model.CategoryId).Category_ParentID ?? -1;
+
+                //if another category with the same parent and the same name is found
+                var foundDuplicate = DatabaseContext.Categories.AsNoTracking().Any(c => c.Category_ParentID == intParentId
+                                                                                                                        && !c.Deleted && c.CategoryId != model.CategoryId
+                                                                                                                        && c.CategoryName == model.CategoryName);
+
+                if (foundDuplicate)
+                    return Json(new { 
+                                        Status = "Error", 
+                                        Data = new { 
+                                                        ErrorMessage = "Duplicate Category Name", 
+                                                        CategoryId = editedCategory.CategoryId 
+                                                    } 
+                                });
+
+                //update the category
+                DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
+
+                //dont update the categoryorder value
+                DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified = false;
+                DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
+
+                //save changes
+                await DatabaseContext.SaveChangesAsync();
+
+                //notify clients that a category has been updated
+                PushNotifications.sendUpdatedCategoryDetails(model);
+
+                //return the object, so that the UI can be updated
+                return Json(new { Status = "OK", Data = editedCategory });
+
+            }
+            catch {
+                //add logging here
+            }
+            
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
 
 
@@ -342,66 +329,65 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int CategoryId)
         {
-            //check the user is allowed to delete categories
-            if (User.CanDeleteCategories() || User.IsInRole("Administrator"))
+            //user does not have access to delete categories
+            if (!User.CanDeleteCategories() && !User.IsInRole("Administrator"))
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            try
             {
-                try
-                {
 
-                    //get the category item to delete
-                    var selectedCategory = DatabaseContext.Categories
-                                                            .Where(c => c.CategoryId == CategoryId)
-                                                            .Include("Parent_Category")
-                                                            .SingleOrDefault();
+                //get the category item to delete
+                var selectedCategory = DatabaseContext.Categories
+                                                        .Where(c => c.CategoryId == CategoryId)
+                                                        .Include("Parent_Category")
+                                                        .SingleOrDefault();
 
-                    //category not found
-                    if(selectedCategory == null)
-                        return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-
-                    //load in the parent's subcategories
-                    DatabaseContext.Entry(selectedCategory.Parent_Category)
-                                            .Collection(c => c.SubCategories)
-                                            .Query()
-                                            .Where(c => !c.Deleted)
-                                            .Load();
-
-                    //loop through and adjust category order
-                    foreach (Category siblingCategory in selectedCategory.Parent_Category
-                                                                                    .SubCategories
-                                                                                    .Where(c => !c.Deleted && c.CategoryOrder > selectedCategory.CategoryOrder))
-                    {
-                        siblingCategory.CategoryOrder--;
-                        DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
-                    }
-
-                    //set the item to deleted
-                    selectedCategory.Deleted = true;
-
-                    //move it to the very end
-                    selectedCategory.CategoryOrder = 9999;
-
-                    //set the item to be deleted
-                    DatabaseContext.Entry(selectedCategory).State = EntityState.Modified;
-
-                    //save changes
-                    await DatabaseContext.SaveChangesAsync();
-
-                    //create the view model to return relevant details
-                    CategoryDelete deletedCategory = AutoMapper.Mapper.Map<CategoryDelete>(selectedCategory);
-
-                    //notify clients that a category has been deleted
-                    PushNotifications.sendDeletedCategoryDetails(deletedCategory);
-
-                    //return the item, so that it can be removed from the UI
-                    return Json(deletedCategory);
-                }
-                catch {
+                //category not found
+                if(selectedCategory == null)
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+                //load in the parent's subcategories
+                DatabaseContext.Entry(selectedCategory.Parent_Category)
+                                        .Collection(c => c.SubCategories)
+                                        .Query()
+                                        .Where(c => !c.Deleted)
+                                        .Load();
+
+                //loop through and adjust category order
+                foreach (Category siblingCategory in selectedCategory.Parent_Category
+                                                                                .SubCategories
+                                                                                .Where(c => !c.Deleted && c.CategoryOrder > selectedCategory.CategoryOrder))
+                {
+                    siblingCategory.CategoryOrder--;
+                    DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
                 }
+
+                //set the item to deleted
+                selectedCategory.Deleted = true;
+
+                //move it to the very end
+                selectedCategory.CategoryOrder = 9999;
+
+                //set the item to be deleted
+                DatabaseContext.Entry(selectedCategory).State = EntityState.Modified;
+
+                //save changes
+                await DatabaseContext.SaveChangesAsync();
+
+                //create the view model to return relevant details
+                CategoryDelete deletedCategory = AutoMapper.Mapper.Map<CategoryDelete>(selectedCategory);
+
+                //notify clients that a category has been deleted
+                PushNotifications.sendDeletedCategoryDetails(deletedCategory);
+
+                //return the item, so that it can be removed from the UI
+                return Json(deletedCategory);
+            }
+            catch {
+                //add logging here   
             }
 
-            //user does not have access to delete categories
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
 
         #endregion
@@ -428,11 +414,27 @@ namespace Secure_Password_Repository.Controllers
                                                             && (
                                                                 (UserIDList.Contains(UserId))
                                                              || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
-                                                             || pass.Creator_Id == UserId)
+                                                             || pass.Creator_Id == UserId) && pass.PasswordId == PasswordId
                                                                 )
                                                                 .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
-                                                                .SingleOrDefault(p => p.PasswordId == PasswordId);
+                                                                .SingleOrDefault();
 
+
+            //user does not have access to view password
+            if(selectedPassword == null)
+            {
+                passwordDisplayDetails = new PasswordDetails
+                {
+                    UserPermissions = new System.Collections.ObjectModel.Collection<PasswordUserPermission>(),
+                    ViewPassword = new PasswordDisplay(),
+                    EditPassword = new PasswordEdit(),
+                    OpenTab = DefaultTab.ViewPassword
+                };
+
+                ModelState.AddModelError("", "You do not have permission to view this password");
+
+                return View(passwordDisplayDetails);
+            }
            
             //obtain a list of users that dont have a record in the UserPassword table
             var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
@@ -456,65 +458,24 @@ namespace Secure_Password_Repository.Controllers
             //wipe this out, as we dont want to decrypted and on show - plus we want to know if we should update the password when EditPassword is called
             selectedPassword.EncryptedPassword = "";
 
-
             #region Decrypt_Password_Fields
 
-                //grab the 3 encryption keys that are required to do encryption
-                byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+                string DecryptedUsername = selectedPassword.EncryptedUserName;
+                string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
 
-                //decrypt the user's private
-                EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+                EncryptionAndHashing.DecryptUsernameFields(user, ref DecryptedUsername, ref DecryptedSecondCredential);
 
-                //decrypt the database encryption key
-                EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                //decrypt the username
-                byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
-
-                if (!string.IsNullOrEmpty(selectedPassword.EncryptedSecondCredential))
-                {
-                    //decrypt the second credential
-                    byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                    EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                    selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                }
-
-                //clear what isnt needed any more
-                Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                Array.Clear(byteData, 0, byteData.Length);
+                selectedPassword.EncryptedUserName = DecryptedUsername;
+                selectedPassword.EncryptedSecondCredential = DecryptedSecondCredential;
 
             #endregion
 
-
-            //user has access
-            if (selectedPassword != null)
+            passwordDisplayDetails = new PasswordDetails
             {
-                passwordDisplayDetails = new PasswordDetails
-                {
-                    UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.OrderBy(up => up.UserPasswordUser.userFullName).ToList()),
-                    ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
-                    EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
-                };
-            }
-            //user does not have access
-            else
-            {
-                passwordDisplayDetails = new PasswordDetails
-                {
-                    UserPermissions = new System.Collections.ObjectModel.Collection<PasswordUserPermission>(),
-                    ViewPassword = new PasswordDisplay(),
-                    EditPassword = new PasswordEdit(),
-                    OpenTab = DefaultTab.ViewPassword
-                };
-
-                ModelState.AddModelError("", "You do not have permission to view this password");
-            }
+                UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.OrderBy(up => up.UserPasswordUser.userFullName).ToList()),
+                ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
+                EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
+            };
 
             passwordDisplayDetails.OpenTab = DefaultTab.ViewPassword;
             return View(passwordDisplayDetails);
@@ -524,6 +485,7 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password/AddPassword/24
         public ActionResult AddPassword(int ParentCategoryId)
         {
+            //return the view - this will open in Magnificent window
             return View("AddPassword", new PasswordAdd { Parent_CategoryId = ParentCategoryId });
         }
 
@@ -534,7 +496,7 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> AddPassword(PasswordAdd model)
         {
             if (!ModelState.IsValid)
-                return View();
+                return View(model);
 
             //check if user can add passwords
             if (!User.CanAddPasswords() && !User.IsInRole("Administrator"))
@@ -575,46 +537,19 @@ namespace Secure_Password_Repository.Controllers
                 newPasswordItem.Creator_Id = user.Id;
                 newPasswordItem.Location = model.Location;
 
-
                 #region Encrypt_Password_Fields
 
-                    //grab the 3 encryption keys that are required to do encryption
-                    byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                    byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                    byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+                    string EncryptedUsername = newPasswordItem.EncryptedUserName;
+                    string EncryptedSecondCredential = newPasswordItem.EncryptedSecondCredential;
+                    string EncryptedPassword = newPasswordItem.EncryptedPassword;
 
-                    //decrypt the users copy of the private key
-                    EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+                    EncryptionAndHashing.EncryptUsernameAndPasswordFields(user, ref EncryptedUsername, ref EncryptedSecondCredential, ref EncryptedPassword);
 
-                    //decrypt the users copy of the database key
-                    EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                    //encrypt the username
-                    byte[] byteData = model.EncryptedUserName.ToBytes();
-                    EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                    newPasswordItem.EncryptedUserName = byteData.ToBase64String();
-
-                    if(!string.IsNullOrEmpty(model.EncryptedSecondCredential))
-                    { 
-                        //encrypt the second credential
-                        byteData = model.EncryptedSecondCredential.ToBytes();
-                        EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                        newPasswordItem.EncryptedSecondCredential = byteData.ToBase64String();
-                    }
-
-                    //encrypt the password
-                    byteData = model.EncryptedPassword.ToBytes();
-                    EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                    newPasswordItem.EncryptedPassword = byteData.ToBase64String();
-
-                    //clear what isnt needed any more
-                    Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                    Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                    Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                    Array.Clear(byteData, 0, byteData.Length);
+                    newPasswordItem.EncryptedUserName = EncryptedUsername;
+                    newPasswordItem.EncryptedSecondCredential = EncryptedSecondCredential;
+                    newPasswordItem.EncryptedPassword = EncryptedPassword;
 
                 #endregion
-
 
                 //add the new password item
                 DatabaseContext.Passwords.Add(newPasswordItem);
@@ -720,7 +655,7 @@ namespace Secure_Password_Repository.Controllers
                     string DecryptedUserName = selectedPassword.EncryptedUserName;
                     string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
 
-                    EncryptionAndHashing.DecryptUsernameAndPasswordFields(user,
+                    EncryptionAndHashing.DecryptUsernameFields(user,
                                                                             ref DecryptedUserName,
                                                                             ref DecryptedSecondCredential);
 
@@ -739,14 +674,14 @@ namespace Secure_Password_Repository.Controllers
             }
 
             //user does not have access to edit the password
-            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
+            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) && selectedPassword.Creator_Id != UserId)
             {
                 #region Decrypt_Password_Fields_To_Display
 
                     string DecryptedUserName = selectedPassword.EncryptedUserName;
                     string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
 
-                    EncryptionAndHashing.DecryptUsernameAndPasswordFields(user,
+                    EncryptionAndHashing.DecryptUsernameFields(user,
                                                                             ref DecryptedUserName,
                                                                             ref DecryptedSecondCredential);
 
@@ -829,26 +764,21 @@ namespace Secure_Password_Repository.Controllers
                                                             .Where(pass => pass.Creator_Id == UserId || pass.Parent_UserPasswords.Any(up => up.CanDeletePassword && up.Id == UserId))
                                                             .SingleOrDefault(p => p.PasswordId == PasswordId);
 
-
-            if (selectedPassword!=null)
-            {
-
-                //set the password as deleted and save to database
-                selectedPassword.Deleted = true;
-                DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
-                await DatabaseContext.SaveChangesAsync();
-
-                PasswordDelete deletedPassword = AutoMapper.Mapper.Map<PasswordDelete>(selectedPassword);
-
-                PushNotifications.sendDeletedPasswordDetails(deletedPassword);
-
-                //return item so it can be removed from the UI
-                return Json(deletedPassword);
-
-            }
-
             //user does not have access to delete the password
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (selectedPassword==null)
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden); 
+
+            //set the password as deleted and save to database
+            selectedPassword.Deleted = true;
+            DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
+            await DatabaseContext.SaveChangesAsync();
+
+            PasswordDelete deletedPassword = AutoMapper.Mapper.Map<PasswordDelete>(selectedPassword);
+
+            PushNotifications.sendDeletedPasswordDetails(deletedPassword);
+
+            //return item so it can be removed from the UI
+            return Json(deletedPassword);
         }
 
 
@@ -914,7 +844,7 @@ namespace Secure_Password_Repository.Controllers
                 string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
                 string DecryptedPassword = selectedPassword.EncryptedPassword;
 
-                EncryptionAndHashing.DecryptUsernameAndPasswordFields(user, ref DecryptedUserName, ref DecryptedSecondCredential);
+                EncryptionAndHashing.DecryptUsernameFields(user, ref DecryptedUserName, ref DecryptedSecondCredential);
 
                 selectedPassword.EncryptedUserName = DecryptedUserName;
                 selectedPassword.EncryptedSecondCredential = DecryptedSecondCredential;
@@ -1098,44 +1028,20 @@ namespace Secure_Password_Repository.Controllers
                                                                )).SingleOrDefault(p => p.PasswordId == PasswordId);
 
 
-            //return the password if it exists
-            if (selectedPassword != null)
-            {
-
-
-                #region Decrypt_Password
-
-                    //grab the 3 encryption keys that are required to do encryption
-                    byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                    byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                    byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                    //decrypt the user's private
-                    EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                    //decrypt the database encryption key
-                    EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                    //decrypt the password
-                    byte[] byteData = selectedPassword.EncryptedPassword.FromBase64().ToBytes();
-                    EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                    selectedPassword.EncryptedPassword = byteData.FromBase64().ConvertToString();
-
-                    //clear what isnt needed any more
-                    Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                    Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                    Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                    Array.Clear(byteData, 0, byteData.Length);
-
-                #endregion
-
-
-                PasswordPassword passwordText = new PasswordPassword {PlainTextPassword = selectedPassword.EncryptedPassword };
-                return Json(passwordText);
-            }
-
             //password does not exist... or user does not have access
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (selectedPassword == null)
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            #region Decrypt_Password
+
+                string DecryptedPassword = selectedPassword.EncryptedPassword;
+                EncryptionAndHashing.DecryptPasswordField(user, ref DecryptedPassword);
+                selectedPassword.EncryptedPassword = DecryptedPassword;
+
+            #endregion
+
+            PasswordPassword passwordText = new PasswordPassword {PlainTextPassword = selectedPassword.EncryptedPassword };
+            return Json(passwordText);
         }
 
         #endregion
@@ -1148,216 +1054,214 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
         {
             //check if user can edit categories
-            if (User.CanEditCategories() || User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administrator"))
-            {
-                try
+            if (!User.CanEditCategories() && !User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) && !User.IsInRole("Administrator"))
+                return Json(new
                 {
-                    //disable auto detect changes (as this slows everything down)
-                    DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
+                    Status = "Failed"
+                });
 
-                    //moved down
-                    if (NewPosition > OldPosition)
+            try
+            {
+                //disable auto detect changes (as this slows everything down)
+                DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
+
+                //moved down
+                if (NewPosition > OldPosition)
+                {
+
+
+                    if (isCategoryItem)
                     {
 
+                        #region movecategorydown
 
-                        if (isCategoryItem)
+                        //get the category item to move
+                        var currentCategory = DatabaseContext.Categories
+                                                                .Include("Parent_Category")
+                                                                .Single(c => c.CategoryId == ItemId);
+
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentCategory.Parent_Category)
+                                                .Collection(c => c.SubCategories)
+                                                .Query()
+                                                .Where(c => !c.Deleted)
+                                                .Load();
+
+                        //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
+                        foreach (Category childCategory in currentCategory.Parent_Category
+                                                                                .SubCategories
+                                                                                .Where(c => c.CategoryOrder > OldPosition && c.CategoryOrder < NewPosition + 1))
                         {
+                            //move the category up
+                            childCategory.CategoryOrder--;
 
-                            #region movecategorydown
-
-                            //get the category item to move
-                            var currentCategory = DatabaseContext.Categories
-                                                                    .Include("Parent_Category")
-                                                                    .Single(c => c.CategoryId == ItemId);
-
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentCategory.Parent_Category)
-                                                    .Collection(c => c.SubCategories)
-                                                    .Query()
-                                                    .Where(c => !c.Deleted)
-                                                    .Load();
-
-                            //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
-                            foreach (Category childCategory in currentCategory.Parent_Category
-                                                                                    .SubCategories
-                                                                                    .Where(c => c.CategoryOrder > OldPosition && c.CategoryOrder < NewPosition + 1))
-                            {
-                                //move the category up
-                                childCategory.CategoryOrder--;
-
-                                //tell EF that the category has been altered
-                                DatabaseContext.Entry(childCategory).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentCategory.CategoryOrder = NewPosition;
-                            DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
+                            //tell EF that the category has been altered
+                            DatabaseContext.Entry(childCategory).State = EntityState.Modified;
                         }
-                        else
-                        {
 
-                            #region movepasswordown
+                        //set its new position
+                        currentCategory.CategoryOrder = NewPosition;
+                        DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
 
-                            //get the password item to move
-                            var currentPassword = DatabaseContext.Passwords
-                                                                    .Include("Parent_Category")
-                                                                    .Single(p => p.PasswordId == ItemId);
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
 
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentPassword.Parent_Category)
-                                                    .Collection(c => c.Passwords)
-                                                    .Query()
-                                                    .Where(p => !p.Deleted)
-                                                    .Load();
+                        if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
-                            //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                            foreach (Password childPassword in currentPassword.Parent_Category
-                                                                                        .Passwords
-                                                                                        .Where(p => p.PasswordOrder > OldPosition && p.PasswordOrder < NewPosition + 1))
-                            {
-                                //move the password up
-                                childPassword.PasswordOrder--;
-
-                                //tell EF that the password has been altered
-                                DatabaseContext.Entry(childPassword).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentPassword.PasswordOrder = NewPosition;
-                            DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
-                        }
+                        #endregion
 
                     }
-                    //moved up
                     else
                     {
 
-                        if (isCategoryItem)
-                        {
+                        #region movepasswordown
 
-                            #region movecategoryup
+                        //get the password item to move
+                        var currentPassword = DatabaseContext.Passwords
+                                                                .Include("Parent_Category")
+                                                                .Single(p => p.PasswordId == ItemId);
 
-                            //get the category item to move
-                            var currentCategory = DatabaseContext.Categories
-                                                                    .Include("Parent_Category")
-                                                                    .Single(c => c.CategoryId == ItemId);
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentPassword.Parent_Category)
+                                                .Collection(c => c.Passwords)
+                                                .Query()
+                                                .Where(p => !p.Deleted)
+                                                .Load();
 
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentCategory.Parent_Category)
-                                                    .Collection(c => c.SubCategories)
-                                                    .Query()
-                                                    .Where(c => !c.Deleted)
-                                                    .Load();
-
-                            //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
-                            foreach (Category childCategory in currentCategory.Parent_Category
-                                                                                    .SubCategories
-                                                                                    .Where(c => c.CategoryOrder < OldPosition && c.CategoryOrder > NewPosition - 1))
-                            {
-                                //move the category up
-                                childCategory.CategoryOrder++;
-
-                                //tell EF that the category has been altered
-                                DatabaseContext.Entry(childCategory).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentCategory.CategoryOrder = NewPosition;
-                            DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
-                        }
-                        else
-                        {
-
-                            #region movepasswordup
-
-                            //get the password item to move
-                            var currentPassword = DatabaseContext.Passwords
-                                                                    .Include("Parent_Category")
-                                                                    .Single(p => p.PasswordId == ItemId);
-
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentPassword.Parent_Category)
-                                                    .Collection(c => c.Passwords)
-                                                    .Query()
-                                                    .Where(p => !p.Deleted)
-                                                    .Load();
-
-                            //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                            foreach (Password childPassword in currentPassword.Parent_Category
+                        //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
+                        foreach (Password childPassword in currentPassword.Parent_Category
                                                                                     .Passwords
-                                                                                    .Where(p => p.PasswordOrder < OldPosition && p.PasswordOrder > NewPosition - 1))
-                            {
-                                //move the password up
-                                childPassword.PasswordOrder++;
+                                                                                    .Where(p => p.PasswordOrder > OldPosition && p.PasswordOrder < NewPosition + 1))
+                        {
+                            //move the password up
+                            childPassword.PasswordOrder--;
 
-                                //tell EF that the password has been altered
-                                DatabaseContext.Entry(childPassword).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentPassword.PasswordOrder = NewPosition;
-                            DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
+                            //tell EF that the password has been altered
+                            DatabaseContext.Entry(childPassword).State = EntityState.Modified;
                         }
+
+                        //set its new position
+                        currentPassword.PasswordOrder = NewPosition;
+                        DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
+
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
+
+                        if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
+
+                        #endregion
 
                     }
 
-                    DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+                }
+                //moved up
+                else
+                {
 
-                    return Json(new
+                    if (isCategoryItem)
                     {
-                        Status = "Completed"
-                    });
+
+                        #region movecategoryup
+
+                        //get the category item to move
+                        var currentCategory = DatabaseContext.Categories
+                                                                .Include("Parent_Category")
+                                                                .Single(c => c.CategoryId == ItemId);
+
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentCategory.Parent_Category)
+                                                .Collection(c => c.SubCategories)
+                                                .Query()
+                                                .Where(c => !c.Deleted)
+                                                .Load();
+
+                        //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
+                        foreach (Category childCategory in currentCategory.Parent_Category
+                                                                                .SubCategories
+                                                                                .Where(c => c.CategoryOrder < OldPosition && c.CategoryOrder > NewPosition - 1))
+                        {
+                            //move the category up
+                            childCategory.CategoryOrder++;
+
+                            //tell EF that the category has been altered
+                            DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                        }
+
+                        //set its new position
+                        currentCategory.CategoryOrder = NewPosition;
+                        DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
+
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
+
+                        if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
+
+                        #endregion
+
+                    }
+                    else
+                    {
+
+                        #region movepasswordup
+
+                        //get the password item to move
+                        var currentPassword = DatabaseContext.Passwords
+                                                                .Include("Parent_Category")
+                                                                .Single(p => p.PasswordId == ItemId);
+
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentPassword.Parent_Category)
+                                                .Collection(c => c.Passwords)
+                                                .Query()
+                                                .Where(p => !p.Deleted)
+                                                .Load();
+
+                        //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
+                        foreach (Password childPassword in currentPassword.Parent_Category
+                                                                                .Passwords
+                                                                                .Where(p => p.PasswordOrder < OldPosition && p.PasswordOrder > NewPosition - 1))
+                        {
+                            //move the password up
+                            childPassword.PasswordOrder++;
+
+                            //tell EF that the password has been altered
+                            DatabaseContext.Entry(childPassword).State = EntityState.Modified;
+                        }
+
+                        //set its new position
+                        currentPassword.PasswordOrder = NewPosition;
+                        DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
+
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
+
+                        if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
+
+                        #endregion
+
+                    }
 
                 }
-                catch { }
+
+                DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+
+                return Json(new
+                {
+                    Status = "Completed"
+                });
 
             }
-
-            return Json(new
-            {
-                Status = "Failed"
-            });
-
+            catch { 
+                //add logging here
+            }
         }
 
         #endregion

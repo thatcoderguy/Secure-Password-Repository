@@ -1,14 +1,12 @@
-﻿using Secure_Password_Repository.Models;
+﻿using Microsoft.AspNet.Identity.Owin;
+using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Settings;
 using Secure_Password_Repository.ViewModels;
-using System;
-using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using System.Data.Entity;
-using System.Threading.Tasks;
-using Microsoft.AspNet.Identity.Owin;
 
 namespace Secure_Password_Repository.Controllers
 {

@@ -1,34 +1,28 @@
-using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Models;
-using Secure_Password_Repository.Extensions;
-using Secure_Password_Repository.ViewModels;
-using Secure_Password_Repository.Settings;
-using Secure_Password_Repository.Hubs;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
 using Secure_Password_Repository.Controllers;
+using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Settings;
+using Secure_Password_Repository.ViewModels;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Net.Http;
+using System.Net;
+using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using System.Net;
-using System.Runtime.Caching;
-using System.Data.Entity.Infrastructure;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
-using Microsoft.AspNet.Identity.EntityFramework;
-using Microsoft.Owin.Security;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
 {
     [Authorize(Roles = "Administrator, Super User, User")]
-#if !DEBUG
-[RequireHttps] //apply to all actions in controller
-#endif
+    #if !DEBUG
+    [RequireHttps] //apply to all actions in controller
+    #endif
     public class PasswordController : Controller
     {
 
@@ -99,7 +93,14 @@ namespace Secure_Password_Repository.Controllers
                                                             Parent_Category = c.Parent_Category,
                                                             Deleted = c.Deleted
                                                         })
-                                                        .Single(c => c.CategoryId == 1);
+                                                        .SingleOrDefault();
+
+            //root item not found
+            if (rootCategoryItem == null)
+                return View(new CategoryDisplayItem() {
+                                                            categoryListItem = new CategoryItem(),
+                                                            categoryAddItem = new CategoryAdd() { Category_ParentID = null }
+                                                      });
 
             //create the model view from the model
             CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
@@ -108,10 +109,7 @@ namespace Secure_Password_Repository.Controllers
             return View(new CategoryDisplayItem()
             {
                 categoryListItem = rootCategoryViewItem,
-                categoryAddItem = new CategoryAdd()
-                {
-                    Category_ParentID = rootCategoryViewItem.CategoryId
-                }
+                categoryAddItem = new CategoryAdd() { Category_ParentID = rootCategoryViewItem.CategoryId }
             });
         }
 
@@ -168,7 +166,11 @@ namespace Secure_Password_Repository.Controllers
                                                                 Parent_Category = c.Parent_Category,
                                                                 Deleted = c.Deleted
                                                             })
-                                                            .Single(c => c.CategoryId == ParentCategoryId);
+                                                            .SingleOrDefault();
+
+                //selected item not found
+                if(selectedCategoryItem == null)
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
                 //create view model from model
                 CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
@@ -191,7 +193,9 @@ namespace Secure_Password_Repository.Controllers
                                                                     });
 
             }
-            catch { }
+            catch { 
+                //add logging here
+            }
 
             return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
@@ -202,77 +206,60 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddCategory(CategoryAdd model)
         {
-            //check user can add categories
-            if (User.CanAddCategories() || User.IsInRole("Administrator"))
-            {
-                try
-                {
-                    if (ModelState.IsValid)
-                    {
-
-                        //create model from view model
-                        Category newCategory = AutoMapper.Mapper.Map<Category>(model);
-
-                        //make sure there are no spaces at the end or start of the name
-                        newCategory.CategoryName = newCategory.CategoryName.Trim();
-
-                        //if another category with the same parent and the same name is found
-                        var foundDuplicate = DatabaseContext.Categories.Any(c => c.Category_ParentID == newCategory.Category_ParentID
-                                                                                                                && !c.Deleted && c.CategoryName == newCategory.CategoryName);
-
-                        if (!foundDuplicate)
-                        {
-                            //get the parent node, and include it's subcategories
-                            var categoryList = DatabaseContext.Categories
-                                                                    .Where(c => c.CategoryId == model.Category_ParentID)
-                                                                    .Include(c => c.SubCategories)
-                                                                    .SingleOrDefault(c => c.CategoryId == model.Category_ParentID);
-
-                            if (categoryList != null)
-                            {
-
-                                //set the order of the category by getting the number of subcategories
-                                if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
-                                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
-                                else
-                                    newCategory.CategoryOrder = 1;
-
-                                //save the new category
-                                DatabaseContext.Categories.Add(newCategory);
-                                await DatabaseContext.SaveChangesAsync();
-
-                                //map new category to display view model
-                                CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
-
-                                //notify clients that a new category has been added
-                                PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
-
-                                return Json(new { Status = "OK", Data = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem) });
-                            }
-                            else
-                            {
-                                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                            }
-                            
-                        }
-                        else
-                        {
-                            return Json(new { Status = "Error", Data = "Duplicate Category Name" });
-                        }
-                    }
-                    else
-                    {
-                        return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                    }
-
-                }
-                catch {
-                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                }
-            }
+            if (ModelState.IsValid)
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
             //user does not have access to add passwords
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (!User.CanAddCategories() && !User.IsInRole("Administrator"))
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            try
+            {
+                    
+                //create model from view model
+                Category newCategory = AutoMapper.Mapper.Map<Category>(model);
+
+                //make sure there are no spaces at the end or start of the name
+                newCategory.CategoryName = newCategory.CategoryName.Trim();
+
+                //if another category with the same parent and the same name is found
+                var foundDuplicate = DatabaseContext.Categories.Any(c => c.Category_ParentID == newCategory.Category_ParentID
+                                                                                                        && !c.Deleted && c.CategoryName == newCategory.CategoryName);
+
+                if (foundDuplicate)
+                    return Json(new { Status = "Error", Data = "Duplicate Category Name" });
+
+                //get the parent node, and include it's subcategories
+                var categoryList = DatabaseContext.Categories
+                                                        .Where(c => c.CategoryId == model.Category_ParentID)
+                                                        .Include(c => c.SubCategories)
+                                                        .SingleOrDefault();
+                //parent not not found
+                if (categoryList == null)
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+                //set the order of the category by getting the number of subcategories
+                if (categoryList.SubCategories.Where(c => !c.Deleted).ToList().Count > 0)
+                    newCategory.CategoryOrder = (Int16)(categoryList.SubCategories.Where(c => !c.Deleted).Max(c => c.CategoryOrder) + 1);
+                else
+                    newCategory.CategoryOrder = 1;
+
+                //save the new category
+                DatabaseContext.Categories.Add(newCategory);
+                await DatabaseContext.SaveChangesAsync();
+
+                //map new category to display view model
+                CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategory);
+
+                //notify clients that a new category has been added
+                PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
+
+                return Json(new { Status = "OK", Data = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem) });
+
+            }
+            catch {
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+            }
         }
 
         // POST: Password/EditCategory/5
@@ -280,57 +267,60 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> EditCategory(CategoryEdit model)
         {
-            //check user has access to edit categories
-            if (User.CanEditCategories() || User.IsInRole("Administrator"))
-            {
-                try
-                {
-                    if (ModelState.IsValid)
-                    {
-                        //map the view model to a category mode
-                        Category editedCategory = AutoMapper.Mapper.Map<Category>(model);
-
-                        //remove any spaces from the end of the name
-                        editedCategory.CategoryName = editedCategory.CategoryName.Trim();
-
-                        int intParentId = DatabaseContext.Categories.AsNoTracking().SingleOrDefault(c => c.CategoryId == model.CategoryId).Category_ParentID ?? -1;
-
-                        //if another category with the same parent and the same name is found
-                        var foundDuplicate = DatabaseContext.Categories.AsNoTracking().Any(c => c.Category_ParentID == intParentId
-                                                                                        && !c.Deleted && c.CategoryId != model.CategoryId
-                                                                                                                                && c.CategoryName == model.CategoryName);
-
-                        if (!foundDuplicate)
-                        {
-                            //update the category
-                            DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
-
-                            //dont update the categoryorder value
-                            DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified = false;
-                            DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
-
-                            //save changes
-                            await DatabaseContext.SaveChangesAsync();
-
-                            //notify clients that a category has been updated
-                            PushNotifications.sendUpdatedCategoryDetails(model);
-
-                            //return the object, so that the UI can be updated
-                            return Json(new { Status = "OK", Data = editedCategory });
-                        }
-                        else
-                        {
-                            return Json(new { Status = "Error", Data = new { ErrorMessage = "Duplicate Category Name", CategoryId = editedCategory.CategoryId } });
-                        }
-                    }
-                }
-                catch {
-                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-                }
-            }
+            if (ModelState.IsValid)
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
             //user does not have access to edit category
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (!User.CanEditCategories() && !User.IsInRole("Administrator"))
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+       
+            try
+            {
+  
+                //map the view model to a category mode
+                Category editedCategory = AutoMapper.Mapper.Map<Category>(model);
+
+                //remove any spaces from the end of the name
+                editedCategory.CategoryName = editedCategory.CategoryName.Trim();
+
+                int intParentId = DatabaseContext.Categories.AsNoTracking().SingleOrDefault(c => c.CategoryId == model.CategoryId).Category_ParentID ?? -1;
+
+                //if another category with the same parent and the same name is found
+                var foundDuplicate = DatabaseContext.Categories.AsNoTracking().Any(c => c.Category_ParentID == intParentId
+                                                                                                                        && !c.Deleted && c.CategoryId != model.CategoryId
+                                                                                                                        && c.CategoryName == model.CategoryName);
+
+                if (foundDuplicate)
+                    return Json(new { 
+                                        Status = "Error", 
+                                        Data = new { 
+                                                        ErrorMessage = "Duplicate Category Name", 
+                                                        CategoryId = editedCategory.CategoryId 
+                                                    } 
+                                });
+
+                //update the category
+                DatabaseContext.Entry(editedCategory).State = EntityState.Modified;
+
+                //dont update the categoryorder value
+                DatabaseContext.Entry(editedCategory).Property("CategoryOrder").IsModified = false;
+                DatabaseContext.Entry(editedCategory).Property("Category_ParentID").IsModified = false;
+
+                //save changes
+                await DatabaseContext.SaveChangesAsync();
+
+                //notify clients that a category has been updated
+                PushNotifications.sendUpdatedCategoryDetails(model);
+
+                //return the object, so that the UI can be updated
+                return Json(new { Status = "OK", Data = editedCategory });
+
+            }
+            catch {
+                //add logging here
+            }
+            
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
 
 
@@ -339,61 +329,65 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int CategoryId)
         {
-            //check the user is allowed to delete categories
-            if (User.CanDeleteCategories() || User.IsInRole("Administrator"))
+            //user does not have access to delete categories
+            if (!User.CanDeleteCategories() && !User.IsInRole("Administrator"))
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            try
             {
-                try
-                {
 
-                    //get the category item to delete
-                    var selectedCategory = DatabaseContext.Categories
-                                                            .Where(c => c.CategoryId == CategoryId)
-                                                            .Include("Parent_Category")
-                                                            .Single(c => c.CategoryId == CategoryId);
+                //get the category item to delete
+                var selectedCategory = DatabaseContext.Categories
+                                                        .Where(c => c.CategoryId == CategoryId)
+                                                        .Include("Parent_Category")
+                                                        .SingleOrDefault();
 
-                    //load in the parent's subcategories
-                    DatabaseContext.Entry(selectedCategory.Parent_Category)
-                                            .Collection(c => c.SubCategories)
-                                            .Query()
-                                            .Where(c => !c.Deleted)
-                                            .Load();
-
-                    //loop through and adjust category order
-                    foreach (Category siblingCategory in selectedCategory.Parent_Category.SubCategories
-                                                                                            .Where(c => !c.Deleted && c.CategoryOrder > selectedCategory.CategoryOrder))
-                    {
-                        siblingCategory.CategoryOrder--;
-                        DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
-                    }
-
-                    //set the item to deleted
-                    selectedCategory.Deleted = true;
-
-                    //move it to the very end
-                    selectedCategory.CategoryOrder = 9999;
-
-                    //set the item to be deleted
-                    DatabaseContext.Entry(selectedCategory).State = EntityState.Modified;
-
-                    //save changes
-                    await DatabaseContext.SaveChangesAsync();
-
-                    //create the view model to return relevant details
-                    CategoryDelete deletedCategory = AutoMapper.Mapper.Map<CategoryDelete>(selectedCategory);
-
-                    //notify clients that a category has been deleted
-                    PushNotifications.sendDeletedCategoryDetails(deletedCategory);
-
-                    //return the item, so that it can be removed from the UI
-                    return Json(deletedCategory);
-                }
-                catch {
+                //category not found
+                if(selectedCategory == null)
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+                //load in the parent's subcategories
+                DatabaseContext.Entry(selectedCategory.Parent_Category)
+                                        .Collection(c => c.SubCategories)
+                                        .Query()
+                                        .Where(c => !c.Deleted)
+                                        .Load();
+
+                //loop through and adjust category order
+                foreach (Category siblingCategory in selectedCategory.Parent_Category
+                                                                                .SubCategories
+                                                                                .Where(c => !c.Deleted && c.CategoryOrder > selectedCategory.CategoryOrder))
+                {
+                    siblingCategory.CategoryOrder--;
+                    DatabaseContext.Entry(siblingCategory).State = EntityState.Modified;
                 }
+
+                //set the item to deleted
+                selectedCategory.Deleted = true;
+
+                //move it to the very end
+                selectedCategory.CategoryOrder = 9999;
+
+                //set the item to be deleted
+                DatabaseContext.Entry(selectedCategory).State = EntityState.Modified;
+
+                //save changes
+                await DatabaseContext.SaveChangesAsync();
+
+                //create the view model to return relevant details
+                CategoryDelete deletedCategory = AutoMapper.Mapper.Map<CategoryDelete>(selectedCategory);
+
+                //notify clients that a category has been deleted
+                PushNotifications.sendDeletedCategoryDetails(deletedCategory);
+
+                //return the item, so that it can be removed from the UI
+                return Json(deletedCategory);
+            }
+            catch {
+                //add logging here   
             }
 
-            //user does not have access to delete categories
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
         }
 
         #endregion
@@ -420,11 +414,27 @@ namespace Secure_Password_Repository.Controllers
                                                             && (
                                                                 (UserIDList.Contains(UserId))
                                                              || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
-                                                             || pass.Creator_Id == UserId)
+                                                             || pass.Creator_Id == UserId) && pass.PasswordId == PasswordId
                                                                 )
                                                                 .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
-                                                                .SingleOrDefault(p => p.PasswordId == PasswordId);
+                                                                .SingleOrDefault();
 
+
+            //user does not have access to view password
+            if(selectedPassword == null)
+            {
+                passwordDisplayDetails = new PasswordDetails
+                {
+                    UserPermissions = new System.Collections.ObjectModel.Collection<PasswordUserPermission>(),
+                    ViewPassword = new PasswordDisplay(),
+                    EditPassword = new PasswordEdit(),
+                    OpenTab = DefaultTab.ViewPassword
+                };
+
+                ModelState.AddModelError("", "You do not have permission to view this password");
+
+                return View(passwordDisplayDetails);
+            }
            
             //obtain a list of users that dont have a record in the UserPassword table
             var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
@@ -448,65 +458,24 @@ namespace Secure_Password_Repository.Controllers
             //wipe this out, as we dont want to decrypted and on show - plus we want to know if we should update the password when EditPassword is called
             selectedPassword.EncryptedPassword = "";
 
-
             #region Decrypt_Password_Fields
 
-                //grab the 3 encryption keys that are required to do encryption
-                byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
+                string DecryptedUsername = selectedPassword.EncryptedUserName;
+                string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
 
-                //decrypt the user's private
-                EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+                EncryptionAndHashing.DecryptUsernameFields(user, ref DecryptedUsername, ref DecryptedSecondCredential);
 
-                //decrypt the database encryption key
-                EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                //decrypt the username
-                byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
-
-                if (selectedPassword.EncryptedSecondCredential != null && selectedPassword.EncryptedSecondCredential != string.Empty)
-                {
-                    //decrypt the second credential
-                    byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                    EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                    selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                }
-
-                //clear what isnt needed any more
-                Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                Array.Clear(byteData, 0, byteData.Length);
+                selectedPassword.EncryptedUserName = DecryptedUsername;
+                selectedPassword.EncryptedSecondCredential = DecryptedSecondCredential;
 
             #endregion
 
-
-            //user has access
-            if (selectedPassword != null)
+            passwordDisplayDetails = new PasswordDetails
             {
-                passwordDisplayDetails = new PasswordDetails
-                {
-                    UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.OrderBy(up => up.UserPasswordUser.userFullName).ToList()),
-                    ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
-                    EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
-                };
-            }
-            //user does not have access
-            else
-            {
-                passwordDisplayDetails = new PasswordDetails
-                {
-                    UserPermissions = new System.Collections.ObjectModel.Collection<PasswordUserPermission>(),
-                    ViewPassword = new PasswordDisplay(),
-                    EditPassword = new PasswordEdit(),
-                    OpenTab = DefaultTab.ViewPassword
-                };
-
-                ModelState.AddModelError("", "You do not have permission to view this password");
-            }
+                UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(selectedPassword.Parent_UserPasswords.OrderBy(up => up.UserPasswordUser.userFullName).ToList()),
+                ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword),
+                EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword)
+            };
 
             passwordDisplayDetails.OpenTab = DefaultTab.ViewPassword;
             return View(passwordDisplayDetails);
@@ -516,6 +485,7 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password/AddPassword/24
         public ActionResult AddPassword(int ParentCategoryId)
         {
+            //return the view - this will open in Magnificent window
             return View("AddPassword", new PasswordAdd { Parent_CategoryId = ParentCategoryId });
         }
 
@@ -525,115 +495,93 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddPassword(PasswordAdd model)
         {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            //check if user can add passwords
+            if (!User.CanAddPasswords() && !User.IsInRole("Administrator"))
+            {
+                ModelState.AddModelError("", "You do not have permission to create passwords");
+                return View(model);
+            }
+
             try
             {
 
+                Password newPasswordItem = AutoMapper.Mapper.Map<Password>(model);
 
-                //check if usercan add passwords
-                if (User.CanAddPasswords() || User.IsInRole("Administrator"))
+                var userId = int.Parse(User.Identity.GetUserId());
+                var user = await UserMgr.FindByIdAsync(userId);
+
+                //get the parent category node, and include it's passwords
+                var passwordList = DatabaseContext.Categories
+                                                        .Where(c => c.CategoryId == model.Parent_CategoryId)
+                                                        .Include("Passwords")
+                                                        .SingleOrDefault();
+
+                //could not find item
+                if (passwordList == null)
                 {
-
-                    if (ModelState.IsValid)
-                    {
-                        Password newPasswordItem = AutoMapper.Mapper.Map<Password>(model);
-
-                        var userId = int.Parse(User.Identity.GetUserId());
-                        var user = await UserMgr.FindByIdAsync(userId);
-
-                        //get the parent category node, and include it's passwords
-                        var passwordList = DatabaseContext.Categories
-                                                                .Where(c => c.CategoryId == model.Parent_CategoryId)
-                                                                .Include("Passwords")
-                                                                .Single(c => c.CategoryId == model.Parent_CategoryId);
-
-                        //set the order of the category by getting the number of subcategories
-                        if (passwordList.Passwords.Where(p => !p.Deleted).ToList().Count > 0)
-                            newPasswordItem.PasswordOrder = (Int16)(passwordList.Passwords.Where(p => !p.Deleted).Max(p => p.PasswordOrder) + 1);
-                        else
-                            newPasswordItem.PasswordOrder = 1;
-
-                        newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
-                        newPasswordItem.CreatedDate = DateTime.Now;
-                        newPasswordItem.Creator_Id = user.Id;
-                        newPasswordItem.Location = model.Location.Replace("http://", "");
-
-
-                        #region Encrypt_Password_Fields
-
-                        //grab the 3 encryption keys that are required to do encryption
-                        byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                        byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                        byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                        //decrypt the users copy of the private key
-                        EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                        //decrypt the users copy of the database key
-                        EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                        //encrypt the username
-                        byte[] byteData = model.EncryptedUserName.ToBytes();
-                        EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                        newPasswordItem.EncryptedUserName = byteData.ToBase64String();
-
-                        if(model.EncryptedSecondCredential != null && model.EncryptedSecondCredential != string.Empty)
-                        { 
-                            //encrypt the second credential
-                            byteData = model.EncryptedSecondCredential.ToBytes();
-                            EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                            newPasswordItem.EncryptedSecondCredential = byteData.ToBase64String();
-                        }
-
-                        //encrypt the password
-                        byteData = model.EncryptedPassword.ToBytes();
-                        EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                        newPasswordItem.EncryptedPassword = byteData.ToBase64String();
-
-                        //clear what isnt needed any more
-                        Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                        Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                        Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                        Array.Clear(byteData, 0, byteData.Length);
-
-                        #endregion
-
-
-                        //add the new password item
-                        DatabaseContext.Passwords.Add(newPasswordItem);
-
-                        //also create the UserPassword record
-                        UserPassword newUserPassword = new UserPassword()
-                        {
-                            CanDeletePassword = true,
-                            CanEditPassword = true,
-                            CanViewPassword = true,
-                            CanChangePermissions = true,
-                            PasswordId = newPasswordItem.PasswordId,
-                            Id = user.Id
-                        };
-
-                        //add the new userpassword item
-                        DatabaseContext.UserPasswords.Add(newUserPassword);
-
-                        //save both items to database
-                        await DatabaseContext.SaveChangesAsync();
-
-                        //notify clients that a new password has been added
-                        PushNotifications.newPasswordAdded(newPasswordItem.PasswordId);
-
-                        return RedirectToAction("ViewPassword", new System.Web.Routing.RouteValueDictionary { { "PasswordId", newPasswordItem.PasswordId } });
-                    }
-
+                    ModelState.AddModelError("", "Could not find parent category");
+                    return View(model);
                 }
+
+                //set the order of the category by getting the number of subcategories
+                if (passwordList.Passwords.Where(p => !p.Deleted).ToList().Count > 0)
+                    newPasswordItem.PasswordOrder = (Int16)(passwordList.Passwords.Where(p => !p.Deleted).Max(p => p.PasswordOrder) + 1);
                 else
+                    newPasswordItem.PasswordOrder = 1;
+
+                newPasswordItem.Parent_CategoryId = model.Parent_CategoryId;
+                newPasswordItem.CreatedDate = DateTime.Now;
+                newPasswordItem.Creator_Id = user.Id;
+                newPasswordItem.Location = model.Location;
+
+                #region Encrypt_Password_Fields
+
+                    string EncryptedUsername = newPasswordItem.EncryptedUserName;
+                    string EncryptedSecondCredential = newPasswordItem.EncryptedSecondCredential;
+                    string EncryptedPassword = newPasswordItem.EncryptedPassword;
+
+                    EncryptionAndHashing.EncryptUsernameAndPasswordFields(user, ref EncryptedUsername, ref EncryptedSecondCredential, ref EncryptedPassword);
+
+                    newPasswordItem.EncryptedUserName = EncryptedUsername;
+                    newPasswordItem.EncryptedSecondCredential = EncryptedSecondCredential;
+                    newPasswordItem.EncryptedPassword = EncryptedPassword;
+
+                #endregion
+
+                //add the new password item
+                DatabaseContext.Passwords.Add(newPasswordItem);
+
+                //also create the UserPassword record
+                UserPassword newUserPassword = new UserPassword()
                 {
-                    ModelState.AddModelError("", "You do not have permission to create passwords");
-                }
+                    CanDeletePassword = true,
+                    CanEditPassword = true,
+                    CanViewPassword = true,
+                    CanChangePermissions = true,
+                    PasswordId = newPasswordItem.PasswordId,
+                    Id = user.Id
+                };
+
+                //add the new userpassword item
+                DatabaseContext.UserPasswords.Add(newUserPassword);
+
+                //save both items to database
+                await DatabaseContext.SaveChangesAsync();
+
+                //notify clients that a new password has been added
+                PushNotifications.newPasswordAdded(newPasswordItem.PasswordId);
+
+                return RedirectToAction("ViewPassword", new System.Web.Routing.RouteValueDictionary { { "PasswordId", newPasswordItem.PasswordId } });
+
             }
             catch (Exception Ex)
             {
                 ModelState.AddModelError("", "An error occured: " + Ex.Message);
             }
+
             return View(model);
         }
 
@@ -657,222 +605,15 @@ namespace Secure_Password_Repository.Controllers
                                                                     && (
                                                                         (UserIDList.Contains(UserId))
                                                                      || pass.Creator_Id == UserId
-                                                                        )
+                                                                        ) 
+                                                                    && pass.PasswordId == model.EditPassword.PasswordId
                                                                    )
                                                                    .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
                                                                    .Include(p => p.Creator)
-                                                                   .SingleOrDefault(p => p.PasswordId == model.EditPassword.PasswordId);
+                                                                   .SingleOrDefault();
 
-            //user has access to aleast view the password
-            if (selectedPassword != null)
-            {
-
-                //if user can change permission, then load up the additional users
-                if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
-                {
-                    //obtain a list of users that cont have a record in the UserPassword table
-                    var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
-
-                    //add a new UserPassword record in to the list, so that every user is displayed on the "permissions" page.
-                    foreach (var userItem in UserList)
-                    {
-                        UserPasswordList.Add(new UserPassword()
-                        {
-                            Id = userItem.Id,
-                            PasswordId = selectedPassword.PasswordId,
-                            CanChangePermissions = false,
-                            CanViewPassword = false,
-                            CanEditPassword = false,
-                            CanDeletePassword = false,
-                            UserPasswordUser = userItem,
-                            UsersPassword = selectedPassword
-                        });
-                    }
-                }
-
-                if (ModelState.IsValid && model.EditPassword != null)
-                {
-
-                    //does the user have access to edit the password?
-                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
-                    {
-
-
-                        #region Encrypt_Updated_Password_Fields
-
-                            //grab the 3 encryption keys that are required to do encryption
-                            byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                            byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                            //decrypt the user's private
-                            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                            //decrypt the database encryption key
-                            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                            //encrypt the updated username
-                            byte[] byteData = model.EditPassword.EncryptedUserName.ToBytes();
-                            EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                            model.EditPassword.EncryptedUserName = byteData.ToBase64String();
-
-                            if (model.EditPassword.EncryptedSecondCredential != null && model.EditPassword.EncryptedSecondCredential != string.Empty)
-                            {
-                                //encrypt the updated second credential
-                                byteData = model.EditPassword.EncryptedSecondCredential.ToBytes();
-                                EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                                model.EditPassword.EncryptedSecondCredential = byteData.ToBase64String();
-                            }
-
-                            //only if something has been entered into the password box
-                            if (model.EditPassword.EncryptedPassword != null && model.EditPassword.EncryptedPassword != string.Empty)
-                            {
-                                byteData = model.EditPassword.EncryptedPassword.ToBytes();
-                                EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
-                                model.EditPassword.EncryptedPassword = byteData.ToBase64String();
-                            }
-
-                            //clear what isnt needed any more
-                            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-
-                        #endregion
-
-
-                        //save changes to database
-                        DatabaseContext.Entry(selectedPassword).CurrentValues.SetValues(model.EditPassword);
-
-                        //if a new password has not been entered
-                        if (model.EditPassword.EncryptedPassword == null || model.EditPassword.EncryptedPassword == string.Empty)
-                        {
-                            DatabaseContext.Entry(selectedPassword).Property("EncryptedPassword").IsModified = false;
-                        }
-
-                        await DatabaseContext.SaveChangesAsync();
-
-                        //do not display on edit form
-                        model.EditPassword.EncryptedPassword = "";
-                        selectedPassword.EncryptedPassword = "";
-
-                        //decrypt the username
-                        byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-                        EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                        selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
-                        model.EditPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
-
-                        if (selectedPassword.EncryptedSecondCredential != string.Empty && selectedPassword.EncryptedSecondCredential != null)
-                        {
-                            //decrypt the second credential
-                            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                            model.EditPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                        }
-
-                        //clear what isnt needed
-                        Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                        Array.Clear(byteData, 0, byteData.Length);
-
-                        //supply the missing data, so the model can be returned
-                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(UserPasswordList.OrderBy(up => up.UserPasswordUser.userFullName));
-                        model.OpenTab = DefaultTab.EditPassword;
-
-                        PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
-                    }
-                    //user does not have access to edit
-                    else
-                    {
-
-                        #region Encrypt_Updated_Password_Fields
-
-                            //grab the 3 encryption keys that are required to do encryption
-                            byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                            byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                            //decrypt the user's private
-                            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                            //decrypt the database encryption key
-                            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                            //encrypt the updated username
-                            byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedUserName = byteData.ConvertToString();
-
-                            if (selectedPassword.EncryptedSecondCredential != null  && selectedPassword.EncryptedSecondCredential != string.Empty)
-                            {
-                                //encrypt the updated second credential
-                                byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                                selectedPassword.EncryptedSecondCredential = byteData.ConvertToString();
-                            }
-
-                            //clear what isnt needed any more
-                            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-
-                        #endregion
-
-
-                        //return just a readonly model
-                        model.EditPassword = new PasswordEdit();
-                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                        model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(UserPasswordList.OrderBy(up => up.UserPasswordUser.userFullName));
-                        model.OpenTab = DefaultTab.ViewPassword;
-
-                        ModelState.AddModelError("", "You do not have permission to edit this password");
-                    }
-
-                }
-                //model is invalid
-                else
-                {
-
-                    #region Encrypt_Updated_Password_Fields
-
-                        //grab the 3 encryption keys that are required to do encryption
-                        byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                        byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                        byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                        //decrypt the user's private
-                        EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                        //decrypt the database encryption key
-                        EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                        //encrypt the updated username
-                        byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-                        EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                        selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
-
-                        if (selectedPassword.EncryptedSecondCredential != null && selectedPassword.EncryptedSecondCredential != string.Empty)
-                        {
-                            //encrypt the updated second credential
-                            byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                        }
-
-                        //clear what isnt needed any more
-                        Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                        Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-
-                    #endregion
-
-
-                    //supply the missing data, so the model can be returned
-                    model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                    model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(UserPasswordList.OrderBy(up => up.UserPasswordUser.userFullName));
-                    model.OpenTab = DefaultTab.EditPassword;
-                }
-
-            }
-            //user does not have access to view
-            else
+            //user does not have access to view the password
+            if (selectedPassword == null)
             {
                 //return empty model
                 model.ViewPassword = new PasswordDisplay();
@@ -881,7 +622,125 @@ namespace Secure_Password_Repository.Controllers
                 model.OpenTab = DefaultTab.ViewPassword;
 
                 ModelState.AddModelError("", "You do not have permission to view this password");
+
+                return View("ViewPassword", model);
             }
+
+            //if user can change permission, then load up the additional users
+            if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+            {
+                //obtain a list of users that cont have a record in the UserPassword table
+                var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
+
+                //add a new UserPassword record in to the list, so that every user is displayed on the "permissions" page.
+                UserPasswordList.AddRange(UserList.Select(userpass => new UserPassword()
+                {
+                    Id = userpass.Id,
+                    PasswordId = selectedPassword.PasswordId,
+                    CanChangePermissions = false,
+                    CanViewPassword = false,
+                    CanEditPassword = false,
+                    CanDeletePassword = false,
+                    UserPasswordUser = userpass,
+                    UsersPassword = selectedPassword
+                }));
+
+            }
+
+            //model state is invalid, to the editpassword model not submitted
+            if (!ModelState.IsValid || model.EditPassword == null)
+            {
+                #region Decrypt_Password_Fields_To_Display
+
+                    string DecryptedUserName = selectedPassword.EncryptedUserName;
+                    string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
+
+                    EncryptionAndHashing.DecryptUsernameFields(user,
+                                                                            ref DecryptedUserName,
+                                                                            ref DecryptedSecondCredential);
+
+                    selectedPassword.EncryptedUserName = DecryptedUserName;
+                    selectedPassword.EncryptedSecondCredential = DecryptedSecondCredential;
+                    selectedPassword.EncryptedPassword = "";
+
+                #endregion
+
+                //supply the missing data, so the model can be returned
+                model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(UserPasswordList.OrderBy(up => up.UserPasswordUser.userFullName));
+                model.OpenTab = DefaultTab.EditPassword;
+
+                return View("ViewPassword", model);
+            }
+
+            //user does not have access to edit the password
+            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanEditPassword) && selectedPassword.Creator_Id != UserId)
+            {
+                #region Decrypt_Password_Fields_To_Display
+
+                    string DecryptedUserName = selectedPassword.EncryptedUserName;
+                    string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
+
+                    EncryptionAndHashing.DecryptUsernameFields(user,
+                                                                            ref DecryptedUserName,
+                                                                            ref DecryptedSecondCredential);
+
+                    selectedPassword.EncryptedUserName = DecryptedUserName;
+                    selectedPassword.EncryptedSecondCredential = DecryptedSecondCredential;
+                    selectedPassword.EncryptedPassword = "";
+
+                #endregion
+
+                //return just a readonly model
+                model.EditPassword = new PasswordEdit();
+                model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(UserPasswordList.OrderBy(up => up.UserPasswordUser.userFullName));
+                model.OpenTab = DefaultTab.ViewPassword;
+
+                ModelState.AddModelError("", "You do not have permission to edit this password");
+
+                return View("ViewPassword", model);
+            }
+
+            #region Encrypt_Updated_Password_Fields
+
+                string EncryptedUserName = model.EditPassword.EncryptedUserName;
+                string EncryptedSecondCredential = model.EditPassword.EncryptedSecondCredential;
+                string EncryptedPassword = model.EditPassword.EncryptedPassword;
+
+                EncryptionAndHashing.EncryptUsernameAndPasswordFields(user, 
+                                                                        ref EncryptedUserName, 
+                                                                        ref EncryptedSecondCredential,
+                                                                        ref EncryptedPassword);
+
+            #endregion
+
+            //map changes to existing entry
+            DatabaseContext.Entry(selectedPassword).CurrentValues.SetValues(model.EditPassword);
+            DatabaseContext.Entry(selectedPassword).Property("EncryptedUserName").CurrentValue = EncryptedUserName;
+            DatabaseContext.Entry(selectedPassword).Property("EncryptedSecondCredential").CurrentValue = EncryptedSecondCredential;
+            DatabaseContext.Entry(selectedPassword).Property("EncryptedPassword").CurrentValue = EncryptedPassword;
+
+            //if a new password has not been entered
+            if (string.IsNullOrEmpty(EncryptedPassword))
+                DatabaseContext.Entry(selectedPassword).Property("EncryptedPassword").IsModified = false;
+
+            await DatabaseContext.SaveChangesAsync();
+
+            //do not display on edit form
+            model.EditPassword.EncryptedPassword = "";
+            selectedPassword.EncryptedPassword = "";
+
+            //copy over new values to view model
+            selectedPassword.EncryptedUserName = model.EditPassword.EncryptedUserName;
+            selectedPassword.EncryptedSecondCredential = model.EditPassword.EncryptedSecondCredential;
+
+            //supply the missing data, so the model can be returned
+            model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+            model.UserPermissions = AutoMapper.Mapper.Map<IList<PasswordUserPermission>>(UserPasswordList.OrderBy(up => up.UserPasswordUser.userFullName));
+            model.OpenTab = DefaultTab.EditPassword;
+
+            PushNotifications.sendUpdatedPasswordDetails(model.EditPassword);
 
             return View("ViewPassword", model);
         }
@@ -905,26 +764,21 @@ namespace Secure_Password_Repository.Controllers
                                                             .Where(pass => pass.Creator_Id == UserId || pass.Parent_UserPasswords.Any(up => up.CanDeletePassword && up.Id == UserId))
                                                             .SingleOrDefault(p => p.PasswordId == PasswordId);
 
-
-            if (selectedPassword!=null)
-            {
-
-                //set the password as deleted and save to database
-                selectedPassword.Deleted = true;
-                DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
-                await DatabaseContext.SaveChangesAsync();
-
-                PasswordDelete deletedPassword = AutoMapper.Mapper.Map<PasswordDelete>(selectedPassword);
-
-                PushNotifications.sendDeletedPasswordDetails(deletedPassword);
-
-                //return item so it can be removed from the UI
-                return Json(deletedPassword);
-
-            }
-
             //user does not have access to delete the password
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (selectedPassword==null)
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden); 
+
+            //set the password as deleted and save to database
+            selectedPassword.Deleted = true;
+            DatabaseContext.Entry(selectedPassword).State = EntityState.Modified;
+            await DatabaseContext.SaveChangesAsync();
+
+            PasswordDelete deletedPassword = AutoMapper.Mapper.Map<PasswordDelete>(selectedPassword);
+
+            PushNotifications.sendDeletedPasswordDetails(deletedPassword);
+
+            //return item so it can be removed from the UI
+            return Json(deletedPassword);
         }
 
 
@@ -934,282 +788,223 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> EditUserPermissions(PasswordDetails model)
         {
 
-            if (ModelState.IsValid && model.UserPermissions != null && model.UserPermissions.Count>0)
-            {
-
-                int UserId = User.Identity.GetUserId().ToInt();
-                var user = await UserMgr.FindByIdAsync(UserId);
-
-                //important we store the password id - this is so that an attacker cannot change the passwordId field
-                //in one of the userpermission items to a password Id he doesnt have access to.
-                //e.g. if   model.UserPermissions[0].PasswordId  is "1", which the attacker has access to
-                //he can quite easily change model.UserPermissions[1].PasswordId to "2" which he doesnt have access to
-                //so this variable will be used for validation later.
-                int PasswordId = model.UserPermissions[0].PasswordId;
-
-                //get a list of userIds that have UserPassword records for this password
-                var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
-
-                //Retrive the password - if the user has access to view the password
-                Password selectedPassword = DatabaseContext.Passwords.AsNoTracking()
-                                                                            .Where(pass => !pass.Deleted
-                                                                                    && (
-                                                                                        (UserIDList.Contains(UserId))
-                                                                                        || pass.Creator_Id == UserId
-                                                                                        )
-                                                                                    )
-                                                                                    .Include(p => p.Creator)
-                                                                                    .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
-                                                                                    .SingleOrDefault(p => p.PasswordId == PasswordId);
-
-                //user has access to aleast view the password
-                if (selectedPassword != null)
-                {
-
-                    //does the user have access to edit the password permissions?
-                    if (selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
-                    {
-
-                        //get all of the users
-                        var UserList = DatabaseContext.Users.AsNoTracking().ToList();
-
-                        //get all of the UserPassword records for the selected password
-                        var UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking()
-                                                                                .Where(up => up.PasswordId == PasswordId)
-                                                                                .Include(up => up.UserPasswordUser)
-                                                                                .ToList();
-
-
-                        //load in the UserPassword records into the related User records (normally EF does this view Lazy Loading, but we can't filter on Include())
-                        UserList = UserList.Select(u => new ApplicationUser()
-                        {
-                            Id = u.Id,
-                            UserName = u.UserName,
-                            userFullName = u.userFullName,
-                            UserPasswords = UserPasswordList.Where(up => up.Id == u.Id).ToList()
-                        }).ToList();
-
-
-                        //loop through each permission item submitted
-                        for (int intPermissionIndex = 0; intPermissionIndex < model.UserPermissions.Count; intPermissionIndex++)
-                        {
-                            //pssword id does not match the one submitted - basically the user has been naughty and modifed the form (tut! tut!)
-                            if (model.UserPermissions[intPermissionIndex].PasswordId != PasswordId)
-                            {
-                                ModelState.AddModelError("", "An illegal change has been made to the permission form");
-                                break;
-                            }
-                            else
-                            {
-
-
-                                //convert the current permission item into a UserPassword entity
-                                UserPassword userPermissionItem = AutoMapper.Mapper.Map<UserPassword>(model.UserPermissions[intPermissionIndex]);
-
-                                //has one of the 4 permissions been selected
-                                bool PermissionsSelected = userPermissionItem.CanViewPassword || userPermissionItem.CanEditPassword || userPermissionItem.CanChangePermissions || userPermissionItem.CanDeletePassword;
-
-                                ApplicationUser CurrentPermissionRecordUser = UserList.Single(u => u.Id == userPermissionItem.Id);
-
-                                #region Decide_UserPassword_Record_Action
-
-                                //the user doesnt have a record, but a permission has been selected
-                                if (!CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && PermissionsSelected)
-                                {
-                                    var MissingUser = DatabaseContext.Users.Where(u => u.Id == userPermissionItem.Id).Single();
-                                    userPermissionItem.CanViewPassword = true;                                                          //default
-                                    model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
-                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
-                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Added;                                //add new record
-                                }
-                                //the user DOES have a record, and has a selected permission
-                                else if (CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && PermissionsSelected)
-                                {
-                                    userPermissionItem.CanViewPassword = true;                                                          //default
-                                    model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
-                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
-                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Modified;                             //update record
-                                }
-                                //user DOES have a record, and no permissions have been selected
-                                //the view permission here gets a double check - because if that is unticked, everything else has to be
-                                else if (CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && 
-                                                                                                                    (!PermissionsSelected || !userPermissionItem.CanViewPassword))
-                                {
-                                    model.UserPermissions[intPermissionIndex].CanEditPassword = false;
-                                    model.UserPermissions[intPermissionIndex].CanDeletePassword = false;
-                                    model.UserPermissions[intPermissionIndex].CanChangePermissions = false;
-                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
-                                    DatabaseContext.Entry(userPermissionItem).State = EntityState.Deleted;                              //delete record
-                                }
-                                //user doesnt have a record, and nothing has been selected
-                                else
-                                {
-                                    model.UserPermissions[intPermissionIndex].CanEditPassword = false;
-                                    model.UserPermissions[intPermissionIndex].CanDeletePassword = false;
-                                    model.UserPermissions[intPermissionIndex].CanChangePermissions = false;
-                                    model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
-                                }
-
-                                #endregion
-
-                            }
-                        }
-
-                        //save changes to DB
-                        await DatabaseContext.SaveChangesAsync();
-
-                        //grab the current user's UserPassword record again - incase they changed their own permissions
-                        UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking()
-                                                                                .Where(up => up.PasswordId == PasswordId && up.Id == UserId)
-                                                                                .ToList();
-
-                        #region Decrypt_Password_Fields
-
-                            //grab the 3 encryption keys that are required to do encryption
-                            byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                            byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                            //decrypt the user's private
-                            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                            //decrypt the database encryption key
-                            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                            //decrypt the username
-                            byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
-
-                            if (selectedPassword.EncryptedSecondCredential != null && selectedPassword.EncryptedSecondCredential != string.Empty)
-                            {
-                                //decrypt the second credential
-                                byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                                selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                            }
-
-                            //clear what isnt needed any more
-                            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                            Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                            Array.Clear(byteData, 0, byteData.Length);
-
-                        #endregion
-
-
-                        //supply the missing data, so the model can be returned
-                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                        
-                        //make sure the user can edit the password before returning an edit password form
-                        //the use the model to see if the user has added the edit permission to their account (they can do this as they have "edit permission")
-                        if (model.UserPermissions.Any(up => up.Id == UserId && up.CanEditPassword) || UserPasswordList.Any(up => up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
-                            model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
-                        else
-                            model.EditPassword = new PasswordEdit();
-                        
-                        //check if the user disabled change permission for themself (also check thier existing records)
-                        if (model.UserPermissions.Any(up => up.Id == UserId && up.CanChangePermissions) || UserPasswordList.Any(up => up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
-                            model.OpenTab = DefaultTab.EditPermissions;
-                        else
-                        {
-                            model.UserPermissions = new List<PasswordUserPermission>();
-                            model.OpenTab = DefaultTab.ViewPassword;
-                        }
-
-                        //It's easier to just tell the client to pull down a whole new copy of the password
-                        PushNotifications.newPasswordAdded(model.EditPassword.PasswordId);
-
-                    }
-                    //user does not have access to edit user permissions
-                    else
-                    {
-
-                        //get all of the UserPassword records for the selected password
-                        var UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking()
-                                                                                .Where(up => up.PasswordId == PasswordId && up.Id == user.Id)
-                                                                                .Include(up => up.UserPasswordUser)
-                                                                                .Select(up => new PasswordUserPermission()
-                                                                                {
-                                                                                    Id = up.Id,
-                                                                                    PasswordId = up.PasswordId,
-                                                                                    UserPasswordUser = up.UserPasswordUser,
-                                                                                    CanChangePermissions = up.CanChangePermissions,
-                                                                                    CanDeletePassword = up.CanDeletePassword,
-                                                                                    CanEditPassword = up.CanEditPassword,
-                                                                                    CanViewPassword = up.CanViewPassword 
-                                                                                })
-                                                                                .ToList();
-
-                        #region Decrypt_Password_Fields
-
-                            //grab the 3 encryption keys that are required to do encryption
-                            byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                            byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                            //decrypt the user's private
-                            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                            //decrypt the database encryption key
-                            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                            //decrypt the username
-                            byte[] byteData = selectedPassword.EncryptedUserName.FromBase64().ToBytes();
-                            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                            selectedPassword.EncryptedUserName = byteData.FromBase64().ConvertToString();
-
-                            if (selectedPassword.EncryptedSecondCredential != null || selectedPassword.EncryptedSecondCredential != string.Empty)
-                            {
-                                //decrypt the second credential
-                                byteData = selectedPassword.EncryptedSecondCredential.FromBase64().ToBytes();
-                                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                                selectedPassword.EncryptedSecondCredential = byteData.FromBase64().ConvertToString();
-                            }
-
-                            //clear what isnt needed any more
-                            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                            Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                            Array.Clear(byteData, 0, byteData.Length);
-
-                        #endregion
-
-                        //prepare the model to return back to the view
-                        model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
-                        model.OpenTab = DefaultTab.ViewPassword;
-
-                        //make sure the user can edit the password before returning an edit password form
-                        if (UserPasswordList.Any(up => up.Id == UserId && up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
-                            model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
-                        else
-                            model.EditPassword = new PasswordEdit();
-
-                        model.UserPermissions = UserPasswordList;
-
-                        ModelState.AddModelError("", "You do not have permission to edit permissions for this password");
-                    }
-                }
-                //user does not have access to view
-                else
-                {
-                    //return empty model
-                    model.ViewPassword = new PasswordDisplay();
-                    model.EditPassword = new PasswordEdit();
-                    model.UserPermissions = new List<PasswordUserPermission>();
-                    model.OpenTab = DefaultTab.ViewPassword;
-
-                    ModelState.AddModelError("", "You do not have permission to view this password");
-                }
-            }
-            //model is invalid
-            else
+            if (!ModelState.IsValid || model.UserPermissions == null || model.UserPermissions.Count==0)
             {
                 //supply the missing data, so the model can be returned
                 //return empty model
                 model.ViewPassword = new PasswordDisplay();
                 model.EditPassword = new PasswordEdit();
+
+                return View("ViewPassword", model);
             }
+
+            int UserId = User.Identity.GetUserId().ToInt();
+            var user = await UserMgr.FindByIdAsync(UserId);
+
+            //important we store the password id - this is so that an attacker cannot change the passwordId field
+            //in one of the userpermission items to a password Id he doesnt have access to.
+            //e.g. if   model.UserPermissions[0].PasswordId  is "1", which the attacker has access to
+            //he can quite easily change model.UserPermissions[1].PasswordId to "2" which he doesnt have access to
+            //so this variable will be used for validation later.
+            int PasswordId = model.UserPermissions[0].PasswordId;
+
+            //get a list of userIds that have UserPassword records for this password
+            var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
+
+            //Retrive the password - if the user has access to view the password
+            Password selectedPassword = DatabaseContext.Passwords.AsNoTracking()
+                                                                        .Where(pass => !pass.Deleted
+                                                                                && (
+                                                                                    (UserIDList.Contains(UserId))
+                                                                                    || pass.Creator_Id == UserId
+                                                                                    )
+                                                                                 && pass.PasswordId == PasswordId
+                                                                                )
+                                                                                .Include(p => p.Creator)
+                                                                                .Include(p => p.Parent_UserPasswords.Select(up => up.UserPasswordUser))
+                                                                                .SingleOrDefault();
+
+            //user does not have access to view
+            if (selectedPassword == null)
+            {
+                //return empty model
+                model.ViewPassword = new PasswordDisplay();
+                model.EditPassword = new PasswordEdit();
+                model.UserPermissions = new List<PasswordUserPermission>();
+                model.OpenTab = DefaultTab.ViewPassword;
+
+                ModelState.AddModelError("", "You do not have permission to view this password");
+
+                return View("ViewPassword", model);
+            }
+
+            #region Decrypt_Password_Fields
+
+                string DecryptedUserName = selectedPassword.EncryptedUserName;
+                string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
+                string DecryptedPassword = selectedPassword.EncryptedPassword;
+
+                EncryptionAndHashing.DecryptUsernameFields(user, ref DecryptedUserName, ref DecryptedSecondCredential);
+
+                selectedPassword.EncryptedUserName = DecryptedUserName;
+                selectedPassword.EncryptedSecondCredential = DecryptedSecondCredential;
+
+            #endregion
+
+            //user does not have access to edit user permissions
+            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+            {
+                            
+                //get all of the UserPassword records for the selected password
+                var CurrentUserUserPassword = DatabaseContext.UserPasswords.AsNoTracking()
+                                                                        .Where(up => up.PasswordId == PasswordId && up.Id == user.Id)
+                                                                        .Include(up => up.UserPasswordUser)
+                                                                        .Select(up => new PasswordUserPermission()
+                                                                        {
+                                                                            Id = up.Id,
+                                                                            PasswordId = up.PasswordId,
+                                                                            UserPasswordUser = up.UserPasswordUser,
+                                                                            CanChangePermissions = up.CanChangePermissions,
+                                                                            CanDeletePassword = up.CanDeletePassword,
+                                                                            CanEditPassword = up.CanEditPassword,
+                                                                            CanViewPassword = up.CanViewPassword
+                                                                        })
+                                                                        .ToList();
+
+                //prepare the model to return back to the view
+                model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                model.OpenTab = DefaultTab.ViewPassword;
+
+                //make sure the user can edit the password before returning an edit password form
+                if (CurrentUserUserPassword.Any(up => up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
+                    model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
+                else
+                    model.EditPassword = new PasswordEdit();
+
+                model.UserPermissions = null;
+
+                ModelState.AddModelError("", "You do not have permission to edit permissions for this password");
+
+                return View("ViewPassword", model);
+
+            }
+
+            //get all of the users
+            var UserList = DatabaseContext.Users.AsNoTracking().ToList();
+
+            //get all of the UserPassword records for the selected password
+            var UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking()
+                                                                    .Where(up => up.PasswordId == PasswordId)
+                                                                    .Include(up => up.UserPasswordUser)
+                                                                    .ToList();
+
+
+            //load in the UserPassword records into the related User records (normally EF does this view Lazy Loading, but we can't filter on Include())
+            UserList = UserList.Select(u => new ApplicationUser() {
+                                                                        Id = u.Id,
+                                                                        UserName = u.UserName,
+                                                                        userFullName = u.userFullName,
+                                                                        UserPasswords = UserPasswordList.Where(up => up.Id == u.Id).ToList()
+                                                                  }).ToList();
+
+
+            //loop through each permission item submitted
+            for (int intPermissionIndex = 0; intPermissionIndex < model.UserPermissions.Count; intPermissionIndex++)
+            {
+                //pssword id does not match the one submitted - basically the user has been naughty and modifed the form (tut! tut!)
+                if (model.UserPermissions[intPermissionIndex].PasswordId != PasswordId)
+                {
+                    ModelState.AddModelError("", "An illegal change has been made to the permission form");
+                    break;
+                }
+                else
+                {
+
+                    //convert the current permission item into a UserPassword entity
+                    UserPassword userPermissionItem = AutoMapper.Mapper.Map<UserPassword>(model.UserPermissions[intPermissionIndex]);
+
+                    //has one of the 4 permissions been selected
+                    bool PermissionsSelected = (userPermissionItem.CanViewPassword 
+                                                                                    || userPermissionItem.CanEditPassword 
+                                                                                    || userPermissionItem.CanChangePermissions 
+                                                                                    || userPermissionItem.CanDeletePassword);
+
+                    ApplicationUser CurrentPermissionRecordUser = UserList.Where(u => u.Id == userPermissionItem.Id).SingleOrDefault();
+
+                    #region Decide_UserPassword_Record_Action
+
+                    //the user doesnt have a user password record for this password, so we need to add one
+                    if (!CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && PermissionsSelected)
+                    {
+                        //get the user from the userid in the permission item submitted
+                        var MissingUser = DatabaseContext.Users.Where(u => u.Id == userPermissionItem.Id).SingleOrDefault();
+                        userPermissionItem.CanViewPassword = true;                                                          //default
+                        model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
+                        model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
+                        DatabaseContext.Entry(userPermissionItem).State = EntityState.Added;                                //add new record
+                    }
+                    //the user DOES have a record, so we need to update
+                    else if (CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && PermissionsSelected)
+                    {
+                        userPermissionItem.CanViewPassword = true;                                                          //default
+                        model.UserPermissions[intPermissionIndex].CanViewPassword = true;                                   //for the UI
+                        model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
+                        DatabaseContext.Entry(userPermissionItem).State = EntityState.Modified;                             //update record
+                    }
+                    //user DOES have a record, and no permissions have been selected (or View permission has been unticked)
+                    //if the view permission is unticked, then all other permission (del/edit etc..) are revoked
+                    else if (CurrentPermissionRecordUser.UserPasswords.Any(up => up.PasswordId == userPermissionItem.PasswordId) && 
+                                                                                                        (!PermissionsSelected || !userPermissionItem.CanViewPassword))
+                    {
+                        model.UserPermissions[intPermissionIndex].CanEditPassword = false;
+                        model.UserPermissions[intPermissionIndex].CanDeletePassword = false;
+                        model.UserPermissions[intPermissionIndex].CanChangePermissions = false;
+                        model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
+                        DatabaseContext.Entry(userPermissionItem).State = EntityState.Deleted;                              //delete record
+                    }
+                    //user doesnt have a record, and nothing has been selected
+                    else
+                    {
+                        model.UserPermissions[intPermissionIndex].CanEditPassword = false;
+                        model.UserPermissions[intPermissionIndex].CanDeletePassword = false;
+                        model.UserPermissions[intPermissionIndex].CanChangePermissions = false;
+                        model.UserPermissions[intPermissionIndex].UserPasswordUser = CurrentPermissionRecordUser;           //for the UI
+                    }
+
+                    #endregion
+
+                }
+            }
+
+            //save changes to DB
+            await DatabaseContext.SaveChangesAsync();
+
+            //grab the current user's UserPassword record again - incase they changed their own permissions
+            UserPasswordList = DatabaseContext.UserPasswords.AsNoTracking()
+                                                                    .Where(up => up.PasswordId == PasswordId && up.Id == UserId)
+                                                                    .ToList();
+
+            //supply the missing data, so the model can be returned
+            model.ViewPassword = AutoMapper.Mapper.Map<PasswordDisplay>(selectedPassword);
+                        
+            //make sure the user can edit the password before returning an edit password form
+            //the use the model to see if the user has added the edit permission to their account (they can do this as they have "edit permission")
+            if (model.UserPermissions.Any(up => up.Id == UserId && up.CanEditPassword) || UserPasswordList.Any(up => up.CanEditPassword) || selectedPassword.Creator_Id == UserId)
+                model.EditPassword = AutoMapper.Mapper.Map<PasswordEdit>(selectedPassword);
+            else
+                model.EditPassword = new PasswordEdit();
+                        
+            //check if the user disabled change permission for themself (also check thier existing records)
+            if (model.UserPermissions.Any(up => up.Id == UserId && up.CanChangePermissions) || UserPasswordList.Any(up => up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+                model.OpenTab = DefaultTab.EditPermissions;
+            else
+            {
+                model.UserPermissions = new List<PasswordUserPermission>();
+                model.OpenTab = DefaultTab.ViewPassword;
+            }
+
+            //It's easier to just tell the client to pull down a whole new copy of the password
+            PushNotifications.newPasswordAdded(model.EditPassword.PasswordId);
 
             return View("ViewPassword", model);
         }
@@ -1233,44 +1028,20 @@ namespace Secure_Password_Repository.Controllers
                                                                )).SingleOrDefault(p => p.PasswordId == PasswordId);
 
 
-            //return the password if it exists
-            if (selectedPassword != null)
-            {
-
-
-                #region Decrypt_Password
-
-                    //grab the 3 encryption keys that are required to do encryption
-                    byte[] bytePrivateKey = user.userPrivateKey.FromBase64().ToBytes();
-                    byte[] byteEncryptionKey = user.userEncryptionKey.FromBase64().ToBytes();
-                    byte[] bytePasswordBasedKey = MemoryCache.Default.Get(user.UserName).ToString().ToBytes();
-
-                    //decrypt the user's private
-                    EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
-
-                    //decrypt the database encryption key
-                    EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
-
-                    //decrypt the password
-                    byte[] byteData = selectedPassword.EncryptedPassword.FromBase64().ToBytes();
-                    EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
-                    selectedPassword.EncryptedPassword = byteData.FromBase64().ConvertToString();
-
-                    //clear what isnt needed any more
-                    Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
-                    Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
-                    Array.Clear(byteEncryptionKey, 0, byteEncryptionKey.Length);
-                    Array.Clear(byteData, 0, byteData.Length);
-
-                #endregion
-
-
-                PasswordPassword passwordText = new PasswordPassword {PlainTextPassword = selectedPassword.EncryptedPassword };
-                return Json(passwordText);
-            }
-
             //password does not exist... or user does not have access
-            return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (selectedPassword == null)
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            #region Decrypt_Password
+
+                string DecryptedPassword = selectedPassword.EncryptedPassword;
+                EncryptionAndHashing.DecryptPasswordField(user, ref DecryptedPassword);
+                selectedPassword.EncryptedPassword = DecryptedPassword;
+
+            #endregion
+
+            PasswordPassword passwordText = new PasswordPassword {PlainTextPassword = selectedPassword.EncryptedPassword };
+            return Json(passwordText);
         }
 
         #endregion
@@ -1283,208 +1054,214 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
         {
             //check if user can edit categories
-            if (User.CanEditCategories() || User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) || User.IsInRole("Administrator"))
-            {
-                try
+            if (!User.CanEditCategories() && !User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) && !User.IsInRole("Administrator"))
+                return Json(new
                 {
-                    //disable auto detect changes (as this slows everything down)
-                    DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
+                    Status = "Failed"
+                });
 
-                    //moved down
-                    if (NewPosition > OldPosition)
+            try
+            {
+                //disable auto detect changes (as this slows everything down)
+                DatabaseContext.Configuration.AutoDetectChangesEnabled = false;
+
+                //moved down
+                if (NewPosition > OldPosition)
+                {
+
+
+                    if (isCategoryItem)
                     {
 
+                        #region movecategorydown
 
-                        if (isCategoryItem)
+                        //get the category item to move
+                        var currentCategory = DatabaseContext.Categories
+                                                                .Include("Parent_Category")
+                                                                .Single(c => c.CategoryId == ItemId);
+
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentCategory.Parent_Category)
+                                                .Collection(c => c.SubCategories)
+                                                .Query()
+                                                .Where(c => !c.Deleted)
+                                                .Load();
+
+                        //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
+                        foreach (Category childCategory in currentCategory.Parent_Category
+                                                                                .SubCategories
+                                                                                .Where(c => c.CategoryOrder > OldPosition && c.CategoryOrder < NewPosition + 1))
                         {
+                            //move the category up
+                            childCategory.CategoryOrder--;
 
-                            #region movecategorydown
-
-                            //get the category item to move
-                            var currentCategory = DatabaseContext.Categories
-                                                                    .Include("Parent_Category")
-                                                                    .Single(c => c.CategoryId == ItemId);
-
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentCategory.Parent_Category)
-                                                    .Collection(c => c.SubCategories)
-                                                    .Query()
-                                                    .Where(c => !c.Deleted)
-                                                    .Load();
-
-                            //loop through the parent's sub categories that are below the moved category, but dont grab the ones above where the category is being moved to
-                            foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder > OldPosition).Where(c => c.CategoryOrder < NewPosition + 1))
-                            {
-                                //move the category up
-                                childCategory.CategoryOrder--;
-
-                                //tell EF that the category has been altered
-                                DatabaseContext.Entry(childCategory).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentCategory.CategoryOrder = NewPosition;
-                            DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
+                            //tell EF that the category has been altered
+                            DatabaseContext.Entry(childCategory).State = EntityState.Modified;
                         }
-                        else
-                        {
 
-                            #region movepasswordown
+                        //set its new position
+                        currentCategory.CategoryOrder = NewPosition;
+                        DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
 
-                            //get the password item to move
-                            var currentPassword = DatabaseContext.Passwords
-                                                                    .Include("Parent_Category")
-                                                                    .Single(p => p.PasswordId == ItemId);
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
 
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentPassword.Parent_Category)
-                                                    .Collection(c => c.Passwords)
-                                                    .Query()
-                                                    .Where(p => !p.Deleted)
-                                                    .Load();
+                        if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
 
-                            //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                            foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder > OldPosition).Where(p => p.PasswordOrder < NewPosition + 1))
-                            {
-                                //move the password up
-                                childPassword.PasswordOrder--;
-
-                                //tell EF that the password has been altered
-                                DatabaseContext.Entry(childPassword).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentPassword.PasswordOrder = NewPosition;
-                            DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
-                        }
+                        #endregion
 
                     }
-                    //moved up
                     else
                     {
 
-                        if (isCategoryItem)
+                        #region movepasswordown
+
+                        //get the password item to move
+                        var currentPassword = DatabaseContext.Passwords
+                                                                .Include("Parent_Category")
+                                                                .Single(p => p.PasswordId == ItemId);
+
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentPassword.Parent_Category)
+                                                .Collection(c => c.Passwords)
+                                                .Query()
+                                                .Where(p => !p.Deleted)
+                                                .Load();
+
+                        //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
+                        foreach (Password childPassword in currentPassword.Parent_Category
+                                                                                    .Passwords
+                                                                                    .Where(p => p.PasswordOrder > OldPosition && p.PasswordOrder < NewPosition + 1))
                         {
+                            //move the password up
+                            childPassword.PasswordOrder--;
 
-                            #region movecategoryup
-
-                            //get the category item to move
-                            var currentCategory = DatabaseContext.Categories
-                                                                    .Include("Parent_Category")
-                                                                    .Single(c => c.CategoryId == ItemId);
-
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentCategory.Parent_Category)
-                                                    .Collection(c => c.SubCategories)
-                                                    .Query()
-                                                    .Where(c => !c.Deleted)
-                                                    .Load();
-
-                            //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
-                            foreach (Category childCategory in currentCategory.Parent_Category.SubCategories.Where(c => c.CategoryOrder < OldPosition).Where(c => c.CategoryOrder > NewPosition - 1))
-                            {
-                                //move the category up
-                                childCategory.CategoryOrder++;
-
-                                //tell EF that the category has been altered
-                                DatabaseContext.Entry(childCategory).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentCategory.CategoryOrder = NewPosition;
-                            DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
+                            //tell EF that the password has been altered
+                            DatabaseContext.Entry(childPassword).State = EntityState.Modified;
                         }
-                        else
-                        {
 
-                            #region movepasswordup
+                        //set its new position
+                        currentPassword.PasswordOrder = NewPosition;
+                        DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
 
-                            //get the password item to move
-                            var currentPassword = DatabaseContext.Passwords
-                                                                    .Include("Parent_Category")
-                                                                    .Single(p => p.PasswordId == ItemId);
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
 
-                            //load in the parent's subcategories
-                            DatabaseContext.Entry(currentPassword.Parent_Category)
-                                                    .Collection(c => c.Passwords)
-                                                    .Query()
-                                                    .Where(p => !p.Deleted)
-                                                    .Load();
+                        if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
 
-                            //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
-                            foreach (Password childPassword in currentPassword.Parent_Category.Passwords.Where(p => p.PasswordOrder < OldPosition).Where(p => p.PasswordOrder > NewPosition - 1))
-                            {
-                                //move the password up
-                                childPassword.PasswordOrder++;
-
-                                //tell EF that the password has been altered
-                                DatabaseContext.Entry(childPassword).State = EntityState.Modified;
-                            }
-
-                            //set its new position
-                            currentPassword.PasswordOrder = NewPosition;
-                            DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
-
-                            //save changes to database
-                            await DatabaseContext.SaveChangesAsync();
-
-                            if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
-                                //notify clients that a category or password has changed position
-                                PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
-
-                            #endregion
-
-                        }
+                        #endregion
 
                     }
 
-                    DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+                }
+                //moved up
+                else
+                {
 
-                    return Json(new
+                    if (isCategoryItem)
                     {
-                        Status = "Completed"
-                    });
+
+                        #region movecategoryup
+
+                        //get the category item to move
+                        var currentCategory = DatabaseContext.Categories
+                                                                .Include("Parent_Category")
+                                                                .Single(c => c.CategoryId == ItemId);
+
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentCategory.Parent_Category)
+                                                .Collection(c => c.SubCategories)
+                                                .Query()
+                                                .Where(c => !c.Deleted)
+                                                .Load();
+
+                        //loop through the parent's sub categories that are above the moved category, but dont grab the ones below where the category is being moved to
+                        foreach (Category childCategory in currentCategory.Parent_Category
+                                                                                .SubCategories
+                                                                                .Where(c => c.CategoryOrder < OldPosition && c.CategoryOrder > NewPosition - 1))
+                        {
+                            //move the category up
+                            childCategory.CategoryOrder++;
+
+                            //tell EF that the category has been altered
+                            DatabaseContext.Entry(childCategory).State = EntityState.Modified;
+                        }
+
+                        //set its new position
+                        currentCategory.CategoryOrder = NewPosition;
+                        DatabaseContext.Entry(currentCategory).State = EntityState.Modified;
+
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
+
+                        if(ApplicationSettings.Default.BroadcastCategoryPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition(ItemId.ToString(), NewPosition, OldPosition);
+
+                        #endregion
+
+                    }
+                    else
+                    {
+
+                        #region movepasswordup
+
+                        //get the password item to move
+                        var currentPassword = DatabaseContext.Passwords
+                                                                .Include("Parent_Category")
+                                                                .Single(p => p.PasswordId == ItemId);
+
+                        //load in the parent's subcategories
+                        DatabaseContext.Entry(currentPassword.Parent_Category)
+                                                .Collection(c => c.Passwords)
+                                                .Query()
+                                                .Where(p => !p.Deleted)
+                                                .Load();
+
+                        //loop through the parent's passwords that are below the moved password, but dont grab the ones above where the password is being moved to
+                        foreach (Password childPassword in currentPassword.Parent_Category
+                                                                                .Passwords
+                                                                                .Where(p => p.PasswordOrder < OldPosition && p.PasswordOrder > NewPosition - 1))
+                        {
+                            //move the password up
+                            childPassword.PasswordOrder++;
+
+                            //tell EF that the password has been altered
+                            DatabaseContext.Entry(childPassword).State = EntityState.Modified;
+                        }
+
+                        //set its new position
+                        currentPassword.PasswordOrder = NewPosition;
+                        DatabaseContext.Entry(currentPassword).State = EntityState.Modified;
+
+                        //save changes to database
+                        await DatabaseContext.SaveChangesAsync();
+
+                        if(ApplicationSettings.Default.BroadcastPasswordPositionChange)
+                            //notify clients that a category or password has changed position
+                            PushNotifications.sendUpdatedItemPosition("Password-" + ItemId.ToString(), NewPosition, OldPosition);
+
+                        #endregion
+
+                    }
 
                 }
-                catch { }
+
+                DatabaseContext.Configuration.AutoDetectChangesEnabled = true;
+
+                return Json(new
+                {
+                    Status = "Completed"
+                });
 
             }
-
-            return Json(new
-            {
-                Status = "Failed"
-            });
-
+            catch { 
+                //add logging here
+            }
         }
 
         #endregion
@@ -1493,10 +1270,7 @@ namespace Secure_Password_Repository.Controllers
 
         private void AddErrors(IdentityResult result)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error);
-            }
+            ModelState.AddModelError("", string.Join(" and ", result.Errors));
         }
 
         #endregion

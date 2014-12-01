@@ -1,8 +1,7 @@
-﻿using Secure_Password_Repository.Settings;
+﻿using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Settings;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+using System.Runtime.Caching;
 
 namespace Secure_Password_Repository.Extensions
 {
@@ -112,6 +111,126 @@ namespace Secure_Password_Repository.Extensions
 
             //decrypt again
             //EncryptionAndHashing.Decrypt_DPAPI(ref PrivateKey);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentuser"></param>
+        /// <param name="username"></param>
+        /// <param name="secondcredential"></param>
+        /// <param name="password"></param>
+        public static void EncryptUsernameAndPasswordFields(ApplicationUser currentuser, ref string username, ref string secondcredential, ref string password)
+        {
+
+            //grab the 3 encryption keys that are required to do encryption
+            byte[] bytePrivateKey = currentuser.userPrivateKey.FromBase64().ToBytes();
+            byte[] byteEncryptionKey = currentuser.userEncryptionKey.FromBase64().ToBytes();
+            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(currentuser.UserName).ToString().ToBytes();
+
+            //decrypt the user's private
+            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+
+            //decrypt the database encryption key
+            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
+
+            //encrypt the updated username
+            byte[] byteData = username.ToBytes();
+            EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+            username = byteData.ToBase64String();
+
+            if (!string.IsNullOrEmpty(secondcredential))
+            {
+                //encrypt the updated second credential
+                byteData = secondcredential.ToBytes();
+                EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                secondcredential = byteData.ToBase64String();
+            }
+
+            //only if something has been entered into the password box
+            if (!string.IsNullOrEmpty(password))
+            {
+                byteData = password.ToBytes();
+                EncryptionAndHashing.EncryptData(byteEncryptionKey, ref byteData);
+                password = byteData.ToBase64String();
+            }
+
+            //clear what isnt needed any more
+            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentuser"></param>
+        /// <param name="username"></param>
+        /// <param name="secondcredential"></param>
+        public static void DecryptUsernameFields(ApplicationUser currentuser, ref string username, ref string secondcredential)
+        {
+
+            //grab the 3 encryption keys that are required to do encryption
+            byte[] bytePrivateKey = currentuser.userPrivateKey.FromBase64().ToBytes();
+            byte[] byteEncryptionKey = currentuser.userEncryptionKey.FromBase64().ToBytes();
+            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(currentuser.UserName).ToString().ToBytes();
+
+            //decrypt the user's private
+            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+
+            //decrypt the database encryption key
+            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
+
+            //encrypt the updated username
+            byte[] byteData = username.FromBase64().ToBytes();
+            EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+            username = byteData.FromBase64().ConvertToString();
+
+            if (!string.IsNullOrEmpty(secondcredential))
+            {
+                //encrypt the updated second credential
+                byteData = secondcredential.FromBase64().ToBytes();
+                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                secondcredential = byteData.FromBase64().ConvertToString();
+            }
+
+            //clear what isnt needed any more
+            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentuser"></param>
+        /// <param name="username"></param>
+        /// <param name="secondcredential"></param>
+        public static void DecryptPasswordField(ApplicationUser currentuser, ref string password)
+        {
+
+            //grab the 3 encryption keys that are required to do encryption
+            byte[] bytePrivateKey = currentuser.userPrivateKey.FromBase64().ToBytes();
+            byte[] byteEncryptionKey = currentuser.userEncryptionKey.FromBase64().ToBytes();
+            byte[] bytePasswordBasedKey = MemoryCache.Default.Get(currentuser.UserName).ToString().ToBytes();
+
+            //decrypt the user's private
+            EncryptionAndHashing.DecryptPrivateKey(ref bytePrivateKey, bytePasswordBasedKey);
+
+            //decrypt the database encryption key
+            EncryptionAndHashing.DecryptDatabaseKey(ref byteEncryptionKey, bytePrivateKey);
+
+            if (!string.IsNullOrEmpty(password))
+            {
+                //encrypt the updated second credential
+                byte[] byteData = password.FromBase64().ToBytes();
+                EncryptionAndHashing.DecryptData(byteEncryptionKey, ref byteData);
+                password = byteData.FromBase64().ConvertToString();
+            }
+
+            //clear what isnt needed any more
+            Array.Clear(bytePrivateKey, 0, bytePrivateKey.Length);
+            Array.Clear(bytePasswordBasedKey, 0, bytePasswordBasedKey.Length);
+
         }
 
     }

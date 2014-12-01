@@ -1,21 +1,18 @@
-﻿using Secure_Password_Repository.Models;
-using Secure_Password_Repository.ViewModels;
+﻿using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
 using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using System.Threading.Tasks;
 using System.Net;
 using System.Runtime.Caching;
-using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
-using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin.Security;
+using System.Threading.Tasks;
+using System.Web;
+using System.Web.Mvc;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -71,18 +68,23 @@ namespace Secure_Password_Repository.Controllers
         public async Task<ActionResult> Index()
         {
             //success messages upon return to index page
-            if (Request.QueryString.Get("successaction") == "Account Updated")
+            switch(Request.QueryString.Get("successaction"))
             {
-                ViewBag.Message = "Account updated successfully.";
-            }
-            else if (Request.QueryString.Get("successaction") == "Account Deleted")
-            {
-                ViewBag.Message = "Account delete successfully.";
+                case "Account Updated":
+                    ViewBag.Message = "Account updated successfully.";
+                    break;
+
+                case "Account Deleted":
+                    ViewBag.Message = "Account delete successfully.";
+                    break;
+
+                default:
+                    break;
             }
 
             return View(new UserList() { 
-                Users = await UserMgr.Users.Include("Roles").ToListAsync()
-            });
+                                        Users = await UserMgr.Users.Include("Roles").ToListAsync()
+                                        });
         }
 
         // GET: UserManager/Edit/5
@@ -139,12 +141,7 @@ namespace Secure_Password_Repository.Controllers
                     else
                     {
                         //list any errors (e.g. email/username already exists)
-                        string errorlist = string.Empty;
-                        foreach (string error in result.Errors.ToList())
-                            errorlist += error + " and ";
-
-                        if (errorlist != string.Empty)
-                            errorlist = errorlist.Substring(0, errorlist.Length - 5);
+                        string errorlist = string.Join(" and ", result.Errors);
 
                         ModelState.AddModelError("", errorlist);
                     }
@@ -213,9 +210,17 @@ namespace Secure_Password_Repository.Controllers
                 var result = await UserMgr.UpdateAsync(user);
                 if (result.Succeeded)
                 {
-
+                    ///generate url to login action
                     var callbackUrl = Url.Action("Login", "Account", new {}, protocol: Request.Url.Scheme);
-                    await UserMgr.SendEmailAsync(user.Id, "Account has been authorised", RenderViewContent.RenderViewToString("UserManager", "AccountAuthorisedEmail", new AccountAuthorisedConfirmation { CallBackURL = callbackUrl, UserName = user.UserName }));
+
+                    //generate html body from a view
+                    string bodyText = RenderViewContent.RenderViewToString("UserManager", "AccountAuthorisedEmail", 
+                                                                                                                    new AccountAuthorisedConfirmation { 
+                                                                                                                        CallBackURL = callbackUrl, 
+                                                                                                                        UserName = user.UserName 
+                                                                                                                    });
+
+                    await UserMgr.SendEmailAsync(user.Id, "Account has been authorised", bodyText);
 
                     return Json(new
                     {
@@ -261,10 +266,7 @@ namespace Secure_Password_Repository.Controllers
 
         private void AddErrors(IdentityResult result)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error);
-            }
+            ModelState.AddModelError("", string.Join(" and ", result.Errors));
         }
 
     }

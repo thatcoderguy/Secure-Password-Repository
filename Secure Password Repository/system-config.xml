@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <LogoImage>logo.png</LogoImage>
+  <SMTPServerAddress>localhost</SMTPServerAddress>
+  <SMTPEmailAddress>securepasswordrepository@local</SMTPEmailAddress>
+  <SMTPServerUsername />
+  <SMTPServerPassword />
+  <SystemSalt>0Mj/0!uYirmsw.?x*(Y,hJpp4CBC=haE</SystemSalt>
+  <SystemInitilisationVector>FV3/HGqH*QJ)1uBA</SystemInitilisationVector>
+  <SCryptHashCost>262144</SCryptHashCost>
+  <PBKDF2IterationCount>1000</PBKDF2IterationCount>
+  <RoleAllowEditCategories>Administrator</RoleAllowEditCategories>
+  <RoleAllowDeleteCategories>Administrator</RoleAllowDeleteCategories>
+  <RoleAllowAddCategories>User</RoleAllowAddCategories>
+  <RoleAllowAddPasswords>User</RoleAllowAddPasswords>
+  <AdminsHaveAccessToAllPasswords>true</AdminsHaveAccessToAllPasswords>
+  <BroadcastCategoryPositionChange>false</BroadcastCategoryPositionChange>
+  <BroadcastPasswordPositionChange>false</BroadcastPasswordPositionChange>
+</ApplicationSettings>

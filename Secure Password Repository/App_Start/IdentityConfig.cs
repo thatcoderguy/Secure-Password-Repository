@@ -1,14 +1,16 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
+﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
-using Secure_Password_Repository.Models;
-using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Settings;
 using System;
 using System.Collections.Generic;
-using Secure_Password_Repository.Settings;
+using System.Net.Mail;
+using System.Net.Mime;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Secure_Password_Repository
 {
@@ -109,22 +111,56 @@ namespace Secure_Password_Repository
 
             client.Port = 25;
             client.DeliveryMethod = System.Net.Mail.SmtpDeliveryMethod.Network;
-            client.UseDefaultCredentials = false;
-
-            // Create the credentials:
-            System.Net.NetworkCredential credentials =
-                new System.Net.NetworkCredential(credentialUserName, pwd);
-
             client.EnableSsl = false;
-            client.Credentials = credentials;
+
+            if (!string.IsNullOrEmpty(credentialUserName))
+            {
+                // Create the credentials:
+                System.Net.NetworkCredential credentials =
+                    new System.Net.NetworkCredential(credentialUserName, pwd);
+
+                client.Credentials = credentials;
+                client.UseDefaultCredentials = true;
+            }
+            else
+            {
+                client.UseDefaultCredentials = false;
+            }
 
             // Create the message:
             var mail =
                 new System.Net.Mail.MailMessage(sentFrom, message.Destination);
 
             mail.Subject = message.Subject;
-            mail.Body = message.Body;
-            mail.IsBodyHtml = true;
+
+            string plainBodyText = string.Empty;
+            string bodyText = string.Empty;
+
+            //attempt to create a plain text view of the email
+            try
+            {
+
+                //plain text version is stored between html comments
+                plainBodyText = Regex.Match(message.Body, "<!--(.*)-->", RegexOptions.Singleline).Groups[1].Value;
+                bodyText = message.Body.Replace("<!--" + plainBodyText + "-->","");
+
+                ContentType mimeType = new System.Net.Mime.ContentType("text/plain");
+                AlternateView alternate = AlternateView.CreateAlternateViewFromString(plainBodyText, mimeType);
+
+                mail.AlternateViews.Add(alternate);
+
+                mimeType = new System.Net.Mime.ContentType("text/html");
+                alternate = AlternateView.CreateAlternateViewFromString(bodyText, mimeType);
+
+                mail.AlternateViews.Add(alternate);
+
+            }
+            catch(Exception){
+
+                mail.Body = message.Body;
+                mail.IsBodyHtml = true;
+
+            }
 
             // Send:
             return client.SendMailAsync(mail);

@@ -11,18 +11,18 @@
             </span>
             <span class="loaderplaceholder" style="display: none;"><img src="~/Images/ajax-loader.gif" /></span>
             <span class="btn-group">
-                @if(User.CanEditCategories())
+                @if (ViewBag.CanEditCategories)
                 { 
                     <a href="#" class="btn btn-xs btn-primary editcategorybutton" onclick="displayForm(event,'@Model.CategoryId');"><i class="glyphicon glyphicon-edit">&nbsp;</i>Edit</a>
                 }
-                @if(User.CanDeleteCategories())
+                @if(ViewBag.CanDeleteCategories)
                 { 
                     <a href="#" class="btn btn-xs btn-danger deletecategorybutton" onclick="deleteCategory(event,'@Model.CategoryId');"><i class="glyphicon glyphicon-remove">&nbsp;</i>Delete</a>
                 }
             </span>
         </div>
         
-        @if(User.CanEditCategories())
+        @if (ViewBag.CanEditCategories)
         {
             @Html.Partial("_EditCategory", (CategoryEdit)Model)
         }

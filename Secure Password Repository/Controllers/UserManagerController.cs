@@ -218,7 +218,7 @@ namespace Secure_Password_Repository.Controllers
                                                                                                                     new AccountAuthorisedConfirmation { 
                                                                                                                         CallBackURL = callbackUrl, 
                                                                                                                         UserName = user.UserName 
-                                                                                                                    });
+                                                                                                                    }, null);
 
                     await UserMgr.SendEmailAsync(user.Id, "Account has been authorised", bodyText);
 

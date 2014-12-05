@@ -306,7 +306,7 @@ namespace Secure_Password_Repository.Controllers
                                                                                                                             userEmail = user.Email,
                                                                                                                             userFullName = user.userFullName,
                                                                                                                             userName = user.UserName
-                                                                                                                        });
+                                                                                                                        }, null);
 
                         await UserMgr.SendEmailAsync(adminUserId, "New account needs authorisation", bodyText);
                     }
@@ -348,7 +348,7 @@ namespace Secure_Password_Repository.Controllers
             string bodyText = RenderViewContent.RenderViewToString("Account", "ResetPasswordEmail", 
                                                                                                     new PasswordForgetConfirmation { 
                                                                                                         CallBackURL = callbackUrl 
-                                                                                                    });
+                                                                                                    }, null);
 
             await UserMgr.SendEmailAsync(user.Id, "Password Reset Request", bodyText);
             return RedirectToAction("ForgotPasswordConfirmation", "Account");
@@ -472,7 +472,7 @@ namespace Secure_Password_Repository.Controllers
                                                                                                                     userEmail = user.Email,
                                                                                                                     userFullName = user.userFullName,
                                                                                                                     userName = user.UserName
-                                                                                                                });
+                                                                                                                }, null);
 
                 await UserMgr.SendEmailAsync(adminUserId, "New account needs authorisation", bodyText);
             }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
 using Microsoft.AspNet.SignalR;
 using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Extensions;
@@ -62,6 +63,10 @@ namespace Secure_Password_Repository.Hubs
         /// <param name="newcategoryid">ID of the new category</param>
         public void getNewCategoryDetails(Int32 newcategoryid)
         {
+            ApplicationUserManager UserMgr = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            int UserId = HttpContext.Current.User.Identity.GetUserId().ToInt();
+            ApplicationUser CurrentUser = UserMgr.FindById(UserId);
+
             //retreive the new category that was just created
             Category newCategoryDetails = DatabaseContext.Categories.SingleOrDefault(c => c.CategoryId == newcategoryid);
 
@@ -74,7 +79,7 @@ namespace Secure_Password_Repository.Hubs
             CategoryItem returnCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(newCategoryDetails);
 
             //generate a string based view of the new category
-            string categoryPartialView = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem);
+            string categoryPartialView = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem, CurrentUser);
 
             //broadcast the new category details
             PushNotifications.sendAddedCategoryDetails(categoryPartialView, newCategoryDetails.Category_ParentID);
@@ -86,9 +91,11 @@ namespace Secure_Password_Repository.Hubs
         /// <param name="newPasswordId">ID of the new password</param>
         public void getNewPasswordDetails(Int32 newPasswordId)
         {
+            ApplicationUserManager UserMgr = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>();
 
             int UserId = HttpContext.Current.User.Identity.GetUserId().ToInt();
             bool userIsAdmin = HttpContext.Current.User.IsInRole("Administrator");
+            ApplicationUser CurrentUser = UserMgr.FindById(UserId);
 
             //get a list of userIds that have UserPassword records for this password
             var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == newPasswordId).Select(up => up.Id).ToList();
@@ -114,7 +121,7 @@ namespace Secure_Password_Repository.Hubs
                 PasswordItem returnPasswordViewItem = AutoMapper.Mapper.Map<PasswordItem>(newPassword);
 
                 //generate a string based view of the new category
-                string passwordPartialView = RenderViewContent.RenderViewToString("Password", "_PasswordItem", returnPasswordViewItem);
+                string passwordPartialView = RenderViewContent.RenderViewToString("Password", "_PasswordItem", returnPasswordViewItem, CurrentUser);
 
                 //broadcast the new password details
                 PushNotifications.sendAddedPasswordDetails(passwordPartialView, returnPasswordViewItem.Parent_CategoryId, returnPasswordViewItem.PasswordId);

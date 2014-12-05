@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Secure_Password_Repository.Models;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -84,7 +85,7 @@ namespace Secure_Password_Repository.Extensions
         /// <param name="model">Name of the view model</param>
         /// <returns>String containing partial view HTML</returns>
         class FakeController : ControllerBase { protected override void ExecuteCore() { } }
-        public static string RenderViewToString(string controllerName, string viewName, object model)
+        public static string RenderViewToString(string controllerName, string viewName, object model, ApplicationUser currentuser)
         {
             using (var writer = new StringWriter())
             {
@@ -95,8 +96,18 @@ namespace Secure_Password_Repository.Extensions
                 var razorViewResult = razorViewEngine.FindPartialView(fakeControllerContext, viewName, false);
 
                 var viewContext = new ViewContext(fakeControllerContext, razorViewResult.View, new ViewDataDictionary(model), new TempDataDictionary(), writer);
+
+                if (currentuser != null)
+                {
+                    viewContext.ViewBag.CanEditCategories = currentuser.CanEditCategories();
+                    viewContext.ViewBag.CanAddCategories = currentuser.CanAddCategories();
+                    viewContext.ViewBag.CanDeleteCategories = currentuser.CanDeleteCategories();
+                    viewContext.ViewBag.CanAddPasswords = currentuser.CanAddPasswords();
+                }
+
                 razorViewResult.View.Render(viewContext, writer);
                 return writer.ToString();
+                
             }
         }
 

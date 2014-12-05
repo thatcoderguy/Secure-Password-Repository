@@ -4,6 +4,7 @@ using Secure_Password_Repository.Controllers;
 using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Extensions;
 using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Repositories;
 using Secure_Password_Repository.Settings;
 using Secure_Password_Repository.ViewModels;
 using System;
@@ -15,6 +16,7 @@ using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System.Threading;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
@@ -27,11 +29,26 @@ namespace Secure_Password_Repository.Controllers
     {
 
         private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+        private ICategoryRepository categoryRepository;
+        private IPasswordRepository passwordRepository;
+        private IUserPasswordRepository userpasswordRepository;
+
+        const int rootCategoryId = 1;
 
         private ApplicationUserManager _userManager;
 
         public PasswordController()
         {
+            this.categoryRepository = new CategoryRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
+            this.passwordRepository = new PasswordRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
+            this.userpasswordRepository = new UserPasswordRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
+        }
+
+        public PasswordController(ICategoryRepository categoryRepository, IPasswordRepository passwordRepository, IUserPasswordRepository userpasswordRepository)
+        {
+            this.categoryRepository = categoryRepository;
+            this.passwordRepository = passwordRepository;
+            this.userpasswordRepository = userpasswordRepository;
         }
 
         public ApplicationUserManager UserMgr
@@ -74,39 +91,36 @@ namespace Secure_Password_Repository.Controllers
         public ActionResult Index()
         {
 
-            //get the root node, and include it's subcategories
-            var rootCategoryItem = DatabaseContext.Categories
-                                                        .Where(c => c.CategoryId == 1)
-                                                        .Include(c => c.SubCategories)
-                                                        .ToList()
-                                                        .Select(c => new Category()
-                                                        {
-                                                            SubCategories = c.SubCategories
-                                                                                .Where(sub => !sub.Deleted)
-                                                                                .OrderBy(sub => sub.CategoryOrder)
-                                                                                .ToList(),                         //make sure only undeleted subcategories are returned
+            ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
 
-                                                            CategoryId = c.CategoryId,
-                                                            CategoryName = c.CategoryName,
-                                                            Category_ParentID = c.Category_ParentID,
-                                                            CategoryOrder = c.CategoryOrder,
-                                                            Parent_Category = c.Parent_Category,
-                                                            Deleted = c.Deleted
-                                                        })
-                                                        .SingleOrDefault();
+            if (CurrentUser == null)
+                return View(new CategoryDisplayItem()
+                {
+                    categoryListItem = new CategoryItem(),
+                    categoryAddItem = new CategoryAdd() { Category_ParentID = null }
+                });
+
+            //get the root node, and include it's subcategories
+            var rootCategoryItem = categoryRepository.GetCategoryWithChildren(rootCategoryId, passwordRepository.GetPasswordIdsByCategoryId(rootCategoryId), CurrentUser.CanOverridePasswordPermissions());
 
             //root item not found
             if (rootCategoryItem == null)
-                return View(new CategoryDisplayItem() {
-                                                            categoryListItem = new CategoryItem(),
-                                                            categoryAddItem = new CategoryAdd() { Category_ParentID = null }
-                                                      });
+                return View(new CategoryDisplayItem()
+                {
+                    categoryListItem = new CategoryItem(),
+                    categoryAddItem = new CategoryAdd() { Category_ParentID = null }
+                });
+
+            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
+            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
+            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
+            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
 
             //create the model view from the model
             CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
 
             //return wrapper class
-            return View(new CategoryDisplayItem()
+            return View(new CategoryDisplayItem() 
             {
                 categoryListItem = rootCategoryViewItem,
                 categoryAddItem = new CategoryAdd() { Category_ParentID = rootCategoryViewItem.CategoryId }
@@ -120,57 +134,24 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GetCategoryChildren(Int32 ParentCategoryId)
         {
+            ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
+
+            if (CurrentUser == null)
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
             try
             {
-                int UserId = User.Identity.GetUserId().ToInt();
-                bool userIsAdmin = User.IsInRole("Administrator");
-
-                //load all of the userpassword item that are related to the passwords being return - this stops multiple hits on the DB when calling Any below
-                var UserPasswordList = DatabaseContext.UserPasswords.Where(up => up.Id == UserId && 
-                                                                                DatabaseContext.Passwords
-                                                                                                    .Where(p => p.Parent_CategoryId == ParentCategoryId)
-                                                                                                    .Select(p => p.PasswordId)
-                                                                                                    .Contains(up.PasswordId))
-                                                                                                    .ToList();
-
                 //return the selected item - with its children
-                var selectedCategoryItem = DatabaseContext.Categories
-                                                            .Where(c => c.CategoryId == ParentCategoryId)
-                                                            .Include(c => c.SubCategories)
-                                                            .Include(c => c.Passwords)
-                                                            .Include(c => c.Passwords.Select(p => p.Creator))
-                                                            .ToList()
-                                                            .Select(c => new Category()
-                                                            {
-
-                                                                SubCategories = c.SubCategories
-                                                                                    .Where(sub => !sub.Deleted)
-                                                                                    .OrderBy(sub => sub.CategoryOrder)
-                                                                                    .ToList(),                          //make sure only undeleted subcategories are returned
-
-                                                                Passwords = c.Passwords
-                                                                                    .Where(pass => !pass.Deleted
-                                                                                    && (
-                                                                                        (UserPasswordList.Any(up => up.PasswordId == pass.PasswordId && up.Id == UserId))
-                                                                                        || (userIsAdmin && ApplicationSettings.Default.AdminsHaveAccessToAllPasswords)
-                                                                                        || pass.Creator_Id == UserId
-                                                                                        )
-                                                                                        )   //make sure only undeleted passwords - that the current user has acccess to - are returned
-                                                                                    .OrderBy(pass => pass.PasswordOrder)
-                                                                                    .ToList(),
-
-                                                                CategoryId = c.CategoryId,
-                                                                CategoryName = c.CategoryName,
-                                                                Category_ParentID = c.Category_ParentID,
-                                                                CategoryOrder = c.CategoryOrder,
-                                                                Parent_Category = c.Parent_Category,
-                                                                Deleted = c.Deleted
-                                                            })
-                                                            .SingleOrDefault();
+                var selectedCategoryItem = categoryRepository.GetCategoryWithChildren(ParentCategoryId, passwordRepository.GetPasswordIdsByCategoryId(ParentCategoryId), CurrentUser.CanOverridePasswordPermissions());
 
                 //selected item not found
                 if(selectedCategoryItem == null)
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+                ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
+                ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
+                ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
+                ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
 
                 //create view model from model
                 CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
@@ -206,12 +187,22 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AddCategory(CategoryAdd model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+            ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
+
+            if (CurrentUser == null)
                 return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
             //user does not have access to add passwords
-            if (!User.CanAddCategories() && !User.IsInRole("Administrator"))
+            if (!CurrentUser.CanAddCategories())
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
+            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
+            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
+            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
 
             try
             {
@@ -254,7 +245,7 @@ namespace Secure_Password_Repository.Controllers
                 //notify clients that a new category has been added
                 PushNotifications.newCategoryAdded(newCategory.CategoryId.Value);
 
-                return Json(new { Status = "OK", Data = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem) });
+                return Json(new { Status = "OK", Data = RenderViewContent.RenderViewToString("Password", "_CategoryItem", returnCategoryViewItem, CurrentUser) });
 
             }
             catch {
@@ -267,12 +258,22 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> EditCategory(CategoryEdit model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+            ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
+
+            if (CurrentUser == null)
                 return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
             //user does not have access to edit category
-            if (!User.CanEditCategories() && !User.IsInRole("Administrator"))
+            if (!CurrentUser.CanEditCategories())
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
+            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
+            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
+            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
        
             try
             {
@@ -329,8 +330,16 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int CategoryId)
         {
+            ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
+
+            if (CurrentUser == null)
+                return Json(new
+                {
+                    Status = "Failed"
+                });
+
             //user does not have access to delete categories
-            if (!User.CanDeleteCategories() && !User.IsInRole("Administrator"))
+            if (!CurrentUser.CanDeleteCategories())
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
             try
@@ -345,6 +354,11 @@ namespace Secure_Password_Repository.Controllers
                 //category not found
                 if(selectedCategory == null)
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
+
+                ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
+                ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
+                ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
+                ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
 
                 //load in the parent's subcategories
                 DatabaseContext.Entry(selectedCategory.Parent_Category)
@@ -403,7 +417,23 @@ namespace Secure_Password_Repository.Controllers
             PasswordDetails passwordDisplayDetails;
             int UserId = User.Identity.GetUserId().ToInt();
             bool userIsAdmin = User.IsInRole("Administrator");
-            var user = await UserMgr.FindByIdAsync(UserId);
+
+            ApplicationUser CurrentUser = await UserMgr.FindByIdAsync(UserId);
+
+            if (CurrentUser == null)
+            {
+                passwordDisplayDetails = new PasswordDetails
+                {
+                    UserPermissions = new System.Collections.ObjectModel.Collection<PasswordUserPermission>(),
+                    ViewPassword = new PasswordDisplay(),
+                    EditPassword = new PasswordEdit(),
+                    OpenTab = DefaultTab.ViewPassword
+                };
+
+                ModelState.AddModelError("", "Cannot find user account");
+
+                return View(passwordDisplayDetails);
+            }
 
             //get a list of userIds that have UserPassword records for this password
             var UserIDList = DatabaseContext.UserPasswords.Where(up => up.PasswordId == PasswordId).Select(up => up.Id).ToList();
@@ -435,6 +465,11 @@ namespace Secure_Password_Repository.Controllers
 
                 return View(passwordDisplayDetails);
             }
+
+            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
+            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
+            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
+            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
            
             //obtain a list of users that dont have a record in the UserPassword table
             var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();
@@ -463,7 +498,7 @@ namespace Secure_Password_Repository.Controllers
                 string DecryptedUsername = selectedPassword.EncryptedUserName;
                 string DecryptedSecondCredential = selectedPassword.EncryptedSecondCredential;
 
-                EncryptionAndHashing.DecryptUsernameFields(user, ref DecryptedUsername, ref DecryptedSecondCredential);
+                EncryptionAndHashing.DecryptUsernameFields(CurrentUser, ref DecryptedUsername, ref DecryptedSecondCredential);
 
                 selectedPassword.EncryptedUserName = DecryptedUsername;
                 selectedPassword.EncryptedSecondCredential = DecryptedSecondCredential;
@@ -498,8 +533,16 @@ namespace Secure_Password_Repository.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
+
+            if (CurrentUser == null)
+                return Json(new
+                {
+                    Status = "Failed"
+                });
+
             //check if user can add passwords
-            if (!User.CanAddPasswords() && !User.IsInRole("Administrator"))
+            if (!CurrentUser.CanAddPasswords())
             {
                 ModelState.AddModelError("", "You do not have permission to create passwords");
                 return View(model);
@@ -1053,12 +1096,19 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> UpdatePosition(Int32 ItemId, Int16 NewPosition, Int16 OldPosition, bool isCategoryItem)
         {
-            //check if user can edit categories
-            if (!User.CanEditCategories() && !User.IsInRole(ApplicationSettings.Default.RoleAllowEditCategories) && !User.IsInRole("Administrator"))
+            ApplicationUser CurrentUser = await UserMgr.FindByIdAsync(User.Identity.GetUserId().ToInt());
+
+            if (CurrentUser == null)
                 return Json(new
                 {
                     Status = "Failed"
                 });
+
+            //check if user can edit categories
+            if (!CurrentUser.CanEditCategories())
+                return Json(new {
+                                    Status = "Failed"
+                                });
 
             try
             {
@@ -1262,6 +1312,11 @@ namespace Secure_Password_Repository.Controllers
             catch { 
                 //add logging here
             }
+
+            return Json(new
+            {
+                Status = "Failed"
+            });
         }
 
         #endregion

@@ -19,7 +19,7 @@
             {
                 @Html.Partial("_CategoryItem", categoryitem)
             }
-            @if (User.CanAddPasswords())
+            @if (ViewBag.CanAddCategories)
             {
                 @Html.Partial("_CreateCategory", Model.categoryAddItem)
             }
@@ -29,7 +29,7 @@
 
 <!-- Used to determine if sortable should be enabled or not -->
 <script type="text/javascript">
-    var canEditCategory = @Html.Raw(@User.CanEditCategories().ToString().ToLower());
+    var canEditCategory = @Html.Raw(ViewBag.CanEditCategories.ToString().ToLower());
 </script>
 
 @section Scripts {

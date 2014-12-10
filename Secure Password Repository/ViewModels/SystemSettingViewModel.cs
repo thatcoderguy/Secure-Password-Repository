@@ -66,4 +66,18 @@ namespace Secure_Password_Repository.ViewModels
 
         public IEnumerable<ApplicationRole> AvailableRoles { get; set; }
     }
+
+    public class ExportPasswordsViewModel
+    {
+        [Required]
+        [Display(Name = "Confirm Password Export - This will decrypt all passwords into memory and then return a plain text file to your browser, so store this file carefully!:")]
+        public bool ConfirmPasswordExport { get; set; }
+    }
+
+    public class ExportPasswordsEmail
+    {
+        public string FullUserName { get; set; }
+        public string UserName { get; set; }
+    }
+
 }

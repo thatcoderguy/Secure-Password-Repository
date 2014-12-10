@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Web;
 
-namespace Secure_Password_Repository.Extensions
+namespace Secure_Password_Repository.Utilities
 {
 
     /// <summary>

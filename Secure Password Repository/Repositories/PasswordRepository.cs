@@ -20,7 +20,7 @@ namespace Secure_Password_Repository.Repositories
             this.userid = userid;
         }
 
-        public List<Password> GetPasswordsByCategoryId(int categoryid)
+        public List<Password> GetPasswordsByParentId(int categoryid)
         {
             return context.Passwords
                             .Where(pass => pass.Parent_CategoryId == categoryid)
@@ -29,7 +29,7 @@ namespace Secure_Password_Repository.Repositories
                             .ToList();
         }
 
-        public List<int> GetPasswordIdsByCategoryId(int categoryid)
+        public List<int> GetPasswordIdsByParentId(int categoryid)
         {
             return context.Passwords
                             .Where(pass => pass.Parent_CategoryId == categoryid)

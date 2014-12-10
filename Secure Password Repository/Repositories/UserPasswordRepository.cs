@@ -28,7 +28,7 @@ namespace Secure_Password_Repository.Repositories
         {
             throw new NotImplementedException();
             //var UserPasswordList = databasecontext.UserPasswords.Where(up => up.Id == userid)
-                //.Passwords.Where(pass => pass.Parent_CategoryId == categoryid).Include(pass => pass.Parent_UserPasswords).Select(pass => pass.Parent_UserPasswords);
+                //.Passwords.Where(pass => pass.Parent_CategoryId == parentid).Include(pass => pass.Parent_UserPasswords).Select(pass => pass.Parent_UserPasswords);
 
             //return UserPasswordList
         }

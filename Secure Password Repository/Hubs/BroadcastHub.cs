@@ -2,7 +2,7 @@
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.AspNet.SignalR;
 using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Settings;
 using Secure_Password_Repository.ViewModels;

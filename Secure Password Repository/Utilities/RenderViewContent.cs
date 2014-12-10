@@ -7,7 +7,7 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 
-namespace Secure_Password_Repository.Extensions
+namespace Secure_Password_Repository.Utilities
 {
     /// <summary>
     /// Utility class to render views and bundles in ways they couldn't normally be rendered

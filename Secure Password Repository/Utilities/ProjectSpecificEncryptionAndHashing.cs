@@ -3,7 +3,7 @@ using Secure_Password_Repository.Settings;
 using System;
 using System.Runtime.Caching;
 
-namespace Secure_Password_Repository.Extensions
+namespace Secure_Password_Repository.Utilities
 {
     /// <summary>
     /// This class contains addition hashing and encryption methods used in the project

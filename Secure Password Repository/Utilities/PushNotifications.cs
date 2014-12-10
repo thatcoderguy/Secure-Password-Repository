@@ -5,7 +5,7 @@ using System;
 using System.Runtime.Caching;
 using System.Web;
 
-namespace Secure_Password_Repository.Extensions
+namespace Secure_Password_Repository.Utilities
 {
     /// <summary>
     /// Class to handle broadcasting of messages from the SignalR Hub

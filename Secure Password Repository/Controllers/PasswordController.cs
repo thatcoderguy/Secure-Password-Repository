@@ -2,7 +2,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Secure_Password_Repository.Controllers;
 using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Repositories;
 using Secure_Password_Repository.Settings;
@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Threading;
+using Secure_Password_Repository.Services;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
@@ -29,38 +30,22 @@ namespace Secure_Password_Repository.Controllers
     {
 
         private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-        private ICategoryRepository categoryRepository;
-        private IPasswordRepository passwordRepository;
-        private IUserPasswordRepository userpasswordRepository;
 
         const int rootCategoryId = 1;
 
         private ApplicationUserManager _userManager;
+        private IViewModelService ViewModelService;
 
         public PasswordController()
         {
-            this.categoryRepository = new CategoryRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
-            this.passwordRepository = new PasswordRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
-            this.userpasswordRepository = new UserPasswordRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
+            this.ViewModelService = new ViewModelService(new CategoryRepository(new ApplicationDbContext()), new PasswordRepository(new ApplicationDbContext()), new UserPasswordRepository(new ApplicationDbContext()));
+            //this.categoryRepository = new CategoryRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
         }
 
-        public PasswordController(ICategoryRepository categoryRepository, IPasswordRepository passwordRepository, IUserPasswordRepository userpasswordRepository)
+        public PasswordController(IViewModelService viewmodelservice)
         {
-            this.categoryRepository = categoryRepository;
-            this.passwordRepository = passwordRepository;
-            this.userpasswordRepository = userpasswordRepository;
-        }
-
-        public ApplicationUserManager UserMgr
-        {
-            get
-            {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            }
-            private set
-            {
-                _userManager = value;
-            }
+            this.ViewModelService = viewmodelservice;
+            //this._userManager = accountRepository;
         }
 
         /// <summary>
@@ -93,15 +78,7 @@ namespace Secure_Password_Repository.Controllers
 
             ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
 
-            if (CurrentUser == null)
-                return View(new CategoryDisplayItem()
-                {
-                    categoryListItem = new CategoryItem(),
-                    categoryAddItem = new CategoryAdd() { Category_ParentID = null }
-                });
 
-            //get the root node, and include it's subcategories
-            var rootCategoryItem = categoryRepository.GetCategoryWithChildren(rootCategoryId, passwordRepository.GetPasswordIdsByCategoryId(rootCategoryId), CurrentUser.CanOverridePasswordPermissions());
 
             //root item not found
             if (rootCategoryItem == null)
@@ -142,7 +119,7 @@ namespace Secure_Password_Repository.Controllers
             try
             {
                 //return the selected item - with its children
-                var selectedCategoryItem = categoryRepository.GetCategoryWithChildren(ParentCategoryId, passwordRepository.GetPasswordIdsByCategoryId(ParentCategoryId), CurrentUser.CanOverridePasswordPermissions());
+                var selectedCategoryItem = categoryRepository.GetCategoryWithChildren(ParentCategoryId, passwordRepository.GetPasswordIdsByParentId(ParentCategoryId), CurrentUser.CanOverridePasswordPermissions());
 
                 //selected item not found
                 if(selectedCategoryItem == null)
@@ -895,7 +872,7 @@ namespace Secure_Password_Repository.Controllers
             #endregion
 
             //user does not have access to edit user permissions
-            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id == UserId)
+            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) && selectedPassword.Creator_Id != UserId)
             {
                             
                 //get all of the UserPassword records for the selected password

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNet.Identity;
-using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.Models;
 using System;
 using System.Collections.Generic;

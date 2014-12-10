@@ -1,11 +1,9 @@
 ﻿using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
-using Microsoft.AspNet.Identity.Owin;
 using System;
-using System.Data.Entity;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using System.Web;
 
 namespace Secure_Password_Repository.Repositories
 {

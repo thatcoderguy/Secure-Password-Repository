@@ -2,7 +2,7 @@
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using Secure_Password_Repository.Database;
-using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Settings;
 using Secure_Password_Repository.ViewModels;
@@ -389,7 +389,7 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> ResetPassword(int UserId, ResetPasswordViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return View("ResetPassword", model);
 
             var user = await UserMgr.FindByEmailAsync(model.Email);

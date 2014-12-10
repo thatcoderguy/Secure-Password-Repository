@@ -8,8 +8,8 @@ namespace Secure_Password_Repository.Repositories
 {
     public interface IPasswordRepository : IDisposable
     {
-        List<Password> GetPasswordsByCategoryId(int categoryid);
-        List<int> GetPasswordIdsByCategoryId(int categoryid);
+        List<Password> GetPasswordsByParentId(int parentid);
+        List<int> GetPasswordIdsByParentId(int parentid);
         Password GetPasswordById(int passwordid);
         void InsertPassword(Password password);
         void DeletePassword(int passwordid);

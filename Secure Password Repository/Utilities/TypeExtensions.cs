@@ -5,7 +5,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Web;
 
-namespace Secure_Password_Repository.Extensions
+namespace Secure_Password_Repository.Utilities
 {
     /// <summary>
     /// Extension methods - just to make life easier

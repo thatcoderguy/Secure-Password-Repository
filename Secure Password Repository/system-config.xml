@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ApplicationSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <LogoImage>logo.png</LogoImage>
-  <SMTPServerAddress>localhost</SMTPServerAddress>
-  <SMTPEmailAddress>securepasswordrepository@local</SMTPEmailAddress>
+  <SMTPServerAddress>webmail.recallhosting.co.uk</SMTPServerAddress>
+  <SMTPEmailAddress>davie@recallhosting.co.uk</SMTPEmailAddress>
   <SMTPServerUsername />
   <SMTPServerPassword />
   <SystemSalt>0Mj/0!uYirmsw.?x*(Y,hJpp4CBC=haE</SystemSalt>

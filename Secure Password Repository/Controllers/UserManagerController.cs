@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
-using Secure_Password_Repository.Extensions;
+using Secure_Password_Repository.Utilities;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.ViewModels;
 using System;

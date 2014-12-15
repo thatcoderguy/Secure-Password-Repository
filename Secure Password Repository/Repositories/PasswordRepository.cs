@@ -6,6 +6,7 @@ using System.Data.Entity;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Secure_Password_Repository.Services;
 
 namespace Secure_Password_Repository.Repositories
 {
@@ -14,7 +15,7 @@ namespace Secure_Password_Repository.Repositories
         private ApplicationDbContext context;
         private int userid;
 
-        public PasswordRepository(ApplicationDbContext databasecontext, int userid)
+        public PasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice)
         {
             this.context = databasecontext;
             this.userid = userid;

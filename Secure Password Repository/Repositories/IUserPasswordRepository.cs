@@ -11,6 +11,7 @@ namespace Secure_Password_Repository.Repositories
     {
         List<UserPassword> GetUserPasswordsByCategoryId(int categoryid);
         List<UserPassword> GetUserPasswordsByPasswordId(int passwordid);
+        public UserPassword GetUserPassword(int passwordid, int userid);
         void InsertUserPassword(UserPassword userpassword);
         void UpdateUserPassword(UserPassword userpassword);
         void DeleteUserPassword(int userid, int passwordid);

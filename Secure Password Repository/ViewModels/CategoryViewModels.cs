@@ -8,7 +8,6 @@ namespace Secure_Password_Repository.ViewModels
     public class CategoryEdit
     {
         public Int32? CategoryId { get; set; }
-        
         [Required]
         public string CategoryName { get; set; }
     }
@@ -29,6 +28,8 @@ namespace Secure_Password_Repository.ViewModels
         public Int32 Category_ParentID { get; set; }
         public virtual ICollection<CategoryItem> SubCategories { get; set; }
         public virtual ICollection<PasswordItem> Passwords { get; set; }
+        public bool CanEditCategory { get; set; }
+        public bool CanDeleteCategory { get; set; }
     }
 
     public class CategoryDisplayItem
@@ -36,6 +37,7 @@ namespace Secure_Password_Repository.ViewModels
         public CategoryItem categoryListItem { get; set; }
         public CategoryAdd categoryAddItem { get; set; }
         public PasswordAdd passwordAddItem { get; set; }
+        public bool CanEditPassword { get; set; }
     }
 
 }

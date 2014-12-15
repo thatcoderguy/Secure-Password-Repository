@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Services
 {
-    interface IViewModelService
+    public interface IViewModelService
     {
-        CategoryDisplayItem GetCategoryDisplayItem();
+        CategoryDisplayItem GetCategoryDisplayItem(int parentcategoryid);
     }
 }

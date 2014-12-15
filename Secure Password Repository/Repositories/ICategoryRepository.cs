@@ -9,7 +9,7 @@ namespace Secure_Password_Repository.Repositories
 {
     public interface ICategoryRepository : IDisposable
     {
-        Category GetCategoryWithChildren(int categoryid, List<int> accessiblepasswordids, bool usercanoverridepermissions);
+        Category GetCategoryWithChildren(int categoryid);
         void InsertCategory(Category category);
         void DeleteCategory(int categoryid);
         void UpdateCategory(Category category);

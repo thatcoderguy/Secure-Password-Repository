@@ -6,7 +6,21 @@ using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Services
 {
-    class ModelValidatorService
+    public class ModelValidatorService : IModelValidatorService
     {
+        public ModelValidatorService()
+        {
+
+        }
+
+        public bool IsPostedModelValid()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddError(string key, string errorMessage)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -29,23 +29,21 @@ namespace Secure_Password_Repository.Controllers
     public class PasswordController : Controller
     {
 
-        private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+        private ApplicationDbContext DatabaseContext;
 
         const int rootCategoryId = 1;
 
         private ApplicationUserManager _userManager;
         private IViewModelService ViewModelService;
 
-        public PasswordController()
+        public PasswordController() 
         {
-            this.ViewModelService = new ViewModelService(new CategoryRepository(new ApplicationDbContext()), new PasswordRepository(new ApplicationDbContext()), new UserPasswordRepository(new ApplicationDbContext()));
-            //this.categoryRepository = new CategoryRepository(new ApplicationDbContext(), Thread.CurrentPrincipal.Identity.GetUserId().ToInt());
         }
 
-        public PasswordController(IViewModelService viewmodelservice)
+        public PasswordController(ApplicationDbContext context, IViewModelService viewmodelservice)
         {
+            this.DatabaseContext = context;
             this.ViewModelService = viewmodelservice;
-            //this._userManager = accountRepository;
         }
 
         /// <summary>

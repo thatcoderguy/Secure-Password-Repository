@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Services
 {
-    interface IModelValidatorService
+    public interface IViewModelValidatorService
     {
         bool IsPostedModelValid();
         void AddError(string key, string errorMessage);

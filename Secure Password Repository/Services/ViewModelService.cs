@@ -17,11 +17,8 @@ namespace Secure_Password_Repository.Services
         private IPasswordRepository passwordRepository;
         private IUserPasswordRepository userpasswordRepository;
 
-        public ViewModelService(ICategoryRepository categoryRepository, IPasswordRepository passwordRepository, IUserPasswordRepository userpasswordRepository)
+        public ViewModelService()
         {
-            this.categoryRepository = categoryRepository;
-            this.passwordRepository = passwordRepository;
-            this.userpasswordRepository = userpasswordRepository;
         }
 
         /// <summary>
@@ -51,10 +48,15 @@ namespace Secure_Password_Repository.Services
         public ViewModels.CategoryDisplayItem GetCategoryDisplayItem(int parentcategoryid)
         {
             //get the root node, and include it's subcategories
-            var rootCategoryItem = categoryRepository.GetCategoryWithChildren(rootCategoryId, passwordRepository.GetPasswordIdsByParentId(rootCategoryId), CurrentUser.CanOverridePasswordPermissions());
+            var rootCategoryItem = categoryRepository.GetCategoryWithChildren(parentcategoryid, passwordRepository.GetPasswordIdsByParentId(parentcategoryid), CurrentUser.CanOverridePasswordPermissions());
 
 
 
+        }
+
+        public CategoryDisplayItem GetCategoryDisplayItem()
+        {
+            throw new NotImplementedException();
         }
     }
 }

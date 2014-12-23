@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Services
 {
-    interface IPermissionService
+    public interface IPermissionService
     {
         bool CanAddCategory();
         bool CanEditCategory();

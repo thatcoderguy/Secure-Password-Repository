@@ -36,14 +36,22 @@ namespace Secure_Password_Repository.Controllers
         private ApplicationUserManager _userManager;
         private IViewModelService ViewModelService;
 
-        public PasswordController() 
-        {
-        }
-
         public PasswordController(ApplicationDbContext context, IViewModelService viewmodelservice)
         {
             this.DatabaseContext = context;
             this.ViewModelService = viewmodelservice;
+        }
+
+        public ApplicationUserManager UserMgr
+        {
+            get
+            {
+                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            }
+            private set
+            {
+                _userManager = value;
+            }
         }
 
         /// <summary>

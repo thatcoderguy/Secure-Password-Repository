@@ -13,11 +13,13 @@ namespace Secure_Password_Repository.Repositories
     {
         private ApplicationDbContext DatabaseContext;
         private IPermissionService PermissionService;
+        private IUserPasswordRepository userPasswordRepository;
 
-        public CategoryRepository(ApplicationDbContext context, IPermissionService permissionservice)
+        public CategoryRepository(ApplicationDbContext context, IPermissionService permissionservice, IUserPasswordRepository userpasswordrespository)
         {
             this.DatabaseContext = context;
             this.PermissionService = permissionservice;
+            this.userPasswordRepository = userpasswordrespository;
         }
 
         public Category GetCategoryWithChildren(int categoryid)

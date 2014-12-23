@@ -11,16 +11,20 @@ namespace Secure_Password_Repository.Services
     {
         private ApplicationUserManager UserManager;
         private IPrincipal SecurityPrincipal;
+        private IApplicationSettingsService ApplicationSettings;
 
-        public AccountService(HttpContextBase httpcontext, IPrincipal securityprincipal)
+        public AccountService(HttpContextBase httpcontext, IPrincipal securityprincipal, IApplicationSettingsService applicationsettings)
         {
             this.UserManager = httpcontext.GetOwinContext().GetUserManager<ApplicationUserManager>();
             this.SecurityPrincipal = securityprincipal;
+            this.ApplicationSettings = applicationsettings;
         }
 
-        public AccountService(ApplicationUserManager usermanager, IPrincipal securityprincipal)
+        public AccountService(ApplicationUserManager usermanager, IPrincipal securityprincipal, IApplicationSettingsService applicationsettings)
         {
             this.UserManager = usermanager;
+            this.SecurityPrincipal = securityprincipal;
+            this.ApplicationSettings = applicationsettings;
         }
 
         public bool UserIsAnAdministrator()

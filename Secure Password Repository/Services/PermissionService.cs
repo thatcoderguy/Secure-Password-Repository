@@ -7,6 +7,16 @@ namespace Secure_Password_Repository.Services
 {
     public class PermissionService : IPermissionService
     {
+
+        private IAccountService UserAccountService;
+        private IApplicationSettingsService ApplicationSettings;
+
+        public PermissionService(IAccountService useraccountservice, IApplicationSettingsService applicationsettings)
+        {
+            this.UserAccountService = useraccountservice;
+            this.ApplicationSettings = applicationsettings;
+        }
+
         public bool CanAddCategory()
         {
             throw new NotImplementedException();

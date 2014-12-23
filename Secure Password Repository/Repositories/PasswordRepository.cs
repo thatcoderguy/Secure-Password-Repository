@@ -7,18 +7,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Microsoft.AspNet.Identity.EntityFramework;
+using Secure_Password_Repository.Services;
 
 namespace Secure_Password_Repository.Repositories
 {
     public class PasswordRepository: IPasswordRepository 
     {
         private ApplicationDbContext context;
-        private int userid;
+        private IUserPasswordRepository userPasswordRepository;
+        private IPermissionService permissionService;
 
-        public PasswordRepository(ApplicationDbContext databasecontext, int userid)
+        public PasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice, IUserPasswordRepository userpasswordrepository)
         {
             this.context = databasecontext;
-            this.userid = userid;
+            this.userPasswordRepository = userpasswordrepository;
+            this.permissionService = permissionservice;
         }
 
         public List<Password> GetPasswordsByParentId(int categoryid)

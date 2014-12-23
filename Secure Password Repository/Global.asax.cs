@@ -22,7 +22,7 @@ namespace Secure_Password_Repository
             var container = new ServiceContainer();
             container.RegisterControllers();        
 
-            container.Register<IAccountRepository, AccountRepository>(new PerScopeLifetime());
+            container.Register<IAccountService, AccountService>(new PerScopeLifetime());
             container.Register<ICategoryRepository, CategoryRepository>(new PerScopeLifetime());
             container.Register<IPasswordRepository, PasswordRepository>(new PerScopeLifetime());
             container.Register<IUserPasswordRepository, UserPasswordRepository>(new PerScopeLifetime());
@@ -32,6 +32,7 @@ namespace Secure_Password_Repository
             container.Register<IViewModelService, ViewModelService>(new PerScopeLifetime());
 
             container.Register<ApplicationDbContext, ApplicationDbContext>(new PerScopeLifetime());
+            container.Register<ApplicationUserManager, ApplicationUserManager>(new PerScopeLifetime());
 
             container.EnableMvc();
         }

@@ -16,9 +16,17 @@ namespace Secure_Password_Repository.Services
         private ICategoryRepository categoryRepository;
         private IPasswordRepository passwordRepository;
         private IUserPasswordRepository userpasswordRepository;
+        private IViewModelValidatorService viewModelValidatorService;
+        private IPermissionService permissionService;
 
-        public ViewModelService()
+        public ViewModelService(ICategoryRepository categoryrepository, IPasswordRepository passwordrepository, IUserPasswordRepository userpasswordrepository, IViewModelValidatorService viewmodelvalidatorservice, IPermissionService permissionservice)
         {
+            this.categoryRepository = categoryrepository;
+            this.passwordRepository = passwordrepository;
+            this.userpasswordRepository = userpasswordrepository;
+            this.viewModelValidatorService = viewmodelvalidatorservice;
+            this.permissionService = permissionservice;
+
         }
 
         /// <summary>

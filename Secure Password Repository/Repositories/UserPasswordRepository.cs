@@ -10,17 +10,17 @@ using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using Secure_Password_Repository.Services;
+using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace Secure_Password_Repository.Repositories
 {
     public class UserPasswordRepository : IUserPasswordRepository 
     {
-        private ApplicationDbContext DatabaseContext;
+        private IdentityDbContext<ApplicationUser, ApplicationRole, int, CustomUserLogin, CustomUserRole, CustomUserClaim> context;
+        private int userid;
 
-        public UserPasswordRepository(ApplicationDbContext databasecontext)
+        public UserPasswordRepository()
         {
-            this.DatabaseContext = databasecontext;
         }
 
         public List<UserPassword> GetUserPasswordsByCategoryId(int categoryid)
@@ -55,12 +55,6 @@ namespace Secure_Password_Repository.Repositories
         public void Save()
         {
             throw new NotImplementedException();
-        }
-
-
-        public UserPassword GetUserPassword(int passwordid, int userid)
-        {
-            return DatabaseContext.UserPasswords.FirstOrDefault(up => up.PasswordId == passwordid && up.Id == userid);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Secure_Password_Repository.Database;
+﻿using Microsoft.AspNet.Identity.EntityFramework;
+using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Services;
 using System;

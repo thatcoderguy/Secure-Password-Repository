@@ -6,7 +6,7 @@ using System.Data.Entity;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using Secure_Password_Repository.Services;
+using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace Secure_Password_Repository.Repositories
 {
@@ -15,7 +15,7 @@ namespace Secure_Password_Repository.Repositories
         private ApplicationDbContext context;
         private int userid;
 
-        public PasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice)
+        public PasswordRepository(ApplicationDbContext databasecontext, int userid)
         {
             this.context = databasecontext;
             this.userid = userid;

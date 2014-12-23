@@ -29,35 +29,20 @@ namespace Secure_Password_Repository.Controllers
     public class PasswordController : Controller
     {
 
-        private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
+        private ApplicationDbContext DatabaseContext;
 
-        const int RootCategoryId = 1;
+        const int rootCategoryId = 1;
 
         private ApplicationUserManager _userManager;
         private IViewModelService ViewModelService;
 
-        public PasswordController()
+        public PasswordController() 
         {
-            
-            this.ViewModelService = new ViewModelService(
-                                                            new CategoryRepository(
-                                                                                    new ApplicationDbContext(), 
-                                                                                    new PermissionService(
-                                                                                                new AccountService(HttpContext, Thread.CurrentPrincipal),
-                                                                                                new UserPasswordRepository(new ApplicationDbContext()),
-                                                                                                new ApplicationSettingsService())),
-                                                            new PasswordRepository(
-                                                                                    new ApplicationDbContext(), 
-                                                                                    new PermissionService(
-                                                                                                new AccountService(HttpContext, Thread.CurrentPrincipal), 
-                                                                                                new UserPasswordRepository(new ApplicationDbContext()),
-                                                                                                new ApplicationSettingsService())),
-                                                            new ModelValidatorService()
-                                                        );
         }
 
-        public PasswordController(IViewModelService viewmodelservice)
+        public PasswordController(ApplicationDbContext context, IViewModelService viewmodelservice)
         {
+            this.DatabaseContext = context;
             this.ViewModelService = viewmodelservice;
         }
 
@@ -88,8 +73,6 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-
-            return View(ViewModelService.GetCategoryDisplayItem(RootCategoryId));
 
             ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
 

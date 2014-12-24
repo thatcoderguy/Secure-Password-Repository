@@ -7,10 +7,11 @@ using Secure_Password_Repository.Models;
 
 namespace Secure_Password_Repository.Services
 {
-    interface IAccountService: IDisposable
+    public interface IAccountService: IDisposable
     {
         ApplicationUser GetUserAccount();
         int GetUserId();
         bool UserIsAnAdministrator();
+        bool UserInRole(string rolename); 
     }
 }

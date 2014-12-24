@@ -56,5 +56,11 @@ namespace Secure_Password_Repository.Services
         {
             throw new NotImplementedException();
         }
+
+
+        public bool UserInRole(string rolename)
+        {
+            return SecurityPrincipal.IsInRole(rolename);
+        }
     }
 }

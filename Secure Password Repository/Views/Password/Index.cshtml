@@ -1,4 +1,4 @@
-﻿@using Secure_Password_Repository.Extensions;
+﻿@using Secure_Password_Repository.Utilities;
 @using Secure_Password_Repository.Settings;
 @using Secure_Password_Repository.ViewModels;
 @model Secure_Password_Repository.ViewModels.CategoryDisplayItem
@@ -19,7 +19,7 @@
             {
                 @Html.Partial("_CategoryItem", categoryitem)
             }
-            @if (ViewBag.CanAddCategories)
+            @if (Model.CanAddCategories)
             {
                 @Html.Partial("_CreateCategory", Model.categoryAddItem)
             }
@@ -29,7 +29,7 @@
 
 <!-- Used to determine if sortable should be enabled or not -->
 <script type="text/javascript">
-    var canEditCategory = @Html.Raw(ViewBag.CanEditCategories.ToString().ToLower());
+    var canEditCategory = @Html.Raw(Model.CanEditCategories.ToString().ToLower());
 </script>
 
 @section Scripts {

@@ -81,33 +81,7 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-
-            ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
-
-
-
-            //root item not found
-            if (rootCategoryItem == null)
-                return View(new CategoryDisplayItem()
-                {
-                    categoryListItem = new CategoryItem(),
-                    categoryAddItem = new CategoryAdd() { Category_ParentID = null }
-                });
-
-            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
-            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
-            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
-            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
-
-            //create the model view from the model
-            CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
-
-            //return wrapper class
-            return View(new CategoryDisplayItem() 
-            {
-                categoryListItem = rootCategoryViewItem,
-                categoryAddItem = new CategoryAdd() { Category_ParentID = rootCategoryViewItem.CategoryId }
-            });
+            return View(ViewModelService.GetCategoryDisplayItem(rootCategoryId));
         }
 
         #region CategoryActions

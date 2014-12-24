@@ -8,6 +8,7 @@ using System.Linq;
 using System.Web;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Secure_Password_Repository.Services;
+using Secure_Password_Repository.Exceptions;
 
 namespace Secure_Password_Repository.Repositories
 {
@@ -16,12 +17,14 @@ namespace Secure_Password_Repository.Repositories
         private ApplicationDbContext context;
         private IUserPasswordRepository userPasswordRepository;
         private IPermissionService permissionService;
+        private IAccountService accountService;
 
-        public PasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice, IUserPasswordRepository userpasswordrepository)
+        public PasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice, IUserPasswordRepository userpasswordrepository, IAccountService accountservice)
         {
             this.context = databasecontext;
             this.userPasswordRepository = userpasswordrepository;
             this.permissionService = permissionservice;
+            this.accountService = accountservice;
         }
 
         public List<Password> GetPasswordsByParentId(int categoryid)
@@ -29,7 +32,7 @@ namespace Secure_Password_Repository.Repositories
             return context.Passwords
                             .Where(pass => pass.Parent_CategoryId == categoryid)
                             .Include(p => p.Parent_UserPasswords)
-                            .Where(pass => pass.Parent_UserPasswords.Any(up => up.Id == userid))
+                            .Where(pass => pass.Parent_UserPasswords.Any(up => up.Id == accountService.GetUserId()))
                             .ToList();
         }
 
@@ -38,9 +41,19 @@ namespace Secure_Password_Repository.Repositories
             return context.Passwords
                             .Where(pass => pass.Parent_CategoryId == categoryid)
                             .Include(p => p.Parent_UserPasswords)
-                            .Where(pass => pass.Parent_UserPasswords.Any(up => up.Id == userid))
+                            .Where(pass => pass.Parent_UserPasswords.Any(up => up.Id == accountService.GetUserId()))
                             .Select(p => p.PasswordId)
                             .ToList();
+        }
+
+        public int GetPasswordCreatorId(int passwordid)
+        {
+            var PasswordItem = context.Passwords.SingleOrDefault(p => p.PasswordId == passwordid);
+
+            if(PasswordItem == null)
+                throw new PasswordItemNotFoundException("Password Item Could Not Be Found");
+
+            return PasswordItem.Creator_Id;
         }
 
         public Password GetPasswordById(int passwordid)

@@ -80,35 +80,6 @@ namespace Secure_Password_Repository.Models
             return "";
         }
 
-        public bool CanOverridePasswordPermissions() 
-        {
-            return ApplicationSettings.Default.AdminsHaveAccessToAllPasswords && this.GetRoleName() == "Administrator";
-        }
-
-        public bool CanEditCategories()
-        {
-            string RoleName = this.GetRoleName();
-            return ApplicationSettings.Default.RoleAllowEditCategories != "None" && ((RoleName == ApplicationSettings.Default.RoleAllowEditCategories) || RoleName == "Administrator");
-        }
-
-        public bool CanDeleteCategories()
-        {
-            string RoleName = this.GetRoleName();
-            return ApplicationSettings.Default.RoleAllowDeleteCategories != "None" && ((RoleName == ApplicationSettings.Default.RoleAllowDeleteCategories) || RoleName == "Administrator");
-        }
-
-        public bool CanAddCategories()
-        {
-            string RoleName = this.GetRoleName();
-            return ApplicationSettings.Default.RoleAllowAddCategories != "None" && ((RoleName == ApplicationSettings.Default.RoleAllowAddCategories) || RoleName == "Administrator");
-        }
-
-        public bool CanAddPasswords()
-        {
-            string RoleName = this.GetRoleName();
-            return ApplicationSettings.Default.RoleAllowAddPasswords != "None" && ((RoleName == ApplicationSettings.Default.RoleAllowAddPasswords) || RoleName == "Administrator");
-        }
-
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser, int> manager)
         {
 

@@ -11,16 +11,21 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using Microsoft.AspNet.Identity.EntityFramework;
+using Secure_Password_Repository.Services;
 
 namespace Secure_Password_Repository.Repositories
 {
     public class UserPasswordRepository : IUserPasswordRepository 
     {
-        private IdentityDbContext<ApplicationUser, ApplicationRole, int, CustomUserLogin, CustomUserRole, CustomUserClaim> context;
+        private ApplicationDbContext context;
         private int userid;
+        private IAccountService AccountService;
+        private IPermissionService PermissionService;
 
-        public UserPasswordRepository()
+        public UserPasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice)
         {
+            this.context = databasecontext;
+            this.PermissionService = permissionservice;
         }
 
         public List<UserPassword> GetUserPasswordsByCategoryId(int categoryid)

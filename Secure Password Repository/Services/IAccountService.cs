@@ -5,10 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Secure_Password_Repository.Models;
 
-namespace Secure_Password_Repository.Repositories
+namespace Secure_Password_Repository.Services
 {
-    interface IAccountRepository:IDisposable
+    interface IAccountService: IDisposable
     {
         ApplicationUser GetUserAccount();
+        int GetUserId();
+        bool UserIsAnAdministrator();
     }
 }

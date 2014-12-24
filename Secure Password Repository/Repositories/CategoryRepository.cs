@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNet.Identity.EntityFramework;
 using Secure_Password_Repository.Database;
 using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Services;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -10,18 +11,20 @@ namespace Secure_Password_Repository.Repositories
 {
     public class CategoryRepository : ICategoryRepository 
     {
-        private ApplicationDbContext databasecontext;
-        private int userid;
+        private ApplicationDbContext DatabaseContext;
+        private IPermissionService PermissionService;
+        private IUserPasswordRepository userPasswordRepository;
 
-        public CategoryRepository(ApplicationDbContext context, int userid)
+        public CategoryRepository(ApplicationDbContext context, IPermissionService permissionservice, IUserPasswordRepository userpasswordrespository)
         {
-            this.databasecontext = context;
-            this.userid = userid;
+            this.DatabaseContext = context;
+            this.PermissionService = permissionservice;
+            this.userPasswordRepository = userpasswordrespository;
         }
 
-        public Category GetCategoryWithChildren(int categoryid, List<int> accessiblepasswordids, bool usercanoverridepasswords)
+        public Category GetCategoryWithChildren(int categoryid)
         {
-            Category ReturnCategoryItem = databasecontext.Categories
+            Category ReturnCategoryItem = DatabaseContext.Categories
                                             .Where(c => c.CategoryId == categoryid)
                                             .Include(c => c.SubCategories)
                                             .Include(c => c.Passwords)
@@ -31,16 +34,14 @@ namespace Secure_Password_Repository.Repositories
                                             {
 
                                                 SubCategories = c.SubCategories
+                                                                    //make sure only undeleted subcategories are returned
                                                                     .Where(sub => !sub.Deleted)
                                                                     .OrderBy(sub => sub.CategoryOrder)
-                                                                    .ToList(),                          //make sure only undeleted subcategories are returned
+                                                                    .ToList(),
 
                                                 Passwords = c.Passwords
-                                                                    .Where(pass => !pass.Deleted
-                                                                                                && (accessiblepasswordids.Contains(pass.PasswordId)
-                                                                                                    || usercanoverridepasswords
-                                                                                                    || pass.Creator_Id == userid)
-                                                                           )   //make sure only undeleted passwords - that the current user has acccess to - are returned
+                                                                    //make sure only undeleted passwords - that the current user has acccess to - are returned
+                                                                    .Where(pass => !pass.Deleted && PermissionService.CanViewPassword(pass)) 
                                                                     .OrderBy(pass => pass.PasswordOrder)
                                                                     .ToList(),
 

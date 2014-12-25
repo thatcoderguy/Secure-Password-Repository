@@ -1262,6 +1262,11 @@ namespace Secure_Password_Repository.Controllers
             catch { 
                 //add logging here
             }
+            
+            return Json(new
+           {
+                 Status = "Completed"
+           });
         }
 
         #endregion

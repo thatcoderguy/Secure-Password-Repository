@@ -1,4 +1,5 @@
-﻿using Secure_Password_Repository.Models;
+﻿using Secure_Password_Repository.Exceptions;
+using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Repositories;
 using Secure_Password_Repository.ViewModels;
 using System;
@@ -53,18 +54,29 @@ namespace Secure_Password_Repository.Services
             AutoMapper.Mapper.CreateMap<PasswordEdit, PasswordDisplay>();
         }
 
-        public ViewModels.CategoryDisplayItem GetCategoryDisplayItem(int parentcategoryid)
+        public CategoryDisplayItem GetCategoryDisplayItem(int parentcategoryid)
         {
-            //get the root node, and include it's subcategories
-            var rootCategoryItem = categoryRepository.GetCategoryWithChildren(parentcategoryid, passwordRepository.GetPasswordIdsByParentId(parentcategoryid), CurrentUser.CanOverridePasswordPermissions());
+            try
+            {
+                var rootCategoryItem = categoryRepository.GetCategoryWithChildren(parentcategoryid);
 
+                //create the model view from the model
+                CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
 
+            } catch(CategoryItemNotFoundException ex)
+            {
+                viewModelValidatorService.AddError("", ex.Message);
+
+                return new CategoryDisplayItem()
+                {
+                    categoryListItem = new CategoryItem(),
+                    categoryAddItem = new CategoryAdd() { Category_ParentID = null },
+                    CanAddCategories = permissionService.CanAddCategories(),
+                    CanEditCategories = permissionService.CanEditCategories()
+                };
+            }
 
         }
 
-        public CategoryDisplayItem GetCategoryDisplayItem()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

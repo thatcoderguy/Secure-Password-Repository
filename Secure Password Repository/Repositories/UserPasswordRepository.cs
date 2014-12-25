@@ -18,7 +18,6 @@ namespace Secure_Password_Repository.Repositories
     public class UserPasswordRepository : IUserPasswordRepository 
     {
         private ApplicationDbContext context;
-        private int userid;
         private IAccountService AccountService;
         private IPermissionService PermissionService;
 
@@ -58,6 +57,33 @@ namespace Secure_Password_Repository.Repositories
         }
 
         public void Save()
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public UserPassword GetUserPassword(int passwordid)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public UserPassword GetUserPassword(int passwordid, int userid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool UserHasViewAccessToPassword(int passwordid)
+        {
+            return context.UserPasswords.Any(up => up.PasswordId == passwordid && up.Id == AccountService.GetUserId());
+        }
+
+        public bool UserHasEditAccessToPassword(int passwordid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool UserHasDeleteAccessToPassword(int passwordid)
         {
             throw new NotImplementedException();
         }

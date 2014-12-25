@@ -8,23 +8,21 @@ namespace Secure_Password_Repository.Services
 {
     public interface IApplicationSettingsService
     {
-        public string GetLogoImage();
-        public string GetSMTPServerAddress();
-        public string GetSMTPEmailAddress();
-        public string GetSMTPServerUsername();
-        public string GetSMTPServerPassword();
-        public string GetSystemSalt();
-        public string GetSystemInitilisationVector();
-        public string GetSCryptHashCost();
-        public string GetPBKDF2IterationCount();
-        public string GetRoleAllowEditCategories();
-        public string GetRoleAllowDeleteCategories();
-        public string GetRoleAllowAddCategories();
-        public string GetRoleAllowAddPasswords();
-        public bool GetAdminsHaveAccessToAllPasswords();
-        public bool GetBroadcastCategoryPositionChange();
-        public bool GetBroadcastPasswordPositionChange();
-
-
+        string GetLogoImage();
+        string GetSMTPServerAddress();
+        string GetSMTPEmailAddress();
+        string GetSMTPServerUsername();
+        string GetSMTPServerPassword();
+        string GetSystemSalt();
+        string GetSystemInitilisationVector();
+        string GetSCryptHashCost();
+        string GetPBKDF2IterationCount();
+        string GetRoleAllowEditCategories();
+        string GetRoleAllowDeleteCategories();
+        string GetRoleAllowAddCategories();
+        string GetRoleAllowAddPasswords();
+        bool GetAdminsHaveAccessToAllPasswords();
+        bool GetBroadcastCategoryPositionChange();
+        bool GetBroadcastPasswordPositionChange();
     }
 }

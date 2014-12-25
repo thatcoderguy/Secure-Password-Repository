@@ -9,9 +9,9 @@ namespace Secure_Password_Repository.Services
 {
     public interface IPermissionService
     {
-        bool CanAddCategory();
-        bool CanEditCategory();
-        bool CanDeleteCategory();
+        bool CanAddCategories();
+        bool CanEditCategories();
+        bool CanDeleteCategories();
         bool CanAddPassword();
         bool CanDeletePassword();
         bool CanEditPassword();

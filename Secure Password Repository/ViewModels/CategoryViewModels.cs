@@ -37,7 +37,8 @@ namespace Secure_Password_Repository.ViewModels
         public CategoryItem categoryListItem { get; set; }
         public CategoryAdd categoryAddItem { get; set; }
         public PasswordAdd passwordAddItem { get; set; }
-        public bool CanEditPassword { get; set; }
+        public bool CanAddCategories { get; set; }
+        public bool CanEditCategories { get; set; }
     }
 
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNet.Identity.EntityFramework;
 using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Exceptions;
 using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Services;
 using System;
@@ -53,6 +54,9 @@ namespace Secure_Password_Repository.Repositories
                                                 Deleted = c.Deleted
                                             })
                                             .SingleOrDefault();
+
+            if (ReturnCategoryItem == null)
+                throw new CategoryItemNotFoundException("Category Item Could Not Be Found.");
 
             return ReturnCategoryItem;
         }

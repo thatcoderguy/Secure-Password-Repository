@@ -81,7 +81,7 @@ namespace Secure_Password_Repository.Controllers
         // GET: Password
         public ActionResult Index()
         {
-            return View(ViewModelService.GetCategoryDisplayItem(rootCategoryId));
+            return View(ViewModelService.GetCategoryItem(rootCategoryId));
         }
 
         #region CategoryActions
@@ -91,6 +91,9 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GetCategoryChildren(Int32 ParentCategoryId)
         {
+
+            return View(ViewModelService.GetCategoryItem(ParentCategoryId));
+
             ApplicationUser CurrentUser = UserMgr.FindById(User.Identity.GetUserId().ToInt());
 
             if (CurrentUser == null)

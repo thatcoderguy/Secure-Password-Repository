@@ -9,6 +9,6 @@ namespace Secure_Password_Repository.Services
 {
     public interface IViewModelService
     {
-        CategoryDisplayItem GetCategoryDisplayItem(int parentcategoryid);
+        CategoryDisplayItem GetCategoryItem(int parentcategoryid);
     }
 }

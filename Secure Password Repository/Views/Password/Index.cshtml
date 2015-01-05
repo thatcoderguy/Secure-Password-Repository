@@ -2,14 +2,6 @@
 @using Secure_Password_Repository.Settings;
 @using Secure_Password_Repository.ViewModels;
 @model Secure_Password_Repository.ViewModels.CategoryDisplayItem
-@{
-    ViewBag.Title = "Password List";
-}
-
-<h2>Password List</h2>
-
-<!--- token for editing/deleteing items  -->
-<form id="_CRSFform" action="#" method="post">@Html.AntiForgeryToken()</form>
 
 <ul id="roottree" class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
     <li class="treeignore treeview ui-accordion ui-widget ui-helper-reset ui-sortable" data-id="0">

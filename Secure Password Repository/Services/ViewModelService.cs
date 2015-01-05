@@ -54,20 +54,33 @@ namespace Secure_Password_Repository.Services
             AutoMapper.Mapper.CreateMap<PasswordEdit, PasswordDisplay>();
         }
 
-        public CategoryDisplayItem GetCategoryDisplayItem(int parentcategoryid)
+        public CategoryDisplayItem GetCategoryItem(int parentcategoryid)
         {
+
+            CategoryDisplayItem displayViewModel;
+
             try
             {
-                var rootCategoryItem = categoryRepository.GetCategoryWithChildren(parentcategoryid);
+                //get the category item, with child items
+                Category categoryItem = categoryRepository.GetCategoryWithChildren(parentcategoryid);
 
                 //create the model view from the model
-                CategoryItem rootCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(rootCategoryItem);
+                CategoryItem categoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(categoryItem);
 
-            } catch(CategoryItemNotFoundException ex)
+                displayViewModel = new CategoryDisplayItem()
+                {
+                    categoryListItem = categoryViewItem,
+                    categoryAddItem = new CategoryAdd() { Category_ParentID = parentcategoryid },
+                    CanAddCategories = permissionService.CanAddCategories(),
+                    CanEditCategories = permissionService.CanEditCategories()
+                };
+
+            } 
+            catch(CategoryItemNotFoundException ex)
             {
                 viewModelValidatorService.AddError("", ex.Message);
 
-                return new CategoryDisplayItem()
+                displayViewModel = new CategoryDisplayItem()
                 {
                     categoryListItem = new CategoryItem(),
                     categoryAddItem = new CategoryAdd() { Category_ParentID = null },
@@ -76,6 +89,8 @@ namespace Secure_Password_Repository.Services
                 };
             }
 
+            //return the viewmodel
+            return displayViewModel;
         }
 
     }

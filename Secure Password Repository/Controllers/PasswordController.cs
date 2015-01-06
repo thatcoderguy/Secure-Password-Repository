@@ -19,6 +19,7 @@ using System.Web.Mvc;
 using System.Threading;
 using Secure_Password_Repository.Services;
 using Secure_Password_Repository.Identity;
+using Secure_Password_Repository.Customisations;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers
@@ -27,7 +28,7 @@ namespace Secure_Password_Repository.Controllers
     #if !DEBUG
     [RequireHttps] //apply to all actions in controller
     #endif
-    public class PasswordController : Controller
+    public class PasswordController : BaseController
     {
 
         private ApplicationDbContext DatabaseContext;

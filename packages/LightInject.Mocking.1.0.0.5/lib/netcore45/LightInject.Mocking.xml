@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>LightInject.Mocking</name>
+    </assembly>
+    <members>
+        <member name="T:LightInject.Mocking.LightInjectMocking">
+            <summary>
+            Extends the <see cref="T:LightInject.IServiceRegistry"/> interface.
+            </summary>
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.StartMocking(LightInject.IServiceRegistry,System.Type,System.Type)">
+            <summary>
+            Allows a service to be mocked using the given <paramref name="implementingType"/>.
+            </summary>
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>
+            <param name="serviceType">The type of service to mock.</param>        
+            <param name="implementingType">The type that represents the mock to be created.</param>
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.StartMocking(LightInject.IServiceRegistry,System.Type,System.String,System.Type)">
+            <summary>
+            Allows a named service to be mocked using the given <paramref name="implementingType"/>.
+            </summary>
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>
+            <param name="serviceType">The type of service to mock.</param>
+            <param name="serviceName">The name of the service to mock.</param>
+            <param name="implementingType">The type that represents the mock to be created.</param>
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.StartMocking``1(LightInject.IServiceRegistry,System.Func{``0},System.String)">
+            <summary>
+            Allows a named service to be mocked using the given <paramref name="mockFactory"/>.
+            </summary>
+            <typeparam name="TService">The type of service to mock.</typeparam>
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>
+            <param name="mockFactory">The factory delegate that creates the mock instance.</param>
+            <param name="serviceName">The name of the service to mock.</param>
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.StartMocking``1(LightInject.IServiceRegistry,System.Func{``0})">
+            <summary>
+            Allows a service to be mocked using the given <paramref name="mockFactory"/>.
+            </summary>
+            <typeparam name="TService">The type of service to mock.</typeparam>
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>
+            <param name="mockFactory">The factory delegate that creates the mock instance.</param>        
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.EndMocking``1(LightInject.IServiceRegistry,System.String)">
+            <summary>
+            Ends mocking the <typeparamref name="TService"/> with the given <paramref name="serviceName"/>.
+            </summary>
+            <typeparam name="TService">The type of service for which to end mocking.</typeparam>
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>
+            <param name="serviceName">The name of the service for which to end mocking.</param>
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.EndMocking(LightInject.IServiceRegistry,System.Type)">
+            <summary>
+            Ends mocking the <paramref name="serviceType"/>.
+            </summary>        
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>
+            <param name="serviceType">The type of service for which to end mocking.</param>        
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.EndMocking(LightInject.IServiceRegistry,System.Type,System.String)">
+            <summary>
+            Ends mocking the <paramref name="serviceType"/> with the given <paramref name="serviceName"/>.
+            </summary>        
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>
+            <param name="serviceType">The type of service for which to end mocking.</param>
+            <param name="serviceName">The name of the service for which to end mocking.</param>
+        </member>
+        <member name="M:LightInject.Mocking.LightInjectMocking.EndMocking``1(LightInject.IServiceRegistry)">
+            <summary>
+            Ends mocking the <typeparamref name="TService"/>.
+            </summary>
+            <typeparam name="TService">The type of service for which to end mocking.</typeparam>
+            <param name="serviceRegistry">The target <see cref="T:LightInject.IServiceRegistry"/> instance.</param>        
+        </member>
+    </members>
+</doc>

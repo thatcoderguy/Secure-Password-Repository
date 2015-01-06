@@ -16,6 +16,7 @@ using System.Web;
 using System.Web.Mvc;
 using Secure_Password_Repository.Identity;
 using Secure_Password_Repository.Services;
+using Secure_Password_Repository.Customisations;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -23,7 +24,7 @@ namespace Secure_Password_Repository.Controllers
     #if !DEBUG
     [RequireHttps] //apply to all actions in controller
     #endif
-    public class AccountController : Controller
+    public class AccountController : BaseController
     {
         private ApplicationUserManager _userManager;
         private ApplicationRoleManager _roleManager;

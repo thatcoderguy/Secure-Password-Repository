@@ -18,9 +18,9 @@ namespace Secure_Password_Repository.Services
         private IPasswordRepository passwordRepository;
         private IUserPasswordRepository userpasswordRepository;
         private IViewModelValidatorService viewModelValidatorService;
-        private IPermissionService permissionService;
+        private IPasswordPermissionService permissionService;
 
-        public ViewModelService(ICategoryRepository categoryrepository, IPasswordRepository passwordrepository, IUserPasswordRepository userpasswordrepository, IViewModelValidatorService viewmodelvalidatorservice, IPermissionService permissionservice)
+        public ViewModelService(ICategoryRepository categoryrepository, IPasswordRepository passwordrepository, IUserPasswordRepository userpasswordrepository, IViewModelValidatorService viewmodelvalidatorservice, IPasswordPermissionService permissionservice)
         {
             this.categoryRepository = categoryrepository;
             this.passwordRepository = passwordrepository;
@@ -70,9 +70,7 @@ namespace Secure_Password_Repository.Services
                 displayViewModel = new CategoryDisplayItem()
                 {
                     categoryListItem = categoryViewItem,
-                    categoryAddItem = new CategoryAdd() { Category_ParentID = parentcategoryid },
-                    CanAddCategories = permissionService.CanAddCategories(),
-                    CanEditCategories = permissionService.CanEditCategories()
+                    categoryAddItem = new CategoryAdd() { Category_ParentID = parentcategoryid }
                 };
 
             } 
@@ -83,9 +81,7 @@ namespace Secure_Password_Repository.Services
                 displayViewModel = new CategoryDisplayItem()
                 {
                     categoryListItem = new CategoryItem(),
-                    categoryAddItem = new CategoryAdd() { Category_ParentID = null },
-                    CanAddCategories = permissionService.CanAddCategories(),
-                    CanEditCategories = permissionService.CanEditCategories()
+                    categoryAddItem = new CategoryAdd() { Category_ParentID = null }
                 };
             }
 

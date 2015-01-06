@@ -1,6 +1,7 @@
 ﻿@using Secure_Password_Repository.Utilities;
 @using Secure_Password_Repository.Settings;
 @using Secure_Password_Repository.ViewModels;
+@using Microsoft.AspNet.Identity;
 @model Secure_Password_Repository.ViewModels.CategoryDisplayItem
 
 <ul id="roottree" class="treeview ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion ui-widget ui-sortable ui-accordion-content-active">
@@ -11,7 +12,7 @@
             {
                 @Html.Partial("_CategoryItem", categoryitem)
             }
-            @if (Model.CanAddCategories)
+            @if (User.CanAddCategories())
             {
                 @Html.Partial("_CreateCategory", Model.categoryAddItem)
             }
@@ -21,7 +22,7 @@
 
 <!-- Used to determine if sortable should be enabled or not -->
 <script type="text/javascript">
-    var canEditCategory = @Html.Raw(Model.CanEditCategories.ToString().ToLower());
+    var canEditCategory = @Html.Raw(User.CanEditCategories().ToString().ToLower());
 </script>
 
 @section Scripts {

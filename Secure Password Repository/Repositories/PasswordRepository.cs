@@ -16,10 +16,10 @@ namespace Secure_Password_Repository.Repositories
     {
         private ApplicationDbContext context;
         private IUserPasswordRepository userPasswordRepository;
-        private IPermissionService permissionService;
+        private IPasswordPermissionService permissionService;
         private IAccountService accountService;
 
-        public PasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice, IUserPasswordRepository userpasswordrepository, IAccountService accountservice)
+        public PasswordRepository(ApplicationDbContext databasecontext, IPasswordPermissionService permissionservice, IUserPasswordRepository userpasswordrepository, IAccountService accountservice)
         {
             this.context = databasecontext;
             this.userPasswordRepository = userpasswordrepository;

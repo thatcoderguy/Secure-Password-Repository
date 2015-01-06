@@ -11,6 +11,7 @@ using System.Net.Mail;
 using System.Net.Mime;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Secure_Password_Repository.Identity;
 
 namespace Secure_Password_Repository
 {

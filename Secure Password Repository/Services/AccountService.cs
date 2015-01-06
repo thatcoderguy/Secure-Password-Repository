@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNet.Identity.Owin;
 using Secure_Password_Repository.Exceptions;
+using Secure_Password_Repository.Identity;
 using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Settings;
 using System;
 using System.Security.Principal;
 using System.Web;

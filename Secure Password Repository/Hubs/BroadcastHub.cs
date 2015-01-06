@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Web;
+using Secure_Password_Repository.Identity;
 
 namespace Secure_Password_Repository.Hubs
 {

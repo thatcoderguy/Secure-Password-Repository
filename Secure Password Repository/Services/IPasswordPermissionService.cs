@@ -7,12 +7,8 @@ using System.Threading.Tasks;
 
 namespace Secure_Password_Repository.Services
 {
-    public interface IPermissionService
+    public interface IPasswordPermissionService
     {
-        bool CanAddCategories();
-        bool CanEditCategories();
-        bool CanDeleteCategories();
-        bool CanAddPassword();
         bool CanDeletePassword();
         bool CanEditPassword();
         bool CanViewPassword(Password passworditem);

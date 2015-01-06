@@ -18,6 +18,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Threading;
 using Secure_Password_Repository.Services;
+using Secure_Password_Repository.Identity;
 
 [assembly: WebActivatorEx.PreApplicationStartMethod(typeof(PasswordController), "AutoMapperStart")]
 namespace Secure_Password_Repository.Controllers

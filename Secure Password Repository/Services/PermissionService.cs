@@ -1,5 +1,6 @@
 ﻿using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Repositories;
+using Secure_Password_Repository.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,41 +8,21 @@ using System.Web;
 
 namespace Secure_Password_Repository.Services
 {
-    public class PermissionService : IPermissionService
+    public class PasswordPermissionService : IPasswordPermissionService
     {
-
         private IAccountService UserAccountService;
-        private IApplicationSettingsService ApplicationSettings;
         private IUserPasswordRepository UserPasswordRepository;
         private IPasswordRepository PasswordRepository;
+        private IApplicationSettingsService applicationSettings;
 
-        public PermissionService(IAccountService useraccountservice, IApplicationSettingsService applicationsettings, IUserPasswordRepository userpasswordrepository, IPasswordRepository passwordrepository)
+        public PasswordPermissionService(IAccountService useraccountservice, IUserPasswordRepository userpasswordrepository, IPasswordRepository passwordrepository, IApplicationSettingsService applicationsettings)
         {
             this.UserAccountService = useraccountservice;
-            this.ApplicationSettings = applicationsettings;
             this.UserPasswordRepository = userpasswordrepository;
             this.PasswordRepository = passwordrepository;
+            this.applicationSettings = applicationsettings;
         }
 
-        public bool CanAddCategories()
-        {
-            return UserAccountService.UserIsAnAdministrator() || UserAccountService.UserInRole(ApplicationSettings.GetRoleAllowAddCategories());
-        }
-
-        public bool CanEditCategories()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool CanDeleteCategories()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool CanAddPassword()
-        {
-            throw new NotImplementedException();
-        }
 
         public bool CanDeletePassword()
         {
@@ -61,7 +42,7 @@ namespace Secure_Password_Repository.Services
 
         public bool CanViewPassword(int passwordid)
         {
-            return ApplicationSettings.GetAdminsHaveAccessToAllPasswords() || PasswordRepository.GetPasswordCreatorId(passwordid) == UserAccountService.GetUserId() || UserPasswordRepository.UserHasViewAccessToPassword(passwordid);
+            return applicationSettings.GetAdminsHaveAccessToAllPasswords() || PasswordRepository.GetPasswordCreatorId(passwordid) == UserAccountService.GetUserId() || UserPasswordRepository.UserHasViewAccessToPassword(passwordid);
         }
 
 

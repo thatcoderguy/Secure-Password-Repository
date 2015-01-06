@@ -13,10 +13,10 @@ namespace Secure_Password_Repository.Repositories
     public class CategoryRepository : ICategoryRepository 
     {
         private ApplicationDbContext DatabaseContext;
-        private IPermissionService PermissionService;
+        private IPasswordPermissionService PermissionService;
         private IUserPasswordRepository userPasswordRepository;
 
-        public CategoryRepository(ApplicationDbContext context, IPermissionService permissionservice, IUserPasswordRepository userpasswordrespository)
+        public CategoryRepository(ApplicationDbContext context, IPasswordPermissionService permissionservice, IUserPasswordRepository userpasswordrespository)
         {
             this.DatabaseContext = context;
             this.PermissionService = permissionservice;

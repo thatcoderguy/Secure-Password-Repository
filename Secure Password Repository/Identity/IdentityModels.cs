@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Secure_Password_Repository.Database;
+using Secure_Password_Repository.Models;
+using Secure_Password_Repository.Services;
 using Secure_Password_Repository.Settings;
 using System;
 using System.Collections.Generic;
@@ -9,7 +11,7 @@ using System.Data.Entity;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace Secure_Password_Repository.Models
+namespace Secure_Password_Repository.Identity
 {
     public class CustomUserRole : IdentityUserRole<int> { }
     public class CustomUserClaim : IdentityUserClaim<int> { }
@@ -52,32 +54,43 @@ namespace Secure_Password_Repository.Models
         public virtual ICollection<Password> Passwords { get; set; }
         public bool isActive { get; set; }
 
+        private IPasswordPermissionService permissionService;
+        private IApplicationSettingsService applicationSettingService;
+        private ApplicationDbContext databaseContext;
+
+        public ApplicationUser(IPasswordPermissionService permissionservice, IApplicationSettingsService applicationsettingservice, ApplicationDbContext databasecontext)
+        {
+            this.permissionService = permissionservice;
+            this.applicationSettingService = applicationsettingservice;
+            this.databaseContext = databasecontext;
+        }
+
         public ApplicationRole GetRole()
         {
-            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-
             foreach (var role in this.Roles)
             {
-                return DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
+                return databaseContext.Roles.SingleOrDefaultAsync(r => r.Id == role.RoleId).Result;
             }
 
             return null;
-
         }
 
         public string GetRoleName()
         {
 
-            ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-
             foreach (var role in this.Roles)
             {
                 //grab first role that the user has (there should be only 1)
-                ApplicationRole myRole = DatabaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
+                ApplicationRole myRole = databaseContext.Roles.FirstOrDefaultAsync(r => r.Id == role.RoleId).Result;
                 return myRole.Name;
             }
 
             return "";
+        }
+
+        public bool isAdministrator()
+        {
+            return GetRoleName() == "Administrator";
         }
 
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser, int> manager)

@@ -1,4 +1,5 @@
-﻿using Secure_Password_Repository.Models;
+﻿using Secure_Password_Repository.Identity;
+using Secure_Password_Repository.Models;
 using Secure_Password_Repository.Settings;
 using System;
 using System.Runtime.Caching;

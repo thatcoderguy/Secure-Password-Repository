@@ -13,6 +13,7 @@ using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using Secure_Password_Repository.Identity;
 
 namespace Secure_Password_Repository.Controllers
 {

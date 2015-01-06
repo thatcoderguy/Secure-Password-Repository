@@ -19,9 +19,9 @@ namespace Secure_Password_Repository.Repositories
     {
         private ApplicationDbContext context;
         private IAccountService AccountService;
-        private IPermissionService PermissionService;
+        private IPasswordPermissionService PermissionService;
 
-        public UserPasswordRepository(ApplicationDbContext databasecontext, IPermissionService permissionservice)
+        public UserPasswordRepository(ApplicationDbContext databasecontext, IPasswordPermissionService permissionservice)
         {
             this.context = databasecontext;
             this.PermissionService = permissionservice;

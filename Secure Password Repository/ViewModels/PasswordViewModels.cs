@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
+using Secure_Password_Repository.Identity;
 
 namespace Secure_Password_Repository.ViewModels
 {

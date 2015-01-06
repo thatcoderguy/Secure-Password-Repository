@@ -1,5 +1,6 @@
 namespace Secure_Password_Repository.Migrations
 {
+    using Secure_Password_Repository.Identity;
     using Secure_Password_Repository.Models;
     using System;
     using System.Data.Entity;

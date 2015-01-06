@@ -14,6 +14,8 @@ using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using Secure_Password_Repository.Identity;
+using Secure_Password_Repository.Services;
 
 namespace Secure_Password_Repository.Controllers
 {
@@ -25,21 +27,31 @@ namespace Secure_Password_Repository.Controllers
     {
         private ApplicationUserManager _userManager;
         private ApplicationRoleManager _roleManager;
+        private ApplicationDbContext databaseContext;
+        private IApplicationSettingsService applicationSettings;
+        private IPasswordPermissionService permissionService;
 
-        private ApplicationDbContext DatabaseContext = new ApplicationDbContext();
-
-        public AccountController()
+        public AccountController(ApplicationDbContext databasecontext, IApplicationSettingsService applicationsettings, IPasswordPermissionService permissionservice)
         {
+            this.databaseContext = databasecontext;
+            this.applicationSettings = applicationsettings;
+            this.permissionService = permissionservice;
         }
 
-        public AccountController(ApplicationUserManager userManager)
+        public AccountController(ApplicationUserManager userManager, ApplicationDbContext databasecontext, IApplicationSettingsService applicationsettings, IPasswordPermissionService permissionservice)
         {
             UserMgr = userManager;
+            this.databaseContext = databasecontext;
+            this.applicationSettings = applicationsettings;
+            this.permissionService = permissionservice;
         }
 
-        public AccountController(ApplicationRoleManager roleManager)
+        public AccountController(ApplicationRoleManager roleManager, ApplicationDbContext databasecontext, IApplicationSettingsService applicationsettings, IPasswordPermissionService permissionservice)
         {
             RoleMgr = roleManager;
+            this.databaseContext = databasecontext;
+            this.applicationSettings = applicationsettings;
+            this.permissionService = permissionservice;
         }
 
         public ApplicationUserManager UserMgr

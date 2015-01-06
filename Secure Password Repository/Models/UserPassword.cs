@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Secure_Password_Repository.Identity;
+using Secure_Password_Repository.Services;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

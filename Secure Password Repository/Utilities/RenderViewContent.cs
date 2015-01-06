@@ -95,16 +95,7 @@ namespace Secure_Password_Repository.Utilities
                 var fakeControllerContext = new ControllerContext(new HttpContextWrapper(new HttpContext(HttpContext.Current.Request, new HttpResponse(null))), routeData, new FakeController());
                 var razorViewEngine = new RazorViewEngine();
                 var razorViewResult = razorViewEngine.FindPartialView(fakeControllerContext, viewName, false);
-
                 var viewContext = new ViewContext(fakeControllerContext, razorViewResult.View, new ViewDataDictionary(model), new TempDataDictionary(), writer);
-
-                if (currentuser != null)
-                {
-                    viewContext.ViewBag.CanEditCategories = currentuser.CanEditCategories();
-                    viewContext.ViewBag.CanAddCategories = currentuser.CanAddCategories();
-                    viewContext.ViewBag.CanDeleteCategories = currentuser.CanDeleteCategories();
-                    viewContext.ViewBag.CanAddPasswords = currentuser.CanAddPasswords();
-                }
 
                 razorViewResult.View.Render(viewContext, writer);
                 return writer.ToString();

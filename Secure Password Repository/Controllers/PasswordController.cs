@@ -110,11 +110,6 @@ namespace Secure_Password_Repository.Controllers
                 if(selectedCategoryItem == null)
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
 
-                ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
-                ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
-                ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
-                ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
-
                 //create view model from model
                 CategoryItem selectedCategoryViewItem = AutoMapper.Mapper.Map<CategoryItem>(selectedCategoryItem);
 
@@ -160,11 +155,6 @@ namespace Secure_Password_Repository.Controllers
             //user does not have access to add passwords
             if (!CurrentUser.CanAddCategories())
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
-
-            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
-            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
-            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
-            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
 
             try
             {
@@ -231,11 +221,6 @@ namespace Secure_Password_Repository.Controllers
             //user does not have access to edit category
             if (!CurrentUser.CanEditCategories())
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
-
-            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
-            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
-            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
-            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
        
             try
             {
@@ -316,11 +301,6 @@ namespace Secure_Password_Repository.Controllers
                 //category not found
                 if(selectedCategory == null)
                     return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-
-                ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
-                ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
-                ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
-                ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
 
                 //load in the parent's subcategories
                 DatabaseContext.Entry(selectedCategory.Parent_Category)
@@ -427,11 +407,6 @@ namespace Secure_Password_Repository.Controllers
 
                 return View(passwordDisplayDetails);
             }
-
-            ViewBag.CanEditCategories = CurrentUser.CanEditCategories();
-            ViewBag.CanAddCategories = CurrentUser.CanAddCategories();
-            ViewBag.CanDeleteCategories = CurrentUser.CanDeleteCategories();
-            ViewBag.CanAddPassword = CurrentUser.CanAddPasswords();
            
             //obtain a list of users that dont have a record in the UserPassword table
             var UserList = DatabaseContext.Users.Where(u => !UserIDList.Contains(u.Id)).ToList();

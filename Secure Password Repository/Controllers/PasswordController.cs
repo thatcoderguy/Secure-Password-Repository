@@ -852,7 +852,7 @@ namespace Secure_Password_Repository.Controllers
             #endregion
 
             //user does not have access to edit user permissions
-            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) || selectedPassword.Creator_Id != UserId)
+            if (!selectedPassword.Parent_UserPasswords.Any(up => up.Id == UserId && up.CanChangePermissions) && selectedPassword.Creator_Id != UserId)
             {
                             
                 //get all of the UserPassword records for the selected password

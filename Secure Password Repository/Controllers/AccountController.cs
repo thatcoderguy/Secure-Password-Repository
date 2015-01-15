@@ -389,7 +389,7 @@ namespace Secure_Password_Repository.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> ResetPassword(int UserId, ResetPasswordViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return View("ResetPassword", model);
 
             var user = await UserMgr.FindByEmailAsync(model.Email);
